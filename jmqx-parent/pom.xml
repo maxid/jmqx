@@ -13,6 +13,7 @@
         <reactor.version>2024.0.4</reactor.version>
         <netty.version>4.1.119.Final</netty.version>
         <lombok.version>1.18.30</lombok.version>
+        <slf4j.version>1.7.30</slf4j.version>
     </properties>
 
     <dependencyManagement>
@@ -33,6 +34,16 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>5.8.35</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
