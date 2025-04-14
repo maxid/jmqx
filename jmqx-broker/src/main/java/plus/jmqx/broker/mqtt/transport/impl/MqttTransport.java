@@ -2,6 +2,7 @@ package plus.jmqx.broker.mqtt.transport.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.transport.Transport;
@@ -86,7 +87,13 @@ public class MqttTransport implements Transport<MqttConfiguration> {
 
     @Override
     public ReceiveContext<MqttConfiguration> context(MqttConfiguration configuration) {
-        return null;
+        synchronized (this) {
+            if (ContextHolder.getContext() == null) {
+                MqttReceiveContext context = new MqttReceiveContext(configuration, this);
+                ContextHolder.setContext(context);
+            }
+            return (ReceiveContext<MqttConfiguration>) ContextHolder.getContext();
+        }
     }
 
     @Override

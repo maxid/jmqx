@@ -24,7 +24,8 @@ import reactor.util.context.ContextView;
 public class MqttReceiver extends OptionHandler implements Receiver {
     @Override
     public Mono<DisposableServer> bind() {
-        return null;
+        return Mono.deferContextual(view -> Mono.just(this.serv(view))
+                .flatMap(serv-> serv.bind().cast(DisposableServer.class)));
     }
 
     private TcpServer serv(ContextView view) {
@@ -38,7 +39,7 @@ public class MqttReceiver extends OptionHandler implements Receiver {
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.SO_REUSEADDR, true)
-                .metrics(true)
+                .metrics(false)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

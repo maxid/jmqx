@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.retry.Ack;
 import plus.jmqx.broker.mqtt.retry.RetryAck;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
+import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.util.MessageUtils;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
@@ -54,28 +55,28 @@ public class MqttChannel {
 
     private String address;
 
-    @JsonIgnore
+//    @JsonIgnore
     private Set<SubscribeTopic> topics;
 
-    @JsonIgnore
+//    @JsonIgnore
     private Boolean isMock = false;
 
-    @JsonIgnore
+//    @JsonIgnore
     private transient AtomicInteger atomicInteger;
 
-    @JsonIgnore
+//    @JsonIgnore
     private transient MqttMessageSink mqttMessageSink;
 
-    @JsonIgnore
+//    @JsonIgnore
     private transient Map<Integer, MqttPublishMessage> qos2MsgCache;
 
-    @JsonIgnore
+//    @JsonIgnore
     private Map<MqttMessageType, Map<Integer, Disposable>> replyMqttMessageMap;
 
-    @JsonIgnore
+//    @JsonIgnore
     private Disposable closeDisposable;
 
-    @JsonIgnore
+//    @JsonIgnore
     private TimeAckManager timeAckManager;
 
     public void disposableClose() {

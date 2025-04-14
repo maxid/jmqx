@@ -24,7 +24,8 @@ import reactor.util.context.ContextView;
 public class MqttsReceiver extends SslHandler implements Receiver {
     @Override
     public Mono<DisposableServer> bind() {
-        return null;
+        return Mono.deferContextual(view -> Mono.just(this.serv(view))
+                .flatMap(serv-> serv.bind().cast(DisposableServer.class)));
     }
 
     private TcpServer serv(ContextView view) {
@@ -32,13 +33,13 @@ public class MqttsReceiver extends SslHandler implements Receiver {
         MqttConfiguration config = context.getConfiguration();
         WriteBufferWaterMark waterMark = new WriteBufferWaterMark(config.getLowWaterMark(), config.getHighWaterMark());
         TcpServer server = initTcpServer(config);
-        return server.port(config.getPort())
+        return server.port(config.getSecurePort())
                 .wiretap(config.getWiretap())
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, waterMark)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.SO_REUSEADDR, true)
-                .metrics(true)
+                .metrics(false)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)

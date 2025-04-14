@@ -107,12 +107,13 @@ public interface Configuration {
      */
     Integer getWebsocketSecurePort();
 
+    String getWebsocketPath();
+
     Map<String, Object> getOptions();
 
     Map<String, Object> getChildOptions();
 
     Boolean getSslEnable();
-
     String getSslCa();
 
     String getSslCrt();
