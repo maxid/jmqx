@@ -8,20 +8,20 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
-import plus.jmqx.broker.mqtt.handler.OptionHandler;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
+import plus.jmqx.broker.mqtt.handler.SslHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.tcp.TcpServer;
 import reactor.util.context.ContextView;
 
 /**
- * MQTT 服务器，MQTT(1883)
+ * MQTT Secure 服务器，MQTTS(1884)
  *
  * @author maxid
- * @since 2025/4/9 11:47
+ * @since 2025/4/9 15:00
  */
-public class MqttReceiver extends OptionHandler implements Receiver {
+public class MqttsReceiver extends SslHandler implements Receiver {
     @Override
     public Mono<DisposableServer> bind() {
         return null;
