@@ -1,0 +1,9 @@
+plus.jmqx.broker.mqtt.message.impl.CommonProcessor
+plus.jmqx.broker.mqtt.message.impl.ConnectProcessor
+plus.jmqx.broker.mqtt.message.impl.ConnectAckProcessor
+plus.jmqx.broker.mqtt.message.impl.PublishProcessor
+plus.jmqx.broker.mqtt.message.impl.PublishAckProcessor
+plus.jmqx.broker.mqtt.message.impl.SubscribeProcessor
+plus.jmqx.broker.mqtt.message.impl.SubscribeAckProcessor
+plus.jmqx.broker.mqtt.message.impl.UnsubscribeProcessor
+plus.jmqx.broker.mqtt.message.impl.UnsubscribeAckProcessor

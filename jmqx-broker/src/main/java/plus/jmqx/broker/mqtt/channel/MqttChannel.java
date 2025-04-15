@@ -10,7 +10,7 @@ import plus.jmqx.broker.mqtt.retry.Ack;
 import plus.jmqx.broker.mqtt.retry.RetryAck;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import plus.jmqx.broker.util.MessageUtils;
+import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;

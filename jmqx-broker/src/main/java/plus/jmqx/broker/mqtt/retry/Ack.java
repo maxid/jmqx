@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public interface Ack extends TimerTask {
     /**
      * ACK ID
+     *
      * @return ACK ID
      */
     long getId();
@@ -28,14 +29,14 @@ public interface Ack extends TimerTask {
     void stop();
 
     /**
-     *
      * @return
      */
     int getTimed();
 
     /**
+     * 时间调度器间隔时间单位
      *
-     * @return
+     * @return 时间单位
      */
     TimeUnit getUnit();
 }
