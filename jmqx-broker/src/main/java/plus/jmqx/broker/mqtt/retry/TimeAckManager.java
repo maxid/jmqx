@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 尽量简洁一句描述
+ * ACK 时间调度管理器
  *
  * @author maxid
  * @since 2025/4/10 18:45

@@ -9,10 +9,16 @@ import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
+import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageProcessor;
+import plus.jmqx.broker.mqtt.message.impl.MqttMessageAdapter;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.transport.Transport;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.resources.LoopResources;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,8 +47,14 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * 流控配置
      */
     private final TrafficHandlerLoader trafficHandlerLoader;
-
+    /**
+     * ACK
+     */
     private final TimeAckManager timeAckManager;
+    /**
+     * MQTT 消息处理适配器
+     */
+    private final MessageAdapter messageAdapter;
 
     public AbstractReceiveContext(T config, Transport<T> transport) {
         this.configuration = config;
@@ -50,6 +62,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.loopResources = LoopResources.create("jmqx-event-loop", config.getBossThreadSize(), config.getWorkThreadSize(), true);
         this.trafficHandlerLoader = trafficHandlerLoader();
         this.timeAckManager = new TimeAckManager(20, TimeUnit.MILLISECONDS, 50);
+        this.messageAdapter = messageAdapter();
     }
 
     private TrafficHandlerLoader trafficHandlerLoader() {
@@ -66,5 +79,10 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
             String[] channelLimits = configuration.getChannelReadWriteSize().split(",");
             return new CacheTrafficHandlerLoader(new GlobalChannelTrafficShapingHandler(this.loopResources.onServer(true), Long.parseLong(globalLimits[1]), Long.parseLong(globalLimits[0]), Long.parseLong(channelLimits[1]), Long.parseLong(channelLimits[0]), 60 * 1000));
         }
+    }
+
+    private MessageAdapter messageAdapter() {
+        Scheduler scheduler = Schedulers.newBoundedElastic(configuration.getBusinessThreadSize(), configuration.getBusinessQueueSize(), "business-io");
+        return Optional.ofNullable(MessageAdapter.INSTANCE).orElse(new MqttMessageAdapter(scheduler));
     }
 }

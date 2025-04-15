@@ -1,7 +1,7 @@
 package plus.jmqx.broker.mqtt.retry;
 
 /**
- * MQTT QoS ACK 管理
+ * MQTT ACK 管理
  *
  * @author maxid
  * @since 2025/4/11 09:12

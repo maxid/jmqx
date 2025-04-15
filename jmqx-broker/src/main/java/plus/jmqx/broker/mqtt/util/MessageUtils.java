@@ -1,9 +1,8 @@
-package plus.jmqx.broker.util;
+package plus.jmqx.broker.mqtt.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
-import plus.jmqx.broker.mqtt.retry.Ack;
 
 /**
  * MQTT 消息工具
