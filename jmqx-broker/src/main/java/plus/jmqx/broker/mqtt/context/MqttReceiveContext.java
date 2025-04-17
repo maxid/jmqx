@@ -1,9 +1,11 @@
 package plus.jmqx.broker.mqtt.context;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import plus.jmqx.broker.cluster.ClusterReceiver;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
@@ -20,8 +22,12 @@ import plus.jmqx.broker.mqtt.transport.Transport;
 @Setter
 public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration> {
 
+    private final ClusterReceiver clusterReceiver;
+
     public MqttReceiveContext(MqttConfiguration configuration, Transport<MqttConfiguration> transport) {
         super(configuration, transport);
+        this.clusterReceiver = new ClusterReceiver(this);
+        this.clusterReceiver.registry();
     }
 
     public void apply(MqttChannel session) {

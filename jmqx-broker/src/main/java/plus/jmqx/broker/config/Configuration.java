@@ -1,5 +1,7 @@
 package plus.jmqx.broker.config;
 
+import plus.jmqx.broker.mqtt.MqttConfiguration;
+
 import java.util.Map;
 
 /**
@@ -107,16 +109,59 @@ public interface Configuration {
      */
     Integer getWebsocketSecurePort();
 
+    /**
+     * Mqtt Ws 地址
+     *
+     * @return {@link String} Mqtt Ws 地址
+     */
     String getWebsocketPath();
 
+    /**
+     * Netty Option 配置
+     *
+     * @return {@link Map} Netty Option 配置
+     */
     Map<String, Object> getOptions();
 
+    /**
+     * Netty Child Option 配置
+     *
+     * @return {@link Map} Netty Child Option 配置
+     */
     Map<String, Object> getChildOptions();
 
+    /**
+     * 是否启用 SSL
+     *
+     * @return {@link Boolean}
+     */
     Boolean getSslEnable();
+
+    /**
+     * CA 证书路径
+     *
+     * @return {@link String} CA 证书路径
+     */
     String getSslCa();
 
+    /**
+     * SSL 证书路径
+     *
+     * @return {@link String} SSL 证书路径
+     */
     String getSslCrt();
 
+    /**
+     * SSL KEY 路径
+     *
+     * @return {@link String} SSL KEY 路径
+     */
     String getSslKey();
+
+    /**
+     * 集群配置
+     *
+     * @return {@link MqttConfiguration.ClusterConfig} 集群配置
+     */
+    MqttConfiguration.ClusterConfig getClusterConfig();
 }

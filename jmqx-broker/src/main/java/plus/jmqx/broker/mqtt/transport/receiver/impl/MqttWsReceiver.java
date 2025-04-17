@@ -11,7 +11,7 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
-import plus.jmqx.broker.mqtt.handler.OptionHandler;
+import plus.jmqx.broker.mqtt.transport.handler.OptionHandler;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.ByteBufToWebSocketFrameEncoder;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.WebSocketFrameToByteBufDecoder;

@@ -9,7 +9,7 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
-import plus.jmqx.broker.mqtt.handler.SslHandler;
+import plus.jmqx.broker.mqtt.transport.handler.SslHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.tcp.TcpServer;

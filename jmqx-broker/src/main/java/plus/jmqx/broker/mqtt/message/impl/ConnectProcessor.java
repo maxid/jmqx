@@ -1,6 +1,6 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
@@ -17,7 +17,7 @@ import java.util.List;
  * @author maxid
  * @since 2025/4/9 16:29
  */
-public class ConnectProcessor implements MessageProcessor<MqttMessage> {
+public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
@@ -31,7 +31,7 @@ public class ConnectProcessor implements MessageProcessor<MqttMessage> {
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttMessage> message, MqttChannel session, ContextView view) {
-        return null;
+    public Mono<Void> process(MessageWrapper<MqttConnectMessage> message, MqttChannel session, ContextView view) {
+        return Mono.empty();
     }
 }

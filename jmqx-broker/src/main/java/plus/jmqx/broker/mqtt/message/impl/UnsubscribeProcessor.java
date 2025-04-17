@@ -1,10 +1,15 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
+import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
@@ -17,7 +22,7 @@ import java.util.List;
  * @author maxid
  * @since 2025/4/9 16:33
  */
-public class UnsubscribeProcessor implements MessageProcessor<MqttMessage> {
+public class UnsubscribeProcessor implements MessageProcessor<MqttUnsubscribeMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
@@ -31,7 +36,18 @@ public class UnsubscribeProcessor implements MessageProcessor<MqttMessage> {
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttMessage> message, MqttChannel session, ContextView view) {
-        return null;
+    public Mono<Void> process(MessageWrapper<MqttUnsubscribeMessage> message, MqttChannel session, ContextView view) {
+        MqttUnsubscribeMessage msg = message.getMessage();
+        return Mono.fromRunnable(() -> {
+            //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
+            ReceiveContext<?> context = view.get(ReceiveContext.class);
+            TopicRegistry topicRegistry = context.getTopicRegistry();
+            msg.payload()
+                    .topics()
+                    .stream()
+                    // 随机设置一个MqttQoS 用于删除topic订阅
+                    .map(topic -> new SubscribeTopic(topic, MqttQoS.AT_MOST_ONCE, session))
+                    .forEach(topicRegistry::removeSubscribeTopic);
+        }).then(session.write(MqttMessageBuilder.unsubAckMessage(msg.variableHeader().messageId()), false));
     }
 }

@@ -1,5 +1,6 @@
 package plus.jmqx.broker.mqtt.channel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.netty.handler.codec.mqtt.*;
 import lombok.Builder;
 import lombok.Data;
@@ -55,28 +56,28 @@ public class MqttChannel {
 
     private String address;
 
-//    @JsonIgnore
+    @JsonIgnore
     private Set<SubscribeTopic> topics;
 
-//    @JsonIgnore
+    @JsonIgnore
     private Boolean isMock = false;
 
-//    @JsonIgnore
+    @JsonIgnore
     private transient AtomicInteger atomicInteger;
 
-//    @JsonIgnore
+    @JsonIgnore
     private transient MqttMessageSink mqttMessageSink;
 
-//    @JsonIgnore
+    @JsonIgnore
     private transient Map<Integer, MqttPublishMessage> qos2MsgCache;
 
-//    @JsonIgnore
+    @JsonIgnore
     private Map<MqttMessageType, Map<Integer, Disposable>> replyMqttMessageMap;
 
-//    @JsonIgnore
+    @JsonIgnore
     private Disposable closeDisposable;
 
-//    @JsonIgnore
+    @JsonIgnore
     private TimeAckManager timeAckManager;
 
     public void disposableClose() {
