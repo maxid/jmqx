@@ -4,6 +4,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttChannel;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
+import plus.jmqx.broker.mqtt.message.interceptor.MessageProxy;
 import plus.jmqx.broker.spi.DynamicLoader;
 
 /**
@@ -19,6 +20,11 @@ public interface MessageAdapter {
     MessageAdapter INSTANCE = DynamicLoader.findFirst(MessageAdapter.class).orElse(null);
 
     /**
+     * 消息处理代理工具
+     */
+    MessageProxy MESSAGE_PROXY = new MessageProxy();
+
+    /**
      * 根据消息类型分发消息至相应消息处理器进行消息处理
      *
      * @param session {@link MqttChannel} 连接会话
@@ -27,4 +33,13 @@ public interface MessageAdapter {
      * @param <C>     配置类型
      */
     <C extends Configuration> void dispatch(MqttChannel session, MessageWrapper<MqttMessage> message, ReceiveContext<C> context);
+
+    /**
+     * 消息处理适配器代理
+     *
+     * @return 消息处理适配器代理
+     */
+    default MessageAdapter proxy() {
+        return MESSAGE_PROXY.proxy(this);
+    }
 }

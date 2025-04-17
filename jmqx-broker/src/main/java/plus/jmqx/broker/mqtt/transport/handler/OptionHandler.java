@@ -1,4 +1,4 @@
-package plus.jmqx.broker.mqtt.handler;
+package plus.jmqx.broker.mqtt.transport.handler;
 
 import io.netty.channel.ChannelOption;
 import plus.jmqx.broker.mqtt.MqttConfiguration;

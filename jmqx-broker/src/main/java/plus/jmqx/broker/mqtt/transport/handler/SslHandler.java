@@ -1,4 +1,4 @@
-package plus.jmqx.broker.mqtt.handler;
+package plus.jmqx.broker.mqtt.transport.handler;
 
 import cn.hutool.core.util.StrUtil;
 import io.netty.handler.ssl.SslContextBuilder;
