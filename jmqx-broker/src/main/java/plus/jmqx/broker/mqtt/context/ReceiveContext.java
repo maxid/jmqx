@@ -5,7 +5,7 @@ import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageAdapter;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
@@ -55,9 +55,9 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
     /**
      * 会话管理中心
      *
-     * @return {@link ChannelRegistry} 会话管理中心
+     * @return {@link SessionRegistry} 会话管理中心
      */
-    ChannelRegistry getChannelRegistry();
+    SessionRegistry getSessionRegistry();
 
     /**
      * MQTT 主题注册中心

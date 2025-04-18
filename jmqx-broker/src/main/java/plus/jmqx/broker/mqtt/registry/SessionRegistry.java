@@ -11,18 +11,18 @@ import java.util.Collection;
  * @author maxid
  * @since 2025/4/9 12:00
  */
-public interface ChannelRegistry extends Startup {
-    ChannelRegistry INSTANCE = DynamicLoader.findFirst(ChannelRegistry.class).orElse(null);
+public interface SessionRegistry extends Startup {
+    SessionRegistry INSTANCE = DynamicLoader.findFirst(SessionRegistry.class).orElse(null);
 
     /**
-     * 关闭通道
+     * 关闭会话
      *
      * @param mqttChannel {@link MqttSession}
      */
     void close(MqttSession mqttChannel);
 
     /**
-     * 注册通道
+     * 注册会话
      *
      * @param clientId 客户端 ID
      * @param mqttChannel      {@link MqttSession}
@@ -30,7 +30,7 @@ public interface ChannelRegistry extends Startup {
     void registry(String clientId, MqttSession mqttChannel);
 
     /**
-     * 判读通道是否存在
+     * 判读会话是否存在
      *
      * @param clientId 客户端 ID
      * @return 布尔
@@ -38,7 +38,7 @@ public interface ChannelRegistry extends Startup {
     boolean exists(String clientId);
 
     /**
-     * 获取通道
+     * 获取会话
      *
      * @param clientId 客户端 ID
      * @return MqttChannel
@@ -46,9 +46,9 @@ public interface ChannelRegistry extends Startup {
     MqttSession get(String clientId);
 
     /**
-     * 获取通道计数
+     * 获取会话计数
      *
-     * @return 通道数
+     * @return 会话数
      */
     Integer counts();
 

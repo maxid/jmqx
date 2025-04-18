@@ -14,7 +14,7 @@ import plus.jmqx.broker.mqtt.message.CloseMqttMessage;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
-import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
@@ -61,7 +61,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         String clientId = payload.clientIdentifier();
         String username = payload.userName();
         byte[] password = payload.passwordInBytes();
-        ChannelRegistry channelRegistry = context.getChannelRegistry();
+        SessionRegistry channelRegistry = context.getSessionRegistry();
         TopicRegistry topicRegistry = context.getTopicRegistry();
         EventRegistry eventRegistry = context.getEventRegistry();
         byte mqttVersion = (byte) header.version();
@@ -201,7 +201,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      * @param channelRegistry 会话注册中心
      * @param topicRegistry   主题注册中心
      */
-    private void registry(MqttSession session, ChannelRegistry channelRegistry, TopicRegistry topicRegistry) {
+    private void registry(MqttSession session, SessionRegistry channelRegistry, TopicRegistry topicRegistry) {
         Optional.ofNullable(channelRegistry.get(session.getClientId()))
                 .ifPresent(s1 -> {
                     // 主题会话新关联
@@ -228,7 +228,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         session.setStatus(SessionStatus.OFFLINE);
         if (!session.isSessionPersistent()) {
             context.getTopicRegistry().clear(session);
-            context.getChannelRegistry().close(session);
+            context.getSessionRegistry().close(session);
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
         //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
