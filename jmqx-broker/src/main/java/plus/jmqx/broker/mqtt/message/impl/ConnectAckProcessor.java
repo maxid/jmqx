@@ -2,7 +2,7 @@ package plus.jmqx.broker.mqtt.message.impl;
 
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import reactor.core.publisher.Mono;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 尽量简洁一句描述
+ * CONNACK 消息流程处理
  *
  * @author maxid
  * @since 2025/4/9 16:29
@@ -31,7 +31,7 @@ public class ConnectAckProcessor implements MessageProcessor<MqttConnAckMessage>
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttConnAckMessage> message, MqttChannel session, ContextView view) {
+    public Mono<Void> process(MessageWrapper<MqttConnAckMessage> wrapper, MqttSession session, ContextView view) {
         return session.cancelRetry(MqttMessageType.CONNECT, -1);
     }
 }

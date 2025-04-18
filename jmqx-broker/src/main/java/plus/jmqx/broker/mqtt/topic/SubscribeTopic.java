@@ -3,7 +3,7 @@ package plus.jmqx.broker.mqtt.topic;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.Getter;
 import lombok.Setter;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 
 import java.util.Objects;
 
@@ -21,9 +21,9 @@ public class SubscribeTopic {
 
     private final MqttQoS qoS;
 
-    private final MqttChannel mqttChannel;
+    private final MqttSession mqttChannel;
 
-    public SubscribeTopic(String topicFilter, MqttQoS qoS, MqttChannel mqttChannel) {
+    public SubscribeTopic(String topicFilter, MqttQoS qoS, MqttSession mqttChannel) {
         this.topicFilter = topicFilter;
         this.qoS = qoS;
         this.mqttChannel = mqttChannel;

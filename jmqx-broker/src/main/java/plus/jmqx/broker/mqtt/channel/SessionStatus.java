@@ -6,7 +6,7 @@ package plus.jmqx.broker.mqtt.channel;
  * @author maxid
  * @since 2025/4/11 09:44
  */
-public enum ChannelStatus {
+public enum SessionStatus {
     /**
      * 初始化
      */

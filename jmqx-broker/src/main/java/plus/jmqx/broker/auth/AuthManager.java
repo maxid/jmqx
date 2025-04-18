@@ -10,4 +10,14 @@ import plus.jmqx.broker.spi.DynamicLoader;
  */
 public interface AuthManager {
     AuthManager INSTANCE = DynamicLoader.findFirst(AuthManager.class).orElse(null);
+
+    /**
+     * 连接鉴权
+     *
+     * @param clientId 设备 ID
+     * @param username 用户名
+     * @param password 密码
+     * @return 是否鉴权通过
+     */
+    boolean auth(String clientId, String username, byte[] password);
 }

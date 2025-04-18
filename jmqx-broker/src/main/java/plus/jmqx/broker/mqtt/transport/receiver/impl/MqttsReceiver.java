@@ -6,7 +6,7 @@ import io.netty.channel.WriteBufferWaterMark;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
 import plus.jmqx.broker.mqtt.transport.handler.SslHandler;
@@ -48,7 +48,7 @@ public class MqttsReceiver extends SslHandler implements Receiver {
                     connection.addHandlerFirst(MqttEncoder.INSTANCE)
                             .addHandlerFirst(new MqttDecoder(config.getMessageMaxSize()))
                             .addHandlerFirst(context.getTrafficHandlerLoader().get());
-                    context.apply(MqttChannel.init(connection, context.getTimeAckManager()));
+                    context.apply(MqttSession.init(connection, context.getTimeAckManager()));
                 });
     }
 }

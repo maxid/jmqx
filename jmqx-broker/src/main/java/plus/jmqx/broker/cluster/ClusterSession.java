@@ -1,7 +1,7 @@
 package plus.jmqx.broker.cluster;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import reactor.core.publisher.Mono;
 
 /**
@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
  * @author maxid
  * @since 2025/4/17 10:27
  */
-public class ClusterSession extends MqttChannel {
+public class ClusterSession extends MqttSession {
     private ClusterSession() {
     }
 
@@ -29,7 +29,7 @@ public class ClusterSession extends MqttChannel {
 
 
     @Override
-    public Boolean getIsMock() {
+    public Boolean getIsCluster() {
         return true;
     }
 

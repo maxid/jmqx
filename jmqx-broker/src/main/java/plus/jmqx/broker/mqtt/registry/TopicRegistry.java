@@ -1,7 +1,7 @@
 package plus.jmqx.broker.mqtt.registry;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.spi.DynamicLoader;
 
@@ -22,10 +22,10 @@ public interface TopicRegistry {
      * 绑定主题跟channel关系
      *
      * @param topicFilter 订阅主题
-     * @param mqttChannel {@link MqttChannel} 会话
+     * @param mqttChannel {@link MqttSession} 会话
      * @param qos         {@link MqttQoS} MQTT 质量服务等级
      */
-    void registrySubscribeTopic(String topicFilter, MqttChannel mqttChannel, MqttQoS qos);
+    void registrySubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS qos);
 
     /**
      * 绑定主题跟channel关系
@@ -37,9 +37,9 @@ public interface TopicRegistry {
     /**
      * 清除订阅消息
      *
-     * @param mqttChannel {@link MqttChannel}
+     * @param mqttChannel {@link MqttSession}
      */
-    void clear(MqttChannel mqttChannel);
+    void clear(MqttSession mqttChannel);
 
     /**
      * registryTopicConnection
@@ -68,9 +68,9 @@ public interface TopicRegistry {
     /**
      * 获取所有topic信息
      *
-     * @return {@link MqttChannel}
+     * @return {@link MqttSession}
      */
-    Map<String, Set<MqttChannel>> getAllTopics();
+    Map<String, Set<MqttSession>> getAllTopics();
 
     /**
      * 获取总数

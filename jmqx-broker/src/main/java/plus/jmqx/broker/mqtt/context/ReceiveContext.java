@@ -6,8 +6,9 @@ import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
@@ -21,7 +22,7 @@ import java.util.function.BiConsumer;
  * @author maxid
  * @since 2025/4/9 11:55
  */
-public interface ReceiveContext<C extends Configuration> extends BiConsumer<MqttChannel, MessageWrapper<MqttMessage>> {
+public interface ReceiveContext<C extends Configuration> extends BiConsumer<MqttSession, MessageWrapper<MqttMessage>> {
 
     /**
      * 获取配置信息
@@ -43,6 +44,13 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
      * @return {@link ClusterRegistry} 集群注册中心
      */
     ClusterRegistry getClusterRegistry();
+
+    /**
+     * 事件注册中心
+     *
+     * @return {@link EventRegistry} 事件注册中心
+     */
+    EventRegistry getEventRegistry();
 
     /**
      * 会话管理中心

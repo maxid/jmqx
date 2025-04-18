@@ -35,12 +35,12 @@ import java.util.function.Consumer;
 @Slf4j
 @Getter
 @Setter
-public class MqttChannel {
+public class MqttSession {
     private Connection connection;
 
     private String clientId;
 
-    private ChannelStatus status;
+    private SessionStatus status;
 
     private long authTime;
 
@@ -60,7 +60,7 @@ public class MqttChannel {
     private Set<SubscribeTopic> topics;
 
     @JsonIgnore
-    private Boolean isMock = false;
+    private Boolean isCluster = false;
 
     @JsonIgnore
     private transient AtomicInteger atomicInteger;
@@ -90,15 +90,15 @@ public class MqttChannel {
         return connection == null && !connection.isDisposed();
     }
 
-    public static MqttChannel init(Connection connection, TimeAckManager timeAckManager) {
-        MqttChannel mqttChannel = new MqttChannel();
+    public static MqttSession init(Connection connection, TimeAckManager timeAckManager) {
+        MqttSession mqttChannel = new MqttSession();
         mqttChannel.setTopics(new CopyOnWriteArraySet<>());
         mqttChannel.setAtomicInteger(new AtomicInteger(0));
         mqttChannel.setReplyMqttMessageMap(new ConcurrentHashMap<>());
         mqttChannel.setMqttMessageSink(new MqttMessageSink());
         mqttChannel.setQos2MsgCache(new ConcurrentHashMap<>());
         mqttChannel.setConnection(connection);
-        mqttChannel.setStatus(ChannelStatus.INIT);
+        mqttChannel.setStatus(SessionStatus.INIT);
         mqttChannel.setAddress(connection.address().toString().replaceAll("/", ""));
         mqttChannel.setTimeAckManager(timeAckManager);
         return mqttChannel;
@@ -129,7 +129,7 @@ public class MqttChannel {
         });
     }
 
-    public MqttChannel registryDelayTcpClose() {
+    public MqttSession registryDelayTcpClose() {
         // registry tcp close event
         Connection connection = this.getConnection();
         this.setCloseDisposable(Mono.fromRunnable(() -> {
@@ -140,12 +140,12 @@ public class MqttChannel {
         return this;
     }
 
-    public void registryClose(Consumer<MqttChannel> consumer) {
+    public void registryClose(Consumer<MqttSession> consumer) {
         this.connection.onDispose(() -> consumer.accept(this));
     }
 
     public boolean active() {
-        return status == ChannelStatus.ONLINE;
+        return status == SessionStatus.ONLINE;
     }
 
     public int generateMessageId() {
@@ -195,7 +195,7 @@ public class MqttChannel {
      */
     public Mono<Void> write(MqttMessage mqttMessage, boolean retry) {
         // http本地mock
-        if (this.getIsMock() && !this.active()) {
+        if (this.getIsCluster() && !this.active()) {
             return Mono.empty();
         } else {
             return MqttMessageSink.MQTT_SINK.sendMessage(mqttMessage, this, retry);
@@ -253,7 +253,7 @@ public class MqttChannel {
         public static MqttMessageSink MQTT_SINK = new MqttMessageSink();
 
 
-        public Mono<Void> sendMessage(MqttMessage mqttMessage, MqttChannel mqttChannel, boolean retry) {
+        public Mono<Void> sendMessage(MqttMessage mqttMessage, MqttSession mqttChannel, boolean retry) {
             if (log.isDebugEnabled()) {
                 log.debug("write channel {} message {}", mqttChannel.getConnection(), mqttMessage);
             }

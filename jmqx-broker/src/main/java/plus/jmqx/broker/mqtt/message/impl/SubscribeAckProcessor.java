@@ -2,7 +2,7 @@ package plus.jmqx.broker.mqtt.message.impl;
 
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import reactor.core.publisher.Mono;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 尽量简洁一句描述
+ * SUBACK 消息流程处理
  *
  * @author maxid
  * @since 2025/4/9 16:31
@@ -31,7 +31,7 @@ public class SubscribeAckProcessor implements MessageProcessor<MqttSubAckMessage
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttSubAckMessage> message, MqttChannel session, ContextView view) {
-        return session.cancelRetry(MqttMessageType.SUBSCRIBE, message.getMessage().variableHeader().messageId());
+    public Mono<Void> process(MessageWrapper<MqttSubAckMessage> wrapper, MqttSession session, ContextView view) {
+        return session.cancelRetry(MqttMessageType.SUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
     }
 }

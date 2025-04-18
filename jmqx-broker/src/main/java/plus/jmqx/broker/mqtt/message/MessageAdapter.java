@@ -2,8 +2,9 @@ package plus.jmqx.broker.mqtt.message;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
+import plus.jmqx.broker.mqtt.message.interceptor.Intercept;
 import plus.jmqx.broker.mqtt.message.interceptor.MessageProxy;
 import plus.jmqx.broker.spi.DynamicLoader;
 
@@ -27,12 +28,13 @@ public interface MessageAdapter {
     /**
      * 根据消息类型分发消息至相应消息处理器进行消息处理
      *
-     * @param session {@link MqttChannel} 连接会话
-     * @param message {@link MessageWrapper} 消息
+     * @param session {@link MqttSession} 连接会话
+     * @param wrapper {@link MessageWrapper} 消息
      * @param context {@link ReceiveContext} 上下文
      * @param <C>     配置类型
      */
-    <C extends Configuration> void dispatch(MqttChannel session, MessageWrapper<MqttMessage> message, ReceiveContext<C> context);
+    @Intercept
+    <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context);
 
     /**
      * 消息处理适配器代理

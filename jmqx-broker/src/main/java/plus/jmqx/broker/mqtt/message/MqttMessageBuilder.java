@@ -61,7 +61,7 @@ public class MqttMessageBuilder {
         return ackMessage(MqttMessageType.PUBACK, messageId, false);
     }
 
-    public static MqttPubAckMessage buildPublishRec(int messageId) {
+    public static MqttPubAckMessage publishRecMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBREC, messageId, false);
     }
 
@@ -88,7 +88,7 @@ public class MqttMessageBuilder {
         return new MqttPubAckMessage(mqttFixedHeader, from);
     }
 
-    public static MqttSubAckMessage buildSubAck(int messageId, List<Integer> qos) {
+    public static MqttSubAckMessage subAckMessage(int messageId, List<Integer> qos) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
         MqttSubAckPayload payload = new MqttSubAckPayload(qos);
@@ -101,7 +101,7 @@ public class MqttMessageBuilder {
         return new MqttUnsubAckMessage(mqttFixedHeader, variableHeader);
     }
 
-    public static MqttConnAckMessage buildConnectAck(MqttConnectReturnCode connectReturnCode, byte version) {
+    public static MqttConnAckMessage connectAckMessage(MqttConnectReturnCode connectReturnCode, byte version) {
         MqttProperties properties = MqttProperties.NO_PROPERTIES;
         if (MqttVersion.MQTT_5.protocolLevel() == version) {
             properties = new MqttProperties();

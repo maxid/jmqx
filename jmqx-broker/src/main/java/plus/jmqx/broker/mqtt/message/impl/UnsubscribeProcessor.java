@@ -3,7 +3,7 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MQTT 消息处理器
+ * UNSUBSCRIBE 消息流程处理
  *
  * @author maxid
  * @since 2025/4/9 16:33
@@ -36,8 +36,8 @@ public class UnsubscribeProcessor implements MessageProcessor<MqttUnsubscribeMes
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttUnsubscribeMessage> message, MqttChannel session, ContextView view) {
-        MqttUnsubscribeMessage msg = message.getMessage();
+    public Mono<Void> process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
+        MqttUnsubscribeMessage msg = wrapper.getMessage();
         return Mono.fromRunnable(() -> {
             //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
             ReceiveContext<?> context = view.get(ReceiveContext.class);

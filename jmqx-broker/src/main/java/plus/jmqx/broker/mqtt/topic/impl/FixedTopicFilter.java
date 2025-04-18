@@ -1,7 +1,7 @@
 package plus.jmqx.broker.mqtt.topic.impl;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.topic.TopicFilter;
 
@@ -31,7 +31,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     @Override
-    public void addSubscribeTopic(String topicFilter, MqttChannel mqttChannel, MqttQoS mqttQoS) {
+    public void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS) {
         this.addSubscribeTopic(new SubscribeTopic(topicFilter, mqttQoS, mqttChannel));
     }
 

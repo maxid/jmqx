@@ -1,6 +1,6 @@
 package plus.jmqx.broker.mqtt.registry;
 
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.spi.DynamicLoader;
 
 import java.util.Collection;
@@ -17,17 +17,17 @@ public interface ChannelRegistry extends Startup {
     /**
      * 关闭通道
      *
-     * @param mqttChannel {@link MqttChannel}
+     * @param mqttChannel {@link MqttSession}
      */
-    void close(MqttChannel mqttChannel);
+    void close(MqttSession mqttChannel);
 
     /**
      * 注册通道
      *
      * @param clientId 客户端 ID
-     * @param mqttChannel      {@link MqttChannel}
+     * @param mqttChannel      {@link MqttSession}
      */
-    void registry(String clientId, MqttChannel mqttChannel);
+    void registry(String clientId, MqttSession mqttChannel);
 
     /**
      * 判读通道是否存在
@@ -43,7 +43,7 @@ public interface ChannelRegistry extends Startup {
      * @param clientId 客户端 ID
      * @return MqttChannel
      */
-    MqttChannel get(String clientId);
+    MqttSession get(String clientId);
 
     /**
      * 获取通道计数
@@ -57,5 +57,5 @@ public interface ChannelRegistry extends Startup {
      *
      * @return {@link Collection}
      */
-    Collection<MqttChannel> getChannels();
+    Collection<MqttSession> getChannels();
 }

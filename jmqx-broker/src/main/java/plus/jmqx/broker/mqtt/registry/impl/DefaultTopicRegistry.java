@@ -2,7 +2,7 @@ package plus.jmqx.broker.mqtt.registry.impl;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.topic.TopicFilter;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
@@ -44,7 +44,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     @Override
-    public void registrySubscribeTopic(String topicFilter, MqttChannel mqttChannel, MqttQoS qos) {
+    public void registrySubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS qos) {
         this.registrySubscribeTopic(new SubscribeTopic(topicFilter, qos, mqttChannel));
     }
 
@@ -58,7 +58,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     @Override
-    public void clear(MqttChannel mqttChannel) {
+    public void clear(MqttSession mqttChannel) {
         Set<SubscribeTopic> topics = mqttChannel.getTopics();
         if (log.isDebugEnabled()) {
             log.debug("mqttChannel channel {} clear topics {}", mqttChannel, topics);
@@ -88,7 +88,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     @Override
-    public Map<String, Set<MqttChannel>> getAllTopics() {
+    public Map<String, Set<MqttSession>> getAllTopics() {
         Set<SubscribeTopic> subscribeTopics = fixedTopicFilter.getAllSubscribesTopic();
         subscribeTopics.addAll(treeTopicFilter.getAllSubscribesTopic());
         return subscribeTopics

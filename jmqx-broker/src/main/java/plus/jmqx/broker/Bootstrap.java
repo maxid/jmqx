@@ -24,17 +24,15 @@ import java.util.List;
 @ToString
 public class Bootstrap {
 
-    private static final Sinks.One<Void>        START_ONLY_MQTT = Sinks.one();
-    private final            List<Transport<?>> transports      = new ArrayList<>();
+    private static final Sinks.One<Void>    START_ONLY_MQTT = Sinks.one();
+    private final        List<Transport<?>> transports      = new ArrayList<>();
 
     /**
      * 启动服务
+     *
      * @return 服务
      */
     public Mono<Bootstrap> start() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.getLogger("root").setLevel(ch.qos.logback.classic.Level.DEBUG);
-        loggerContext.getLogger("reactor.netty").setLevel(ch.qos.logback.classic.Level.DEBUG);
         MqttConfiguration config = new MqttConfiguration();
         return MqttTransport.startMqtt(config)
                 .start()
@@ -44,10 +42,14 @@ public class Bootstrap {
                 .then(startWs(config))
                 .then(startWss(config))
                 .thenReturn(this)
-                .doOnSuccess(bootstrap -> {});
+                .doOnSuccess(bootstrap -> {
+                });
 
     }
 
+    /**
+     * 启动服务，并阻塞
+     */
     public void startAwait() {
         this.start().doOnError(err -> {
             log.error("bootstrap server start error", err);
@@ -56,12 +58,15 @@ public class Bootstrap {
         START_ONLY_MQTT.asMono().block();
     }
 
+    /**
+     * 关闭服务
+     */
     public void shutdown() {
         transports.forEach(Transport::dispose);
     }
 
-    private Mono<Void> startMqtts(MqttConfiguration config ) {
-        if(config.getSslEnable()) {
+    private Mono<Void> startMqtts(MqttConfiguration config) {
+        if (config.getSslEnable()) {
             return MqttTransport.startMqtts(config)
                     .start()
                     .doOnSuccess(transports::add)
@@ -79,8 +84,8 @@ public class Bootstrap {
                 .then();
     }
 
-    private Mono<Void> startWss(MqttConfiguration config ) {
-        if(config.getSslEnable()) {
+    private Mono<Void> startWss(MqttConfiguration config) {
+        if (config.getSslEnable()) {
             return MqttTransport.startMqttWss(config)
                     .start()
                     .doOnSuccess(transports::add)
