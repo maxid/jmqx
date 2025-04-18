@@ -13,6 +13,7 @@ import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultChannelRegistry;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
@@ -21,6 +22,7 @@ import plus.jmqx.broker.mqtt.message.MessageAdapter;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultMessageRegistry;
 import plus.jmqx.broker.mqtt.message.impl.MqttMessageAdapter;
+import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultTopicRegistry;
@@ -69,11 +71,15 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     /**
      * 集群注册中心
      */
-    private final ClusterRegistry      clusterRegistry;
+    private final ClusterRegistry clusterRegistry;
+    /**
+     * 事件注册中心
+     */
+    private final EventRegistry   eventRegistry;
     /**
      * MQTT 会话注册中心
      */
-    private final ChannelRegistry      channelRegistry;
+    private final ChannelRegistry channelRegistry;
     /**
      * MQTT 主题注册中心
      */
@@ -99,6 +105,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.timeAckManager = new TimeAckManager(20, TimeUnit.MILLISECONDS, 50);
         this.messageAdapter = messageAdapter();
         this.clusterRegistry = clusterRegistry();
+        this.eventRegistry = eventRegistry();
         this.channelRegistry = channelRegistry();
         this.topicRegistry = topicRegistry();
         this.messageRegistry = messageRegistry();
@@ -142,12 +149,20 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     private MessageAdapter messageAdapter() {
-        Scheduler scheduler = Schedulers.newBoundedElastic(configuration.getBusinessThreadSize(), configuration.getBusinessQueueSize(), "business-io");
+        Scheduler scheduler = Schedulers.newBoundedElastic(
+                configuration.getBusinessThreadSize(),
+                configuration.getBusinessQueueSize(),
+                "jmqx-business-io"
+        );
         return Optional.ofNullable(MessageAdapter.INSTANCE).orElse(new MqttMessageAdapter(scheduler)).proxy();
     }
 
     private ClusterRegistry clusterRegistry() {
         return Optional.ofNullable(ClusterRegistry.INSTANCE).orElseGet(DefaultClusterRegistry::new);
+    }
+
+    private EventRegistry eventRegistry() {
+        return Event::sender;
     }
 
     private ChannelRegistry channelRegistry() {

@@ -4,7 +4,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageAdapter;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
@@ -41,16 +41,17 @@ public class MqttMessageAdapter implements MessageAdapter {
     }
 
     @Override
-    public <C extends Configuration> void dispatch(MqttChannel session, MessageWrapper<MqttMessage> message, ReceiveContext<C> context) {
-        MqttMessage mqttMessage = message.getMessage();
-        Optional.ofNullable(types.get(mqttMessage.fixedHeader().messageType()))
+    public <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context) {
+        MqttMessage message = wrapper.getMessage();
+        log.debug("【{}】{}",message.fixedHeader().messageType(), session);
+        Optional.ofNullable(types.get(message.fixedHeader().messageType()))
                 .ifPresent(processor -> processor
-                        .process(message, session)
+                        .process(wrapper, session)
                         .contextWrite(view -> view.putNonNull(ReceiveContext.class, context))
                         .subscribeOn(this.scheduler)
                         .subscribe(v -> {}, err -> {
-                            log.error("session {}, message: {}, error: {}", session, mqttMessage, err.getMessage());
-                            ReactorNetty.safeRelease(mqttMessage.payload());
-                        }, () -> ReactorNetty.safeRelease(mqttMessage.payload())));
+                            log.error("session {}, message: {}, error: {}", session, message, err.getMessage());
+                            ReactorNetty.safeRelease(message.payload());
+                        }, () -> ReactorNetty.safeRelease(message.payload())));
     }
 }

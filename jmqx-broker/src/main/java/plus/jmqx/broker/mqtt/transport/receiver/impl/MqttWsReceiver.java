@@ -9,7 +9,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.transport.handler.OptionHandler;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
@@ -57,7 +57,7 @@ public class MqttWsReceiver extends OptionHandler implements Receiver {
                             .addHandlerLast(new ByteBufToWebSocketFrameEncoder())
                             .addHandlerLast(new MqttDecoder(config.getMessageMaxSize()))
                             .addHandlerLast(MqttEncoder.INSTANCE);
-                    context.apply(MqttChannel.init(connection, context.getTimeAckManager()));
+                    context.apply(MqttSession.init(connection, context.getTimeAckManager()));
                 });
     }
 }

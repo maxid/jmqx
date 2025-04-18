@@ -36,7 +36,7 @@ public abstract class AbstractAck implements Ack {
     public void run(Timeout timeout) throws Exception {
         if (++count <= maxRetrySize + 1 && !died) {
             try {
-                log.info("task retry send ...........");
+                log.debug("task retry send ...........");
                 runnable.run();
                 ackManager.addAck(this);
             } catch (Exception e) {
@@ -50,7 +50,7 @@ public abstract class AbstractAck implements Ack {
     @Override
     public void stop() {
         died = true;
-        log.info("retry task  stop ...........");
+        log.debug("retry task  stop ...........");
         ackManager.deleteAck(getId());
     }
 

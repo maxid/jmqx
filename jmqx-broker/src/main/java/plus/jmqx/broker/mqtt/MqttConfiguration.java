@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.config.ConnectMode;
 
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 是否开启 Netty Tcp 二进制日志
      */
-    private Boolean             wiretap              = true; // 二进制日志 前提是 smqtt.logLevel = DEBUG
+    private Boolean             wiretap              = false; // 二进制日志 前提是 smqtt.logLevel = DEBUG
     /**
      * Mqtt 端口
      */
@@ -77,6 +78,14 @@ public class MqttConfiguration implements Configuration {
      * Mqtt Wss 端口
      */
     private String              websocketPath        = "/mqtt";
+    /**
+     * 连接模式
+     */
+    private ConnectMode         connectMode          = ConnectMode.UNIQUE;
+    /**
+     * 指定时间窗内不踢出
+     */
+    private Integer             notKickSeconds       = 30;
     /**
      * Netty Option 配置
      */

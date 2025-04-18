@@ -1,7 +1,7 @@
 package plus.jmqx.broker.mqtt.topic;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 
 import java.util.Set;
 
@@ -27,9 +27,9 @@ public interface TopicFilter {
      *
      * @param topicFilter topicFilter
      * @param mqttQoS     {@link MqttQoS}
-     * @param mqttChannel {@link MqttChannel}
+     * @param mqttChannel {@link MqttSession}
      */
-    void addSubscribeTopic(String topicFilter, MqttChannel mqttChannel, MqttQoS mqttQoS);
+    void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS);
 
     /**
      * 保存订阅 Topic

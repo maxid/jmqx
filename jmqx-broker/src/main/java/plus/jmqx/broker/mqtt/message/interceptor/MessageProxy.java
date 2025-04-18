@@ -6,7 +6,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
 import plus.jmqx.broker.mqtt.message.MessageAdapter;
@@ -47,7 +47,7 @@ public class MessageProxy {
         @Override
         @SuppressWarnings("unchecked")
         public Object intercept(Invocation invocation) {
-            MqttChannel session = (MqttChannel) invocation.getArgs()[0];
+            MqttSession session = (MqttSession) invocation.getArgs()[0];
             MessageWrapper<MqttMessage> wrapper = (MessageWrapper<MqttMessage>) invocation.getArgs()[1];
             ReceiveContext<Configuration> context = (ReceiveContext<Configuration>) invocation.getArgs()[2];
             MqttMessage message = wrapper.getMessage();
@@ -68,7 +68,7 @@ public class MessageProxy {
             return 0;
         }
 
-        private HeapMqttMessage clusterMessage(MqttPublishMessage message, MqttChannel session, long timestamp) {
+        private HeapMqttMessage clusterMessage(MqttPublishMessage message, MqttSession session, long timestamp) {
             MqttPublishVariableHeader header = message.variableHeader();
             MqttFixedHeader fixedHeader = message.fixedHeader();
             return HeapMqttMessage.builder()

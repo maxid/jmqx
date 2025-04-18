@@ -7,7 +7,7 @@ import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.Builder;
 import lombok.Data;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 
@@ -57,7 +57,7 @@ public class SessionMessage {
                 .build();
     }
 
-    public MqttPublishMessage toPublishMessage(MqttChannel session) {
+    public MqttPublishMessage toPublishMessage(MqttSession session) {
         return MqttMessageBuilder.publishMessage(
                 false,
                 MqttQoS.valueOf(this.qos),

@@ -38,7 +38,7 @@ public class ClusterReceiver {
         if (config.isEnable()) {
             if (cluster instanceof DefaultClusterRegistry) {
                 Flux.interval(Duration.ofSeconds(5))
-                        .subscribe(index -> log.warn("Using fake cluster mode base on DefaultClusterRegistry."));
+                        .subscribe(index -> log.debug("Using fake cluster mode base on DefaultClusterRegistry."));
             } else {
                 // 注册集群
                 cluster.registry(config);

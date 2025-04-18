@@ -3,7 +3,7 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
-import plus.jmqx.broker.mqtt.channel.MqttChannel;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 尽量简洁一句描述
+ * PUBACK 消息流程处理
  *
  * @author maxid
  * @since 2025/4/9 16:30
@@ -35,12 +35,12 @@ public class PublishAckProcessor implements MessageProcessor<MqttPubAckMessage> 
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttPubAckMessage> message, MqttChannel session, ContextView view) {
-        ReceiveContext<?> context = view.get(ReceiveContext.class);
-        MqttPubAckMessage mqttMessage = message.getMessage();
-        MqttMessageIdVariableHeader header = mqttMessage.variableHeader();
-        int messageId = header.messageId();
+    public Mono<Void> process(MessageWrapper<MqttPubAckMessage> wrapper, MqttSession session, ContextView view) {
         return Mono.fromRunnable(() -> {
+            ReceiveContext<?> context = view.get(ReceiveContext.class);
+            MqttPubAckMessage message = wrapper.getMessage();
+            MqttMessageIdVariableHeader header = message.variableHeader();
+            int messageId = header.messageId();
             Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, messageId));
             Optional.ofNullable(ack).ifPresent(Ack::stop);
         });
