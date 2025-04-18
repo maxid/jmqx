@@ -12,9 +12,9 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
-import plus.jmqx.broker.mqtt.registry.impl.DefaultChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
@@ -79,11 +79,11 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     /**
      * MQTT 会话注册中心
      */
-    private final ChannelRegistry channelRegistry;
+    private final SessionRegistry sessionRegistry;
     /**
      * MQTT 主题注册中心
      */
-    private final TopicRegistry        topicRegistry;
+    private final TopicRegistry   topicRegistry;
     /**
      * MQTT 消息注册中心
      */
@@ -106,7 +106,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.messageAdapter = messageAdapter();
         this.clusterRegistry = clusterRegistry();
         this.eventRegistry = eventRegistry();
-        this.channelRegistry = channelRegistry();
+        this.sessionRegistry = sessionRegistry();
         this.topicRegistry = topicRegistry();
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
@@ -165,8 +165,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         return Event::sender;
     }
 
-    private ChannelRegistry channelRegistry() {
-        return Optional.ofNullable(ChannelRegistry.INSTANCE).orElseGet(DefaultChannelRegistry::new);
+    private SessionRegistry sessionRegistry() {
+        return Optional.ofNullable(SessionRegistry.INSTANCE).orElseGet(DefaultSessionRegistry::new);
     }
 
     private TopicRegistry topicRegistry() {

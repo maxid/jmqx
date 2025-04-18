@@ -1,6 +1,6 @@
 package plus.jmqx.broker.mqtt.registry.impl;
 
-import plus.jmqx.broker.mqtt.registry.ChannelRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 
@@ -15,10 +15,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author maxid
  * @since 2025/4/16 14:09
  */
-public class DefaultChannelRegistry implements ChannelRegistry {
+public class DefaultSessionRegistry implements SessionRegistry {
     private final Map<String, MqttSession> sessions = new ConcurrentHashMap<>();
 
-    public DefaultChannelRegistry() {
+    public DefaultSessionRegistry() {
     }
 
     @Override
