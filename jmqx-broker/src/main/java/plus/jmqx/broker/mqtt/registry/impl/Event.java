@@ -11,7 +11,7 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
-import plus.jmqx.broker.mqtt.message.system.ChannelStatusMessage;
+import plus.jmqx.broker.mqtt.message.system.SessionStatusMessage;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 
 /**
@@ -38,7 +38,7 @@ public enum Event {
         @Override
         public ByteBuf writeBody(MqttSession mqttChannel, Object body) {
             return PooledByteBufAllocator.DEFAULT
-                    .directBuffer().writeBytes(JacksonUtil.bean2Json(new ChannelStatusMessage(
+                    .directBuffer().writeBytes(JacksonUtil.bean2Json(new SessionStatusMessage(
                             mqttChannel.getClientId(),
                             System.currentTimeMillis(),
                             mqttChannel.getUsername(),
@@ -67,7 +67,7 @@ public enum Event {
         @Override
         public ByteBuf writeBody(MqttSession mqttChannel, Object body) {
             return PooledByteBufAllocator.DEFAULT
-                    .directBuffer().writeBytes(JacksonUtil.bean2Json(new ChannelStatusMessage(
+                    .directBuffer().writeBytes(JacksonUtil.bean2Json(new SessionStatusMessage(
                             mqttChannel.getClientId(),
                             System.currentTimeMillis(),
                             mqttChannel.getUsername(),

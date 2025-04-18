@@ -14,7 +14,7 @@ import plus.jmqx.broker.mqtt.channel.SessionStatus;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChannelStatusMessage {
+public class SessionStatusMessage {
     /**
      * 客户端 ID
      */
