@@ -84,8 +84,8 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
                                             .collect(Collectors.toList()))
                                     .then(Mono.fromRunnable(() -> Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header.messageId())))
                                             .ifPresent(Ack::stop)))
-                                    .then(session.write(MqttMessageBuilder.buildPublishComp(header.messageId()), false));
-                        }).orElseGet(() -> session.write(MqttMessageBuilder.buildPublishComp(header.messageId()), false));
+                                    .then(session.write(MqttMessageBuilder.publishCompMessage(header.messageId()), false));
+                        }).orElseGet(() -> session.write(MqttMessageBuilder.publishCompMessage(header.messageId()), false));
             case PUBCOMP:
                 return Mono.fromRunnable(() -> {
                     Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREL, header.messageId()));

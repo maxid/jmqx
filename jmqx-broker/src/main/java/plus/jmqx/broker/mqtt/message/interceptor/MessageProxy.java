@@ -23,14 +23,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 尽量简洁一句描述
+ * 消息代理
  *
  * @author maxid
  * @since 2025/4/16 17:27
  */
 public class MessageProxy {
 
-    private List<Interceptor> interceptors = DynamicLoader.findAll(Interceptor.class)
+    private final List<Interceptor> interceptors = DynamicLoader.findAll(Interceptor.class)
             .sorted(Comparator.comparing(Interceptor::sort))
             .collect(Collectors.toList());
 
@@ -54,7 +54,7 @@ public class MessageProxy {
             if (!wrapper.getClustered() && message instanceof MqttPublishMessage) {
                 MqttPublishMessage publishMessage = (MqttPublishMessage) message;
                 HeapMqttMessage heapMqttMessage = this.clusterMessage(publishMessage, session, wrapper.getTimestamp());
-                if(context.getConfiguration().getSslEnable()) {
+                if(context.getConfiguration().getClusterConfig().isEnable()) {
                     context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage))
                             .subscribeOn(Schedulers.boundedElastic())
                             .subscribe();
