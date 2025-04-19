@@ -57,7 +57,7 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
-    public static MqttPubAckMessage buildPublishAck(int messageId) {
+    public static MqttPubAckMessage publishAckMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBACK, messageId, false);
     }
 
@@ -77,7 +77,7 @@ public class MqttMessageBuilder {
         return new MqttPubAckMessage(mqttFixedHeader, from);
     }
 
-    public static MqttPubAckMessage buildPublishComp(int messageId) {
+    public static MqttPubAckMessage publishCompMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBCOMP, messageId, false);
 
     }

@@ -80,16 +80,31 @@ public class MqttSession {
     @JsonIgnore
     private TimeAckManager timeAckManager;
 
+    /**
+     * 取消或处置底层任务或资源
+     */
     public void disposableClose() {
         if (closeDisposable != null && !closeDisposable.isDisposed()) {
             closeDisposable.dispose();
         }
     }
 
+    /**
+     * 连接是否活跃
+     *
+     * @return {@link Boolean} 连接是否活跃
+     */
     public boolean isActive() {
         return connection == null && !connection.isDisposed();
     }
 
+    /**
+     * 初始化 MQTT 连接会话
+     *
+     * @param connection     {@link Connection}  连接
+     * @param timeAckManager {@link TimeAckManager} 确认管理器
+     * @return {@link MqttSession} MQTT 连接会话
+     */
     public static MqttSession init(Connection connection, TimeAckManager timeAckManager) {
         MqttSession mqttChannel = new MqttSession();
         mqttChannel.setTopics(new CopyOnWriteArraySet<>());
@@ -104,18 +119,42 @@ public class MqttSession {
         return mqttChannel;
     }
 
+    /**
+     * 缓存 QoS 2 消息
+     *
+     * @param messageId      {@link Integer}  消息 ID
+     * @param publishMessage {@link MqttPublishMessage} 发布消息
+     * @return {@link Mono}
+     */
     public Mono<Void> cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
         return Mono.fromRunnable(() -> qos2MsgCache.put(messageId, publishMessage));
     }
 
+    /**
+     * 缓存中是否存在 QoS 2 消息
+     *
+     * @param messageId {@link Integer}  消息 ID
+     * @return {@link Boolean} 否存在 QoS 2 消息
+     */
     public Boolean existQos2Msg(int messageId) {
         return qos2MsgCache.containsKey(messageId);
     }
 
+    /**
+     * 从缓存中移除 QoS 2 消息
+     *
+     * @param messageId {@link Integer}  消息 ID
+     * @return {@link MqttPublishMessage}
+     */
     public Optional<MqttPublishMessage> removeQos2Msg(int messageId) {
         return Optional.ofNullable(qos2MsgCache.remove(messageId));
     }
 
+    /**
+     * 关闭设备连接
+     *
+     * @return {@link Mono}
+     */
     public Mono<Void> close() {
         return Mono.fromRunnable(() -> {
             this.clearReplyMessage();
@@ -129,6 +168,11 @@ public class MqttSession {
         });
     }
 
+    /**
+     * 注册关闭设备连接延时事件
+     *
+     * @return {@link MqttSession}
+     */
     public MqttSession registryDelayTcpClose() {
         // registry tcp close event
         Connection connection = this.getConnection();
@@ -140,14 +184,29 @@ public class MqttSession {
         return this;
     }
 
+    /**
+     * 注册关闭连接时要执行的任务
+     *
+     * @param consumer {@link Consumer}
+     */
     public void registryClose(Consumer<MqttSession> consumer) {
         this.connection.onDispose(() -> consumer.accept(this));
     }
 
+    /**
+     * 会话是否活跃
+     *
+     * @return {@link Boolean} 会话是否活跃
+     */
     public boolean active() {
         return status == SessionStatus.ONLINE;
     }
 
+    /**
+     * 生成序列消息 ID
+     *
+     * @return {@link Integer} 消息 ID
+     */
     public int generateMessageId() {
         int value;
         while (qos2MsgCache.containsKey(value = atomicInteger.incrementAndGet())) {
@@ -166,7 +225,7 @@ public class MqttSession {
     }
 
     /**
-     *
+     * 遗愿消息
      */
     @Data
     @Builder
@@ -182,8 +241,15 @@ public class MqttSession {
 
     }
 
+    /**
+     * 生成消息 ID
+     *
+     * @param type      消息类型
+     * @param messageId 消息ID
+     * @return 消息 ID
+     */
     public long generateId(MqttMessageType type, Integer messageId) {
-        return (long) connection.channel().hashCode() << 32 | (long) type.value() << 28 | messageId<<4>>>4;
+        return (long) connection.channel().hashCode() << 32 | (long) type.value() << 28 | messageId << 4 >>> 4;
     }
 
     /**
@@ -194,7 +260,6 @@ public class MqttSession {
      * @return 空操作符
      */
     public Mono<Void> write(MqttMessage mqttMessage, boolean retry) {
-        // http本地mock
         if (this.getIsCluster() && !this.active()) {
             return Mono.empty();
         } else {
@@ -325,6 +390,7 @@ public class MqttSession {
 
     @Override
     public String toString() {
-        return "MqttChannel{" + " address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\'' + ", status=" + status + ", keepalive=" + keepalive + ", username='" + username + '}';
+        return "MqttSession{" + " address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\''
+                + ", status=" + status + ", keepalive=" + keepalive + ", username='" + username + '}';
     }
 }

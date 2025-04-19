@@ -68,7 +68,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
                     return send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry));
                 case AT_LEAST_ONCE:
                     return send(topics, message, messageRegistry, session.write(
-                            MqttMessageBuilder.buildPublishAck(header.packetId()), false
+                            MqttMessageBuilder.publishAckMessage(header.packetId()), false
                     ).then(filterRetainMessage(message, messageRegistry)));
                 case EXACTLY_ONCE:
                     if (!session.existQos2Msg(header.packetId())) {
