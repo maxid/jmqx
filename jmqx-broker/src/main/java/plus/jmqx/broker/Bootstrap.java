@@ -2,6 +2,7 @@ package plus.jmqx.broker;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import lombok.AllArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
@@ -22,10 +23,12 @@ import java.util.List;
  */
 @Slf4j
 @ToString
+@AllArgsConstructor
 public class Bootstrap {
 
     private static final Sinks.One<Void>    START_ONLY_MQTT = Sinks.one();
     private final        List<Transport<?>> transports      = new ArrayList<>();
+    private final        MqttConfiguration  config;
 
     /**
      * 启动服务
@@ -33,7 +36,6 @@ public class Bootstrap {
      * @return 服务
      */
     public Mono<Bootstrap> start() {
-        MqttConfiguration config = new MqttConfiguration();
         return MqttTransport.startMqtt(config)
                 .start()
                 .doOnError(err -> log.error("start mqtt error", err))
