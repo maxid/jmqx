@@ -1,6 +1,6 @@
 package plus.jmqx.broker.mqtt.message.interceptor;
 
-import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 
 import java.lang.reflect.Proxy;
 
@@ -22,11 +22,11 @@ public interface Interceptor {
     /**
      * 代理
      *
-     * @param adapter {{@link MessageAdapter} 消息处理适配器
+     * @param adapter {{@link MessageDispatcher} 消息处理适配器
      * @return 代理类
      */
-    default MessageAdapter proxy(MessageAdapter adapter) {
-        return (MessageAdapter) Proxy.newProxyInstance(adapter.getClass().getClassLoader(), new Class[]{MessageAdapter.class}, new InterceptorHandler(this, adapter));
+    default MessageDispatcher proxy(MessageDispatcher adapter) {
+        return (MessageDispatcher) Proxy.newProxyInstance(adapter.getClass().getClassLoader(), new Class[]{MessageDispatcher.class}, new InterceptorHandler(this, adapter));
     }
 
     /**

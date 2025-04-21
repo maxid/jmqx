@@ -80,12 +80,13 @@ public class MqttTransport implements Transport<MqttConfiguration> {
         return Mono.deferContextual(view -> receiver.bind())
                 .doOnNext(this::setDisposableServer)
                 .thenReturn(this)
-                .doOnSuccess(transport -> log.info(""))
+                .doOnSuccess(transport -> log.info("server start success host {} port {}", disposableServer.host(), disposableServer.port()))
                 .cast(Transport.class)
                 .contextWrite(context -> context.put(MqttReceiveContext.class, this.context(configuration)));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ReceiveContext<MqttConfiguration> context(MqttConfiguration configuration) {
         synchronized (this) {
             if (ContextHolder.getContext() == null) {

@@ -17,17 +17,17 @@ public interface SessionRegistry extends Startup {
     /**
      * 关闭会话
      *
-     * @param mqttChannel {@link MqttSession}
+     * @param session {@link MqttSession}
      */
-    void close(MqttSession mqttChannel);
+    void close(MqttSession session);
 
     /**
      * 注册会话
      *
      * @param clientId 客户端 ID
-     * @param mqttChannel      {@link MqttSession}
+     * @param session      {@link MqttSession}
      */
-    void registry(String clientId, MqttSession mqttChannel);
+    void registry(String clientId, MqttSession session);
 
     /**
      * 判读会话是否存在

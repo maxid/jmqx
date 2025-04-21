@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.spi.DynamicLoader;
@@ -19,19 +19,19 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * MQTT 消息分发适配器
+ * MQTT 消息报文分发处理器
  *
  * @author maxid
  * @since 2025/4/15 09:35
  */
 @Slf4j
-public class MqttMessageAdapter implements MessageAdapter {
+public class MqttMessageDispatcher implements MessageDispatcher {
     private Map<MqttMessageType, MessageProcessor<MqttMessage>> types = new HashMap<>();
 
     private final Scheduler scheduler;
 
     @SuppressWarnings("unchecked")
-    public MqttMessageAdapter(Scheduler scheduler) {
+    public MqttMessageDispatcher(Scheduler scheduler) {
         this.scheduler = Optional.ofNullable(scheduler).orElse(Schedulers.boundedElastic());
         DynamicLoader.findAll(MessageProcessor.class)
                 .forEach(processor -> processor.getMqttMessageTypes().forEach(o -> {

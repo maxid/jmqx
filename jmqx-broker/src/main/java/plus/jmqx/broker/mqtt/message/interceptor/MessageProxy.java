@@ -9,7 +9,7 @@ import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
-import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
@@ -34,7 +34,7 @@ public class MessageProxy {
             .sorted(Comparator.comparing(Interceptor::sort))
             .collect(Collectors.toList());
 
-    public MessageAdapter proxy(MessageAdapter adapter) {
+    public MessageDispatcher proxy(MessageDispatcher adapter) {
         adapter = new TailIntercept().proxy(adapter);
         for (Interceptor interceptor : interceptors) {
             adapter = interceptor.proxy(adapter);

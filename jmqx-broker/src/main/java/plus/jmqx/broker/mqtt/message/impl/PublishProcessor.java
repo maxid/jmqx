@@ -8,13 +8,17 @@ import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.*;
+import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -58,6 +62,18 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             TopicRegistry topicRegistry = context.getTopicRegistry();
             MessageRegistry messageRegistry = context.getMessageRegistry();
             Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
+            // 分发设备上报消息
+            String topicName = header.topicName();
+            if(!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
+                context.dispatch(d -> d.onPublish(PublishMessage.builder()
+                                .clientId(session.getClientId())
+                                .username(session.getUsername())
+                                .topic(header.topicName())
+                                .payload(MessageUtils.copyReleaseByteBuf(message.payload()))
+                                .build())
+                        .subscribeOn(ContextHolder.getDispatchScheduler())
+                        .subscribe());
+            }
             // 集群节点消息广播
             if (session.getIsCluster()) {
                 return send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry));

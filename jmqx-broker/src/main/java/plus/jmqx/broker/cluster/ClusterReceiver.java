@@ -33,10 +33,10 @@ public class ClusterReceiver {
     public void registry() {
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
         ClusterRegistry cluster = context.getClusterRegistry();
-        MessageAdapter messageAdapter = context.getMessageAdapter();
+        MessageDispatcher messageAdapter = context.getMessageDispatcher();
         if (config.isEnable()) {
             if (cluster instanceof DefaultClusterRegistry) {
-                Flux.interval(Duration.ofSeconds(5))
+                Flux.interval(Duration.ofSeconds(60))
                         .subscribe(index -> log.debug("Using fake cluster mode base on DefaultClusterRegistry."));
             } else {
                 // 注册集群

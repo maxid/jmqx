@@ -42,6 +42,6 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
 
     @Override
     public void accept(MqttSession session, MessageWrapper<MqttMessage> message) {
-        this.getMessageAdapter().dispatch(session, message, this);
+        this.getMessageDispatcher().dispatch(session, message, this);
     }
 }

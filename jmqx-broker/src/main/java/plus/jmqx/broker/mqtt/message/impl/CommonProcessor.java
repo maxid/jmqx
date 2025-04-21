@@ -4,11 +4,14 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.SessionMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
@@ -17,6 +20,7 @@ import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.Connection;
 import reactor.util.context.ContextView;
 
@@ -32,6 +36,7 @@ import java.util.stream.Collectors;
  * @author maxid
  * @since 2025/4/9 15:28
  */
+@Slf4j
 public class CommonProcessor implements MessageProcessor<MqttMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
@@ -54,7 +59,6 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
     public Mono<Void> process(MessageWrapper<MqttMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         MqttMessage message = wrapper.getMessage();
-        MqttMessageIdVariableHeader header = (MqttMessageIdVariableHeader) message.variableHeader();
         switch (message.fixedHeader().messageType()) {
             case PINGREQ:
                 return session.write(MqttMessageBuilder.pongMessage(), false);
@@ -66,14 +70,24 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
                     if (!(connection = session.getConnection()).isDisposed()) {
                         connection.dispose();
                     }
+                    context.dispatch(d -> d.onDisconnect(DisconnectMessage.builder()
+                                    .clientId(session.getClientId())
+                                    .username(session.getUsername())
+                                    .build())
+                            .subscribeOn(ContextHolder.getDispatchScheduler())
+                            .subscribe());
                 });
             case PUBREC:
+                // QoS 2 step 1
+                MqttMessageIdVariableHeader header1 = (MqttMessageIdVariableHeader) message.variableHeader();
                 return Mono.fromRunnable(() -> {
-                    Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, header.messageId()));
+                    Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, header1.messageId()));
                     Optional.ofNullable(ack).ifPresent(Ack::stop);
-                }).then(session.write(MqttMessageBuilder.publishRelMessage(header.messageId()), true));
+                }).then(session.write(MqttMessageBuilder.publishRelMessage(header1.messageId()), true));
             case PUBREL:
-                return session.removeQos2Msg(header.messageId())
+                // QoS 2 step 2
+                MqttMessageIdVariableHeader header2 = (MqttMessageIdVariableHeader) message.variableHeader();
+                return session.removeQos2Msg(header2.messageId())
                         .map(msg -> {
                             TopicRegistry topicRegistry = context.getTopicRegistry();
                             MessageRegistry messageRegistry = context.getMessageRegistry();
@@ -82,13 +96,15 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
                                             .filter(topic -> filterOfflineSession(topic.getMqttChannel(), messageRegistry, MessageUtils.wrapPublishMessage(msg, topic.getQoS(), topic.getMqttChannel().generateMessageId())))
                                             .map(topic -> topic.getMqttChannel().write(MessageUtils.wrapPublishMessage(msg, topic.getQoS(), topic.getMqttChannel().generateMessageId()), topic.getQoS().value() > 0))
                                             .collect(Collectors.toList()))
-                                    .then(Mono.fromRunnable(() -> Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header.messageId())))
+                                    .then(Mono.fromRunnable(() -> Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header2.messageId())))
                                             .ifPresent(Ack::stop)))
-                                    .then(session.write(MqttMessageBuilder.publishCompMessage(header.messageId()), false));
-                        }).orElseGet(() -> session.write(MqttMessageBuilder.publishCompMessage(header.messageId()), false));
+                                    .then(session.write(MqttMessageBuilder.publishCompMessage(header2.messageId()), false));
+                        }).orElseGet(() -> session.write(MqttMessageBuilder.publishCompMessage(header2.messageId()), false));
             case PUBCOMP:
+                // QoS 2 step 3
+                MqttMessageIdVariableHeader header3 = (MqttMessageIdVariableHeader) message.variableHeader();
                 return Mono.fromRunnable(() -> {
-                    Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREL, header.messageId()));
+                    Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREL, header3.messageId()));
                     Optional.ofNullable(ack).ifPresent(Ack::stop);
                 });
             case PINGRESP:

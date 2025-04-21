@@ -22,23 +22,23 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     @Override
-    public void close(MqttSession mqttChannel) {
-        Optional.ofNullable(mqttChannel.getClientId()).ifPresent(sessions::remove);
+    public void close(MqttSession session) {
+        Optional.ofNullable(session.getClientId()).ifPresent(sessions::remove);
     }
 
     @Override
-    public void registry(String clientIdentifier, MqttSession mqttChannel) {
-        sessions.put(clientIdentifier, mqttChannel);
+    public void registry(String clientId, MqttSession session) {
+        sessions.put(clientId, session);
     }
 
     @Override
-    public boolean exists(String clientIdentifier) {
-        return sessions.containsKey(clientIdentifier) && sessions.get(clientIdentifier).getStatus() == SessionStatus.ONLINE;
+    public boolean exists(String clientId) {
+        return sessions.containsKey(clientId) && sessions.get(clientId).getStatus() == SessionStatus.ONLINE;
     }
 
     @Override
-    public MqttSession get(String clientIdentifier) {
-        return sessions.get(clientIdentifier);
+    public MqttSession get(String clientId) {
+        return sessions.get(clientId);
     }
 
     @Override

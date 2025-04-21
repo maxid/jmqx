@@ -45,12 +45,16 @@ public enum Event {
                             SessionStatus.ONLINE)).getBytes());
         }
 
+        @Override
+        public String topicName() {
+            return CONNECT_TOPIC;
+        }
     },
     /**
      * 关闭事件
      */
     CLOSE {
-        private static final String CLOSE_TOPIC = "$event/close";
+        protected static final String CLOSE_TOPIC = "$event/close";
 
         @Override
         public void sender(MqttSession session, Object body, ReceiveContext<?> context) {
@@ -72,6 +76,11 @@ public enum Event {
                             System.currentTimeMillis(),
                             mqttChannel.getUsername(),
                             SessionStatus.OFFLINE)).getBytes());
+        }
+
+        @Override
+        public String topicName() {
+            return CLOSE_TOPIC;
         }
     };
 
@@ -95,6 +104,13 @@ public enum Event {
     public abstract ByteBuf writeBody(MqttSession mqttChannel, Object body);
 
     /**
+     * 事件主题名称
+     *
+     * @return 事件主题名称
+     */
+    public abstract String topicName();
+
+    /**
      * 分发事件消息
      *
      * @param context 上下文
@@ -102,7 +118,7 @@ public enum Event {
      * @param message 事件消息
      */
     public void write(ReceiveContext<?> context, MqttSession session, MqttMessage message) {
-        context.getMessageAdapter().dispatch(
+        context.getMessageDispatcher().dispatch(
                 ClusterSession.wrapClientId(session.getClientId()),
                 new MessageWrapper<>(message, System.currentTimeMillis(), Boolean.FALSE),
                 context
