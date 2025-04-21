@@ -12,16 +12,17 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
-import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultMessageRegistry;
-import plus.jmqx.broker.mqtt.message.impl.MqttMessageAdapter;
+import plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
@@ -33,6 +34,7 @@ import reactor.netty.resources.LoopResources;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * 上下文抽象
@@ -67,23 +69,23 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     /**
      * MQTT 消息处理适配器
      */
-    private final MessageAdapter       messageAdapter;
+    private final MessageDispatcher    messageDispatcher;
     /**
      * 集群注册中心
      */
-    private final ClusterRegistry clusterRegistry;
+    private final ClusterRegistry      clusterRegistry;
     /**
      * 事件注册中心
      */
-    private final EventRegistry   eventRegistry;
+    private final EventRegistry        eventRegistry;
     /**
      * MQTT 会话注册中心
      */
-    private final SessionRegistry sessionRegistry;
+    private final SessionRegistry      sessionRegistry;
     /**
      * MQTT 主题注册中心
      */
-    private final TopicRegistry   topicRegistry;
+    private final TopicRegistry        topicRegistry;
     /**
      * MQTT 消息注册中心
      */
@@ -103,7 +105,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.loopResources = LoopResources.create("jmqx-event-loop", config.getBossThreadSize(), config.getWorkThreadSize(), true);
         this.trafficHandlerLoader = trafficHandlerLoader();
         this.timeAckManager = new TimeAckManager(20, TimeUnit.MILLISECONDS, 50);
-        this.messageAdapter = messageAdapter();
+        this.messageDispatcher = messageDispatcher();
         this.clusterRegistry = clusterRegistry();
         this.eventRegistry = eventRegistry();
         this.sessionRegistry = sessionRegistry();
@@ -111,6 +113,15 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
         this.authManager = authManager();
+    }
+
+    /**
+     * MQTT 生命周期分发
+     *
+     * @param consumer 订阅
+     */
+    public void dispatch(Consumer<PlatformDispatcher> consumer) {
+        Optional.ofNullable(ContextHolder.getPlatformDispatcher()).ifPresent(consumer);
     }
 
     private TrafficHandlerLoader trafficHandlerLoader() {
@@ -148,13 +159,13 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         }
     }
 
-    private MessageAdapter messageAdapter() {
+    private MessageDispatcher messageDispatcher() {
         Scheduler scheduler = Schedulers.newBoundedElastic(
                 configuration.getBusinessThreadSize(),
                 configuration.getBusinessQueueSize(),
                 "jmqx-business-io"
         );
-        return Optional.ofNullable(MessageAdapter.INSTANCE).orElse(new MqttMessageAdapter(scheduler)).proxy();
+        return Optional.ofNullable(MessageDispatcher.INSTANCE).orElse(new MqttMessageDispatcher(scheduler)).proxy();
     }
 
     private ClusterRegistry clusterRegistry() {
@@ -178,10 +189,12 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     private AclManager aclManager() {
-        return Optional.ofNullable(AclManager.INSTANCE).orElseGet(DefaultAclManager::new);
+        return Optional.ofNullable(ContextHolder.getAclManager())
+                .orElse(Optional.ofNullable(AclManager.INSTANCE).orElseGet(DefaultAclManager::new));
     }
 
     private AuthManager authManager() {
-        return Optional.ofNullable(AuthManager.INSTANCE).orElseGet(DefaultAuthManager::new);
+        return Optional.ofNullable(ContextHolder.getAuthManager())
+                .orElse(Optional.ofNullable(AuthManager.INSTANCE).orElseGet(DefaultAuthManager::new));
     }
 }

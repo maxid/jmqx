@@ -8,12 +8,15 @@ import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.config.ConnectMode;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.CloseMqttMessage;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
 import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
@@ -70,6 +73,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         MqttSession clientSession = channelRegistry.get(clientId);
         if (context.getConfiguration().getConnectMode() == ConnectMode.UNIQUE) {
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
+                dispatchConnectionLost(session, context);
                 return rejected(session, mqttVersion);
             }
         } else {
@@ -77,6 +81,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                 if (System.currentTimeMillis() - clientSession.getConnectTime() > (context.getConfiguration().getNotKickSeconds() * 1000)) {
                     clientSession.close().subscribe();
                 } else {
+                    dispatchConnectionLost(session, context);
                     return rejected(session, mqttVersion);
                 }
             }
@@ -85,10 +90,12 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         if (MqttVersion.MQTT_3_1.protocolLevel() != mqttVersion &&
                 MqttVersion.MQTT_3_1_1.protocolLevel() != mqttVersion &&
                 MqttVersion.MQTT_5.protocolLevel() != mqttVersion) {
+            dispatchConnectionLost(session, context);
             return badVersion(session, mqttVersion);
         }
         // 鉴权认证
         if (!authManager.auth(clientId, username, password)) {
+            dispatchConnectionLost(session, context);
             return badCredentials(session, mqttVersion);
         }
         // START 处理连接业务：建立连接会话等
@@ -140,6 +147,15 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         // session.registryClose(channel -> metricManager.getMetricRegistry().getMetricCounter(CounterType.CONNECT).decrement());
         // 触发连接事件
         eventRegistry.registry(Event.CONNECT, session, message, context);
+        //
+        context.dispatch(d -> d.onConnect(ConnectMessage.builder()
+                        .clientId(session.getClientId())
+                        .username(session.getUsername())
+                        .protocolName(header.name())
+                        .version(header.version())
+                        .build())
+                .subscribeOn(ContextHolder.getDispatchScheduler())
+                .subscribe());
         // 连接确认
         return ok(session, context, mqttVersion);
     }
@@ -233,6 +249,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         eventRegistry.registry(Event.CLOSE, session, null, context);
         //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
         session.close().subscribe();
+        dispatchConnectionLost(session, context);
     }
 
     /**
@@ -250,5 +267,18 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                 }));
     }
 
-
+    /**
+     * 分发失去连接
+     *
+     * @param session 会话
+     * @param context 上下文
+     */
+    private void dispatchConnectionLost(MqttSession session, MqttReceiveContext context) {
+        context.dispatch(d -> d.onConnectionLost(ConnectionLostMessage.builder()
+                        .clientId(session.getClientId())
+                        .username(session.getUsername())
+                        .build())
+                .subscribeOn(ContextHolder.getDispatchScheduler())
+                .subscribe());
+    }
 }

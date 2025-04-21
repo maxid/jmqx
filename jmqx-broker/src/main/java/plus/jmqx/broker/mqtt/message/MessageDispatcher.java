@@ -9,16 +9,16 @@ import plus.jmqx.broker.mqtt.message.interceptor.MessageProxy;
 import plus.jmqx.broker.spi.DynamicLoader;
 
 /**
- * 消息处理适配器
+ * 消息报文分发处理器
  *
  * @author maxid
  * @since 2025/4/9 14:18
  */
-public interface MessageAdapter {
+public interface MessageDispatcher {
     /**
      * 用户自定义实例
      */
-    MessageAdapter INSTANCE = DynamicLoader.findFirst(MessageAdapter.class).orElse(null);
+    MessageDispatcher INSTANCE = DynamicLoader.findFirst(MessageDispatcher.class).orElse(null);
 
     /**
      * 消息处理代理工具
@@ -41,7 +41,7 @@ public interface MessageAdapter {
      *
      * @return 消息处理适配器代理
      */
-    default MessageAdapter proxy() {
+    default MessageDispatcher proxy() {
         return MESSAGE_PROXY.proxy(this);
     }
 }

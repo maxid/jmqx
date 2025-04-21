@@ -5,9 +5,10 @@ import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
-import plus.jmqx.broker.mqtt.message.MessageAdapter;
+import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
@@ -15,6 +16,7 @@ import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * 上下文
@@ -74,11 +76,11 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
     MessageRegistry getMessageRegistry();
 
     /**
-     * 获取 MQTT 消息报文处理适配器
+     * 获取 MQTT 消息报文分发处理器
      *
-     * @return 消息报文处理适配器
+     * @return 消息报文分发处理器
      */
-    MessageAdapter getMessageAdapter();
+    MessageDispatcher getMessageDispatcher();
 
     /**
      * MQTT 主题访问控制管理器
@@ -93,4 +95,11 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
      * @return MQTT 连接认证管理器
      */
     AuthManager getAuthManager();
+
+    /**
+     * MQTT 生命周期分发
+     *
+     * @param consumer 订阅
+     */
+    void dispatch(Consumer<PlatformDispatcher> consumer);
 }

@@ -106,17 +106,17 @@ public class MqttSession {
      * @return {@link MqttSession} MQTT 连接会话
      */
     public static MqttSession init(Connection connection, TimeAckManager timeAckManager) {
-        MqttSession mqttChannel = new MqttSession();
-        mqttChannel.setTopics(new CopyOnWriteArraySet<>());
-        mqttChannel.setAtomicInteger(new AtomicInteger(0));
-        mqttChannel.setReplyMqttMessageMap(new ConcurrentHashMap<>());
-        mqttChannel.setMqttMessageSink(new MqttMessageSink());
-        mqttChannel.setQos2MsgCache(new ConcurrentHashMap<>());
-        mqttChannel.setConnection(connection);
-        mqttChannel.setStatus(SessionStatus.INIT);
-        mqttChannel.setAddress(connection.address().toString().replaceAll("/", ""));
-        mqttChannel.setTimeAckManager(timeAckManager);
-        return mqttChannel;
+        MqttSession session = new MqttSession();
+        session.setTopics(new CopyOnWriteArraySet<>());
+        session.setAtomicInteger(new AtomicInteger(0));
+        session.setReplyMqttMessageMap(new ConcurrentHashMap<>());
+        session.setMqttMessageSink(new MqttMessageSink());
+        session.setQos2MsgCache(new ConcurrentHashMap<>());
+        session.setConnection(connection);
+        session.setStatus(SessionStatus.INIT);
+        session.setAddress(connection.address().toString().replaceAll("/", ""));
+        session.setTimeAckManager(timeAckManager);
+        return session;
     }
 
     /**
