@@ -45,7 +45,7 @@ class BootstrapTest {
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("clientId={}, username={}, topic={}, payload={}", message.getClientId(), message.getUsername(), message.getTopic(), new String(message.getPayload(), StandardCharsets.UTF_8));
+                    log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})", message.getClientId(), message.getUsername(), message.getTopic(), new String(message.getPayload(), StandardCharsets.UTF_8));
                 });
             }
         });
