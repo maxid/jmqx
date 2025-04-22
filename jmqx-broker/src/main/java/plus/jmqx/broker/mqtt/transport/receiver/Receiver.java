@@ -10,6 +10,9 @@ import reactor.netty.DisposableServer;
  * @since 2025/4/8 17:59
  */
 public interface Receiver {
+
+    String getName();
+
     /**
      * 服务端口绑定
      *

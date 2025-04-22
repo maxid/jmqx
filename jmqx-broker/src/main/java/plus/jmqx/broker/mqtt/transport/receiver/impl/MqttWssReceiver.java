@@ -27,6 +27,12 @@ import reactor.util.context.ContextView;
  * @since 2025/4/9 15:00
  */
 public class MqttWssReceiver extends SslHandler implements Receiver {
+
+    @Override
+    public String getName() {
+        return "mqtt-wss";
+    }
+
     @Override
     public Mono<DisposableServer> bind() {
         return Mono.deferContextual(view -> Mono.just(this.serv(view))

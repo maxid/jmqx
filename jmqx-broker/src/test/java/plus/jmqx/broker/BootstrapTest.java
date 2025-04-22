@@ -10,9 +10,11 @@ import plus.jmqx.broker.mqtt.message.dispatch.*;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * MQTT Broker 测试用例
+ *
  * @author maxid
  * @since 2025/4/22 10:46
  */
@@ -25,6 +27,10 @@ class BootstrapTest {
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         MqttConfiguration config = new MqttConfiguration();
+        config.setSslEnable(true);
+        config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
+        config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
+        config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
         Bootstrap bootstrap = new Bootstrap(config, new PlatformDispatcher() {
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
@@ -50,7 +56,11 @@ class BootstrapTest {
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})", message.getClientId(), message.getUsername(), message.getTopic(), new String(message.getPayload(), StandardCharsets.UTF_8));
+                    log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})",
+                            message.getClientId(),
+                            message.getUsername(),
+                            message.getTopic(),
+                            new String(message.getPayload(), StandardCharsets.UTF_8));
                 });
             }
         });
