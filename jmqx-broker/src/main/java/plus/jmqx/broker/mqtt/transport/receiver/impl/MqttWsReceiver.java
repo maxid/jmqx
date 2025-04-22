@@ -27,6 +27,12 @@ import reactor.util.context.ContextView;
  * @since 2025/4/9 11:47
  */
 public class MqttWsReceiver extends OptionHandler implements Receiver {
+
+    @Override
+    public String getName() {
+        return "mqtt-ws";
+    }
+
     @Override
     public Mono<DisposableServer> bind() {
         return Mono.deferContextual(view -> Mono.just(this.serv(view))
