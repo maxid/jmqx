@@ -11,6 +11,11 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * MQTT Broker 测试用例
+ * @author maxid
+ * @since 2025/4/22 10:46
+ */
 @Slf4j
 class BootstrapTest {
     @Test
