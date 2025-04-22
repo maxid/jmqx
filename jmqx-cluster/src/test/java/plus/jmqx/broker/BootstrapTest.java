@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
 /**
- * 尽量简洁一句描述
+ * 集群测试用例
  *
  * @author maxid
  * @since 2025/4/22 10:46
