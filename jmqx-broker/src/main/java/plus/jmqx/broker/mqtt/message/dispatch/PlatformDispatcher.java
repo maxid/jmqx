@@ -19,7 +19,7 @@ public interface PlatformDispatcher {
     Mono<Void> onConnect(ConnectMessage message);
 
     /**
-     * 设备断开连接
+     * 设备断开连接(MQTT客户端主动发送disconnect报文断开连接)
      *
      * @param message 设备断开连接消息
      * @return {@link Mono}
@@ -27,7 +27,7 @@ public interface PlatformDispatcher {
     Mono<Void> onDisconnect(DisconnectMessage message);
 
     /**
-     * 失去设备连接
+     * 失去设备连接(由于任何原因断开连接，无伦是服务端原因还是客户端原因)
      *
      * @param message 失去设备连接消息
      * @return {@link Mono}
