@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 class BootstrapTest {
     @Test
-    void cluster01() throws Exception {
+    void brokerTest() throws Exception {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
