@@ -43,6 +43,13 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, boolean isRetain, int messageId, String topic, ByteBuf message, Map<String, String> userPropertiesMap) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, isRetain, 0);
+        MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId, genMqttProperties(userPropertiesMap));
+        MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, mqttPublishVariableHeader, message);
+        return mqttPublishMessage;
+    }
+
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, int messageId, String topic, ByteBuf message) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, false, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId);

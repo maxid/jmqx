@@ -70,6 +70,6 @@ public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage
 
     private void loadRetainMessage(MessageRegistry messageRegistry, MqttSession session, String topic) {
         messageRegistry.getRetainMessage(topic).forEach(msg ->
-                        session.write(msg.toPublishMessage(session), msg.getQos() > 0).subscribe());
+                session.write(msg.toPublishMessage(session), /*msg.getQos() > 0*/false).subscribe());
     }
 }
