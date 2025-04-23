@@ -318,9 +318,9 @@ public class MqttSession {
         public static MqttMessageSink MQTT_SINK = new MqttMessageSink();
 
 
-        public Mono<Void> sendMessage(MqttMessage mqttMessage, MqttSession mqttChannel, boolean retry) {
+        public Mono<Void> sendMessage(MqttMessage mqttMessage, MqttSession session, boolean retry) {
             if (log.isDebugEnabled()) {
-                log.debug("write channel {} message {}", mqttChannel.getConnection(), mqttMessage);
+                log.debug("write channel {} message {}", session.getConnection(), mqttMessage);
             }
             if (retry) {
                 /*
@@ -329,15 +329,15 @@ public class MqttSession {
                  */
                 MqttMessage reply = getReplyMqttMessage(mqttMessage);
 
-                Runnable runnable = () -> mqttChannel.write(Mono.just(reply)).subscribe();
+                Runnable runnable = () -> session.write(Mono.just(reply)).subscribe();
                 Runnable cleaner = () -> MessageUtils.safeRelease(reply);
 
-                Ack ack = new RetryAck(mqttChannel.generateId(reply.fixedHeader().messageType(), getMessageId(reply)),
-                        5, 5, runnable, mqttChannel.getTimeAckManager(), cleaner);
+                Ack ack = new RetryAck(session.generateId(reply.fixedHeader().messageType(), getMessageId(reply)),
+                        5, 5, runnable, session.getTimeAckManager(), cleaner);
                 ack.start();
-                return mqttChannel.write(Mono.just(mqttMessage)).then();
+                return session.write(Mono.just(mqttMessage)).then();
             } else {
-                return mqttChannel.write(Mono.just(mqttMessage));
+                return session.write(Mono.just(mqttMessage));
             }
         }
 

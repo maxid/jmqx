@@ -90,6 +90,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
                                         MessageUtils.wrapPublishMessage(
                                                 message, message.fixedHeader().qosLevel(), 0
                                         ))
+                                .then(filterRetainMessage(message, messageRegistry))
                                 .then(session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), true));
                     }
                 default:
@@ -114,7 +115,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
         return Mono.when(subscribeTopics.stream()
                         .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
                         .map(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(
-                                message, message.fixedHeader().qosLevel(), t2.getSession().generateMessageId()
+                                message, t2.getQoS(), t2.getSession().generateMessageId()
                         ), t2.getQoS().value() > 0))
                         .collect(Collectors.toList()))
                 .then(other);

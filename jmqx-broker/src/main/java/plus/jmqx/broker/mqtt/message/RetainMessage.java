@@ -29,6 +29,8 @@ public class RetainMessage {
 
     private byte[] body;
 
+    private boolean retain;
+
     private String userProperties;
 
     public static RetainMessage of(MqttPublishMessage message) {
@@ -36,6 +38,7 @@ public class RetainMessage {
         return RetainMessage.builder()
                 .topic(header.topicName())
                 .qos(message.fixedHeader().qosLevel().value())
+                .retain(message.fixedHeader().isRetain())
                 .body(MessageUtils.copyByteBuf(message.payload()))
                 .userProperties(JacksonUtil.map2Json(Optional.ofNullable(header
                                 .properties()
@@ -54,7 +57,8 @@ public class RetainMessage {
     public MqttPublishMessage toPublishMessage(MqttSession session) {
         return MqttMessageBuilder.publishMessage(
                 false,
-                MqttQoS.valueOf(this.qos),
+                MqttQoS.AT_MOST_ONCE,
+                retain,
                 qos > 0 ? session.generateMessageId() : 0,
                 topic,
                 PooledByteBufAllocator.DEFAULT.directBuffer().writeBytes(body),
