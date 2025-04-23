@@ -18,7 +18,6 @@ import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -83,9 +82,8 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
                 case AT_MOST_ONCE:
                     return send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry));
                 case AT_LEAST_ONCE:
-                    return send(topics, message, messageRegistry, session.write(
-                            MqttMessageBuilder.publishAckMessage(header.packetId()), false
-                    ).then(filterRetainMessage(message, messageRegistry)));
+                    return session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false)
+                            .then(send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry)));
                 case EXACTLY_ONCE:
                     if (!session.existQos2Msg(header.packetId())) {
                         return session.cacheQos2Msg(header.packetId(),
@@ -114,9 +112,9 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
      */
     private Mono<Void> send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry, Mono<Void> other) {
         return Mono.when(subscribeTopics.stream()
-                        .filter(t1 -> filterOfflineSession(t1.getMqttChannel(), messageRegistry, message))
-                        .map(t2 -> t2.getMqttChannel().write(MessageUtils.wrapPublishMessage(
-                                message, t2.getQoS(), t2.getMqttChannel().generateMessageId()
+                        .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
+                        .map(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(
+                                message, message.fixedHeader().qosLevel(), t2.getSession().generateMessageId()
                         ), t2.getQoS().value() > 0))
                         .collect(Collectors.toList()))
                 .then(other);

@@ -20,7 +20,6 @@ import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.netty.Connection;
 import reactor.util.context.ContextView;
 
@@ -93,8 +92,8 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
                             MessageRegistry messageRegistry = context.getMessageRegistry();
                             Set<SubscribeTopic> subscribeTopics = topicRegistry.getSubscribesByTopic(msg.variableHeader().topicName(), msg.fixedHeader().qosLevel());
                             return Mono.when(subscribeTopics.stream()
-                                            .filter(topic -> filterOfflineSession(topic.getMqttChannel(), messageRegistry, MessageUtils.wrapPublishMessage(msg, topic.getQoS(), topic.getMqttChannel().generateMessageId())))
-                                            .map(topic -> topic.getMqttChannel().write(MessageUtils.wrapPublishMessage(msg, topic.getQoS(), topic.getMqttChannel().generateMessageId()), topic.getQoS().value() > 0))
+                                            .filter(topic -> filterOfflineSession(topic.getSession(), messageRegistry, MessageUtils.wrapPublishMessage(msg, msg.fixedHeader().qosLevel(), topic.getSession().generateMessageId())))
+                                            .map(topic -> topic.getSession().write(MessageUtils.wrapPublishMessage(msg, msg.fixedHeader().qosLevel(), topic.getSession().generateMessageId()), topic.getQoS().value() > 0))
                                             .collect(Collectors.toList()))
                                     .then(Mono.fromRunnable(() -> Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header2.messageId())))
                                             .ifPresent(Ack::stop)))
