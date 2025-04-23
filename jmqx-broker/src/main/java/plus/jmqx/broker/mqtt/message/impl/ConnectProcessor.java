@@ -129,7 +129,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         session.registryClose(s1 -> Optional.ofNullable(s1.getWill())
                 .ifPresent(will -> topicRegistry.getSubscribesByTopic(will.getWillTopic(), will.getMqttQoS())
                         .forEach(topic -> {
-                            MqttSession s2 = topic.getMqttChannel();
+                            MqttSession s2 = topic.getSession();
                             s2.write(MqttMessageBuilder.publishMessage(
                                             false,
                                             topic.getQoS(),

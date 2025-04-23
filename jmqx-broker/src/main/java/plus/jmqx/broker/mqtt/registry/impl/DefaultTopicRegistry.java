@@ -95,7 +95,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
                 .stream()
                 .collect(Collectors.groupingBy(
                         SubscribeTopic::getTopicFilter,
-                        Collectors.mapping(SubscribeTopic::getMqttChannel, Collectors.toSet())));
+                        Collectors.mapping(SubscribeTopic::getSession, Collectors.toSet())));
     }
 
     @Override

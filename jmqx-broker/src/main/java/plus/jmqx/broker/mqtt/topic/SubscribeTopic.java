@@ -21,25 +21,25 @@ public class SubscribeTopic {
 
     private final MqttQoS qoS;
 
-    private final MqttSession mqttChannel;
+    private final MqttSession session;
 
-    public SubscribeTopic(String topicFilter, MqttQoS qoS, MqttSession mqttChannel) {
+    public SubscribeTopic(String topicFilter, MqttQoS qoS, MqttSession session) {
         this.topicFilter = topicFilter;
         this.qoS = qoS;
-        this.mqttChannel = mqttChannel;
+        this.session = session;
     }
 
     public SubscribeTopic compareQos(MqttQoS mqttQoS) {
         MqttQoS minQos = MqttQoS.valueOf(Math.min(mqttQoS.value(), qoS.value()));
-        return new SubscribeTopic(topicFilter, minQos, mqttChannel);
+        return new SubscribeTopic(topicFilter, minQos, session);
     }
 
     public void linkSubscribe() {
-        mqttChannel.getTopics().add(this);
+        session.getTopics().add(this);
     }
 
     public void unLinkSubscribe() {
-        mqttChannel.getTopics().remove(this);
+        session.getTopics().remove(this);
     }
 
     @Override
@@ -48,12 +48,12 @@ public class SubscribeTopic {
         if (o == null || getClass() != o.getClass()) return false;
         SubscribeTopic that = (SubscribeTopic) o;
         return Objects.equals(topicFilter, that.topicFilter) &&
-                Objects.equals(mqttChannel, that.mqttChannel);
+                Objects.equals(session, that.session);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(topicFilter, mqttChannel);
+        return Objects.hash(topicFilter, session);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class SubscribeTopic {
         return "SubscribeTopic{" +
                 "topicFilter='" + topicFilter + '\'' +
                 ", qoS=" + qoS +
-                ", mqttChannel=" + mqttChannel +
+                ", mqttChannel=" + session +
                 '}';
     }
 }
