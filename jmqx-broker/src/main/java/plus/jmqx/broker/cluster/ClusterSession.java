@@ -23,8 +23,7 @@ public class ClusterSession extends MqttSession {
     }
 
     @Override
-    public Mono<Void> write(MqttMessage mqttMessage, boolean retry) {
-        return Mono.empty();
+    public void write(MqttMessage mqttMessage, boolean retry) {
     }
 
 

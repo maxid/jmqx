@@ -8,7 +8,6 @@ import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.retry.Ack;
-import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -35,14 +34,12 @@ public class PublishAckProcessor implements MessageProcessor<MqttPubAckMessage> 
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttPubAckMessage> wrapper, MqttSession session, ContextView view) {
-        return Mono.fromRunnable(() -> {
-            ReceiveContext<?> context = view.get(ReceiveContext.class);
-            MqttPubAckMessage message = wrapper.getMessage();
-            MqttMessageIdVariableHeader header = message.variableHeader();
-            int messageId = header.messageId();
-            Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, messageId));
-            Optional.ofNullable(ack).ifPresent(Ack::stop);
-        });
+    public void process(MessageWrapper<MqttPubAckMessage> wrapper, MqttSession session, ContextView view) {
+        ReceiveContext<?> context = view.get(ReceiveContext.class);
+        MqttPubAckMessage message = wrapper.getMessage();
+        MqttMessageIdVariableHeader header = message.variableHeader();
+        int messageId = header.messageId();
+        Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, messageId));
+        Optional.ofNullable(ack).ifPresent(Ack::stop);
     }
 }

@@ -36,18 +36,17 @@ public class UnsubscribeProcessor implements MessageProcessor<MqttUnsubscribeMes
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
+    public void process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttUnsubscribeMessage msg = wrapper.getMessage();
-        return Mono.fromRunnable(() -> {
-            //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
-            ReceiveContext<?> context = view.get(ReceiveContext.class);
-            TopicRegistry topicRegistry = context.getTopicRegistry();
-            msg.payload()
-                    .topics()
-                    .stream()
-                    // 随机设置一个MqttQoS 用于删除topic订阅
-                    .map(topic -> new SubscribeTopic(topic, MqttQoS.AT_MOST_ONCE, session))
-                    .forEach(topicRegistry::removeSubscribeTopic);
-        }).then(session.write(MqttMessageBuilder.unsubAckMessage(msg.variableHeader().messageId()), false));
+        //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
+        ReceiveContext<?> context = view.get(ReceiveContext.class);
+        TopicRegistry topicRegistry = context.getTopicRegistry();
+        msg.payload()
+                .topics()
+                .stream()
+                // 随机设置一个MqttQoS 用于删除topic订阅
+                .map(topic -> new SubscribeTopic(topic, MqttQoS.AT_MOST_ONCE, session))
+                .forEach(topicRegistry::removeSubscribeTopic);
+        session.write(MqttMessageBuilder.unsubAckMessage(msg.variableHeader().messageId()), false);
     }
 }

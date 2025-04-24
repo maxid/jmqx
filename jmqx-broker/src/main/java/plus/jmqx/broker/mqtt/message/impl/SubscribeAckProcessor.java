@@ -5,7 +5,6 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
-import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -31,7 +30,7 @@ public class SubscribeAckProcessor implements MessageProcessor<MqttSubAckMessage
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttSubAckMessage> wrapper, MqttSession session, ContextView view) {
-        return session.cancelRetry(MqttMessageType.SUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
+    public void process(MessageWrapper<MqttSubAckMessage> wrapper, MqttSession session, ContextView view) {
+        session.cancelRetry(MqttMessageType.SUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
     }
 }

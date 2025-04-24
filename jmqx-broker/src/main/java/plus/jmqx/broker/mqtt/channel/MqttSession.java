@@ -124,10 +124,9 @@ public class MqttSession {
      *
      * @param messageId      {@link Integer}  消息 ID
      * @param publishMessage {@link MqttPublishMessage} 发布消息
-     * @return {@link Mono}
      */
-    public Mono<Void> cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
-        return Mono.fromRunnable(() -> qos2MsgCache.put(messageId, publishMessage));
+    public void cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
+        qos2MsgCache.put(messageId, publishMessage);
     }
 
     /**
@@ -146,26 +145,22 @@ public class MqttSession {
      * @param messageId {@link Integer}  消息 ID
      * @return {@link MqttPublishMessage}
      */
-    public Optional<MqttPublishMessage> removeQos2Msg(int messageId) {
-        return Optional.ofNullable(qos2MsgCache.remove(messageId));
+    public MqttPublishMessage removeQos2Msg(int messageId) {
+        return qos2MsgCache.remove(messageId);
     }
 
     /**
      * 关闭设备连接
-     *
-     * @return {@link Mono}
      */
-    public Mono<Void> close() {
-        return Mono.fromRunnable(() -> {
-            this.clearReplyMessage();
-            this.qos2MsgCache.clear();
-            if (!this.sessionPersistent) {
-                this.topics.clear();
-            }
-            if (!this.connection.isDisposed()) {
-                this.connection.dispose();
-            }
-        });
+    public void close() {
+        this.clearReplyMessage();
+        this.qos2MsgCache.clear();
+        if (!this.sessionPersistent) {
+            this.topics.clear();
+        }
+        if (!this.connection.isDisposed()) {
+            this.connection.dispose();
+        }
     }
 
     /**
@@ -257,13 +252,10 @@ public class MqttSession {
      *
      * @param mqttMessage 消息体
      * @param retry       是否重试
-     * @return 空操作符
      */
-    public Mono<Void> write(MqttMessage mqttMessage, boolean retry) {
-        if (this.getIsCluster() && !this.active()) {
-            return Mono.empty();
-        } else {
-            return MqttMessageSink.MQTT_SINK.sendMessage(mqttMessage, this, retry);
+    public void write(MqttMessage mqttMessage, boolean retry) {
+        if (!this.getIsCluster() || this.active()) {
+            MqttMessageSink.MQTT_SINK.sendMessage(mqttMessage, this, retry);
         }
     }
 
@@ -272,10 +264,9 @@ public class MqttSession {
      *
      * @param type      type
      * @param messageId 消息Id
-     * @return 空操作符
      */
-    public Mono<Void> cancelRetry(MqttMessageType type, Integer messageId) {
-        return Mono.fromRunnable(() -> this.removeReply(type, messageId));
+    public void cancelRetry(MqttMessageType type, Integer messageId) {
+        this.removeReply(type, messageId);
     }
 
     /**
@@ -292,13 +283,10 @@ public class MqttSession {
      * 写入消息
      *
      * @param messageMono 消息体
-     * @return 空操作符
      */
-    private Mono<Void> write(Mono<MqttMessage> messageMono) {
+    private void write(Mono<MqttMessage> messageMono) {
         if (this.connection.channel().isActive() && this.connection.channel().isWritable()) {
-            return connection.outbound().sendObject(messageMono).then();
-        } else {
-            return Mono.empty();
+            connection.outbound().sendObject(messageMono).then().subscribe();
         }
     }
 
@@ -318,7 +306,7 @@ public class MqttSession {
         public static MqttMessageSink MQTT_SINK = new MqttMessageSink();
 
 
-        public Mono<Void> sendMessage(MqttMessage mqttMessage, MqttSession session, boolean retry) {
+        public void sendMessage(MqttMessage mqttMessage, MqttSession session, boolean retry) {
             if (log.isDebugEnabled()) {
                 log.debug("write channel {} message {}", session.getConnection(), mqttMessage);
             }
@@ -329,15 +317,15 @@ public class MqttSession {
                  */
                 MqttMessage reply = getReplyMqttMessage(mqttMessage);
 
-                Runnable runnable = () -> session.write(Mono.just(reply)).subscribe();
+                Runnable runnable = () -> session.write(Mono.just(reply));
                 Runnable cleaner = () -> MessageUtils.safeRelease(reply);
 
                 Ack ack = new RetryAck(session.generateId(reply.fixedHeader().messageType(), getMessageId(reply)),
                         5, 5, runnable, session.getTimeAckManager(), cleaner);
                 ack.start();
-                return session.write(Mono.just(mqttMessage)).then();
+                session.write(Mono.just(mqttMessage));
             } else {
-                return session.write(Mono.just(mqttMessage));
+                session.write(Mono.just(mqttMessage));
             }
         }
 
