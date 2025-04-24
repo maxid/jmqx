@@ -6,6 +6,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.message.*;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
@@ -54,7 +55,7 @@ public class ClusterReceiver {
                             } else {
                                 CloseMqttMessage closeMqttMessage = (CloseMqttMessage) message.getMessage();
                                 Optional.ofNullable(context.getSessionRegistry().get(closeMqttMessage.getClientId()))
-                                        .ifPresent(session -> session.close().subscribe());
+                                        .ifPresent(MqttSession::close);
                             }
                         });
             }

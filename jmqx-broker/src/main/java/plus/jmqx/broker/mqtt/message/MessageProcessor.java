@@ -31,7 +31,10 @@ public interface MessageProcessor<T extends MqttMessage> {
      * @return Mono
      */
     default Mono<Void> process(MessageWrapper<T> message, MqttSession session) {
-        return Mono.deferContextual(view -> this.process(message, session, view));
+        return Mono.deferContextual(view -> {
+            this.process(message, session, view);
+            return Mono.empty();
+        });
     }
 
     /**
@@ -40,7 +43,6 @@ public interface MessageProcessor<T extends MqttMessage> {
      * @param wrapper {@link MessageWrapper} 消息
      * @param session {@link MqttSession} 消息会话
      * @param view    {@link ContextView} 上下文视图
-     * @return Mono
      */
-    Mono<Void> process(MessageWrapper<T> wrapper, MqttSession session, ContextView view);
+    void process(MessageWrapper<T> wrapper, MqttSession session, ContextView view);
 }

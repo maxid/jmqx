@@ -18,13 +18,11 @@ import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
-import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * PUBLISH 消息流程处理
@@ -47,7 +45,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttPublishMessage> wrapper, MqttSession session, ContextView view) {
+    public void process(MessageWrapper<MqttPublishMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         try {
             // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.PUBLISH_EVENT).increment();
@@ -56,7 +54,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             AclManager aclManager = context.getAclManager();
             if (!session.getIsCluster() && !aclManager.check(session, header.topicName(), AclAction.PUBLISH)) {
                 log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ", session.getConnection(), header.topicName());
-                return Mono.empty();
+                return;
             }
 
             TopicRegistry topicRegistry = context.getTopicRegistry();
@@ -64,7 +62,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
             // 分发设备上报消息
             String topicName = header.topicName();
-            if(!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
+            if (!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
                 context.dispatch(d -> d.onPublish(PublishMessage.builder()
                                 .clientId(session.getClientId())
                                 .username(session.getUsername())
@@ -80,29 +78,25 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             }
             // 集群节点消息广播
             if (session.getIsCluster()) {
-                return send(topics, message, messageRegistry);
+                send(topics, message, messageRegistry);
             }
             // MQTT QoS 处理
             MqttQoS qos = message.fixedHeader().qosLevel();
             switch (qos) {
-                case AT_MOST_ONCE:
-                    return send(topics, message, messageRegistry);
                 case AT_LEAST_ONCE:
-                    return session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false)
-                            .then(send(topics, message, messageRegistry));
+                    session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false);
+                    break;
                 case EXACTLY_ONCE:
-                    if (!session.existQos2Msg(header.packetId())) {
-                        return session.cacheQos2Msg(header.packetId(),
-                                        MessageUtils.wrapPublishMessage(message, qos, 0))
-                                .then(session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false));
-                    }
+                    session.cacheQos2Msg(header.packetId(), MessageUtils.wrapPublishMessage(message, qos, 0));
+                    session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false);
+                    return;
                 default:
-                    return Mono.empty();
+                    break;
             }
+            send(topics, message, messageRegistry);
         } catch (Exception e) {
             log.error("error ", e);
         }
-        return Mono.empty();
     }
 
     /**
@@ -111,15 +105,14 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
      * @param subscribeTopics {@link SubscribeTopic}
      * @param message         {@link MqttPublishMessage}
      * @param messageRegistry {@link MessageRegistry}
-     * @return Mono
      */
-    private Mono<Void> send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry) {
-        return Mono.when(subscribeTopics.stream()
-                        .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
-                        .map(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(
-                                message, t2.getQoS(), t2.getSession().generateMessageId()
-                        ), t2.getQoS().value() > 0))
-                        .collect(Collectors.toList()));
+    private void send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry) {
+        subscribeTopics.stream()
+                .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
+                .forEach(t2 -> {
+                    MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, t2.getQoS(), t2.getSession().generateMessageId());
+                    t2.getSession().write(pmsg, t2.getQoS().value() > 0);
+                });
     }
 
     /**

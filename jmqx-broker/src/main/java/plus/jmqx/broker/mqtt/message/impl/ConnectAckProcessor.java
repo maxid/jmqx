@@ -5,7 +5,6 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
-import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -31,7 +30,7 @@ public class ConnectAckProcessor implements MessageProcessor<MqttConnAckMessage>
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttConnAckMessage> wrapper, MqttSession session, ContextView view) {
-        return session.cancelRetry(MqttMessageType.CONNECT, -1);
+    public void process(MessageWrapper<MqttConnAckMessage> wrapper, MqttSession session, ContextView view) {
+        session.cancelRetry(MqttMessageType.CONNECT, -1);
     }
 }

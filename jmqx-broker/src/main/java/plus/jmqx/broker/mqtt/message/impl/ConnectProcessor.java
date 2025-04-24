@@ -23,8 +23,6 @@ import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -56,7 +54,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttConnectMessage> wrapper, MqttSession session, ContextView view) {
+    public void process(MessageWrapper<MqttConnectMessage> wrapper, MqttSession session, ContextView view) {
         MqttConnectMessage message = wrapper.getMessage();
         MqttReceiveContext context = (MqttReceiveContext) view.get(ReceiveContext.class);
         MqttConnectVariableHeader header = message.variableHeader();
@@ -74,15 +72,17 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         if (context.getConfiguration().getConnectMode() == ConnectMode.UNIQUE) {
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
                 dispatchConnectionLost(session, context);
-                return rejected(session, mqttVersion);
+                rejected(session, mqttVersion);
+                return;
             }
         } else {
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
                 if (System.currentTimeMillis() - clientSession.getConnectTime() > (context.getConfiguration().getNotKickSeconds() * 1000)) {
-                    clientSession.close().subscribe();
+                    clientSession.close();
                 } else {
                     dispatchConnectionLost(session, context);
-                    return rejected(session, mqttVersion);
+                    rejected(session, mqttVersion);
+                    return;
                 }
             }
         }
@@ -91,12 +91,14 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                 MqttVersion.MQTT_3_1_1.protocolLevel() != mqttVersion &&
                 MqttVersion.MQTT_5.protocolLevel() != mqttVersion) {
             dispatchConnectionLost(session, context);
-            return badVersion(session, mqttVersion);
+            badVersion(session, mqttVersion);
+            return;
         }
         // 鉴权认证
         if (!authManager.auth(clientId, username, password)) {
             dispatchConnectionLost(session, context);
-            return badCredentials(session, mqttVersion);
+            badCredentials(session, mqttVersion);
+            return;
         }
         // START 处理连接业务：建立连接会话等
         session.disposableClose(); // cancel defer close not authenticate channel
@@ -136,8 +138,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                                             topic.getQoS() == MqttQoS.AT_MOST_ONCE ? 0 : s2.generateMessageId(),
                                             will.getWillTopic(),
                                             Unpooled.wrappedBuffer(will.getWillMessage())
-                                    ), topic.getQoS().value() > 0)
-                                    .subscribe();
+                                    ), topic.getQoS().value() > 0);
                         })));
         // 各注册中心关联会话处理
         registry(session, channelRegistry, topicRegistry);
@@ -157,7 +158,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                 .subscribeOn(ContextHolder.getDispatchScheduler())
                 .subscribe());
         // 连接确认
-        return ok(session, context, mqttVersion);
+        ok(session, context, mqttVersion);
     }
 
     /**
@@ -165,11 +166,11 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      *
      * @param session     会话
      * @param mqttVersion 协议版本
-     * @return {@link Mono}
      */
-    private Mono<Void> rejected(MqttSession session, byte mqttVersion) {
+    private void rejected(MqttSession session, byte mqttVersion) {
         MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, mqttVersion);
-        return session.write(ack, false).then(session.close());
+        session.write(ack, false);
+        session.close();
     }
 
     /**
@@ -177,11 +178,11 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      *
      * @param session     会话
      * @param mqttVersion 协议版本
-     * @return {@link Mono}
      */
-    private Mono<Void> badVersion(MqttSession session, byte mqttVersion) {
+    private void badVersion(MqttSession session, byte mqttVersion) {
         MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION, mqttVersion);
-        return session.write(ack, false).then(session.close());
+        session.write(ack, false);
+        session.close();
     }
 
     /**
@@ -189,11 +190,11 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      *
      * @param session     会话
      * @param mqttVersion 协议版本
-     * @return {@link Mono}
      */
-    private Mono<Void> badCredentials(MqttSession session, byte mqttVersion) {
+    private void badCredentials(MqttSession session, byte mqttVersion) {
         MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, mqttVersion);
-        return session.write(ack, false).then(session.close());
+        session.write(ack, false);
+        session.close();
     }
 
     /**
@@ -202,23 +203,22 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      * @param session     会话
      * @param context     上下文
      * @param mqttVersion 协议版本
-     * @return {@link Mono}
      */
-    private Mono<Void> ok(MqttSession session, MqttReceiveContext context, byte mqttVersion) {
+    private void ok(MqttSession session, MqttReceiveContext context, byte mqttVersion) {
         MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_ACCEPTED, mqttVersion);
-        return session.write(ack, false)
-                .then(Mono.fromRunnable(() -> sendOfflineMessage(context.getMessageRegistry(), session)));
+        session.write(ack, false);
+        sendOfflineMessage(context.getMessageRegistry(), session);
     }
 
     /**
      * 注册中心会话关联
      *
      * @param session         会话
-     * @param channelRegistry 会话注册中心
+     * @param sessionRegistry 会话注册中心
      * @param topicRegistry   主题注册中心
      */
-    private void registry(MqttSession session, SessionRegistry channelRegistry, TopicRegistry topicRegistry) {
-        Optional.ofNullable(channelRegistry.get(session.getClientId()))
+    private void registry(MqttSession session, SessionRegistry sessionRegistry, TopicRegistry topicRegistry) {
+        Optional.ofNullable(sessionRegistry.get(session.getClientId()))
                 .ifPresent(s1 -> {
                     // 主题会话新关联
                     Set<SubscribeTopic> topics = s1.getTopics().stream().map(topic ->
@@ -226,11 +226,11 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                             .collect(Collectors.toSet());
                     topicRegistry.registrySubscribesTopic(topics);
                     // 移除旧会话
-                    channelRegistry.close(s1);
+                    sessionRegistry.close(s1);
                     topicRegistry.clear(s1);
                 });
         // 注册新会话
-        channelRegistry.registry(session.getClientId(), session);
+        sessionRegistry.registry(session.getClientId(), session);
     }
 
     /**
@@ -248,7 +248,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
         //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
-        session.close().subscribe();
+        session.close();
         dispatchConnectionLost(session, context);
     }
 
@@ -260,11 +260,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
      */
     private void sendOfflineMessage(MessageRegistry messageRegistry, MqttSession session) {
         Optional.ofNullable(messageRegistry.getSessionMessage(session.getClientId()))
-                .ifPresent(messages -> messages.forEach(message -> {
-                    session.write(message.toPublishMessage(session), message.getQos() > 0)
-                            .subscribeOn(Schedulers.single())
-                            .subscribe();
-                }));
+                .ifPresent(msgs -> msgs.forEach(msg -> session.write(msg.toPublishMessage(session), msg.getQos() > 0)));
     }
 
     /**

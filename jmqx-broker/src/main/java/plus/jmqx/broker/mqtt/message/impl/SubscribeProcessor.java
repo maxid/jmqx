@@ -41,35 +41,34 @@ public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
+    public void process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttSubscribeMessage message = wrapper.getMessage();
         // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE_EVENT).increment();
-        return Mono.fromRunnable(() -> {
-            ReceiveContext<?> context = (ReceiveContext<?>) view.get(ReceiveContext.class);
-            TopicRegistry topicRegistry = context.getTopicRegistry();
-            MessageRegistry messageRegistry = context.getMessageRegistry();
-            AclManager aclManager = context.getAclManager();
-            Set<SubscribeTopic> topics = message.payload().topicSubscriptions()
-                    .stream()
-                    .peek(s1 -> this.loadRetainMessage(messageRegistry, session, s1.topicFilter()))
-                    .map(s2 -> new SubscribeTopic(s2.topicFilter(), s2.qualityOfService(), session))
-                    .filter(s3 -> aclManager.check(session, s3.getTopicFilter(), AclAction.SUBSCRIBE))
-                    .collect(Collectors.toSet());
-            if (CollectionUtil.isNotEmpty(topics)) {
-                topicRegistry.registrySubscribesTopic(topics);
-            }
-        }).then(session.write(MqttMessageBuilder.subAckMessage(
+        ReceiveContext<?> context = (ReceiveContext<?>) view.get(ReceiveContext.class);
+        TopicRegistry topicRegistry = context.getTopicRegistry();
+        MessageRegistry messageRegistry = context.getMessageRegistry();
+        AclManager aclManager = context.getAclManager();
+        Set<SubscribeTopic> topics = message.payload().topicSubscriptions()
+                .stream()
+                .peek(s1 -> this.loadRetainMessage(messageRegistry, session, s1.topicFilter()))
+                .map(s2 -> new SubscribeTopic(s2.topicFilter(), s2.qualityOfService(), session))
+                .filter(s3 -> aclManager.check(session, s3.getTopicFilter(), AclAction.SUBSCRIBE))
+                .collect(Collectors.toSet());
+        if (CollectionUtil.isNotEmpty(topics)) {
+            topicRegistry.registrySubscribesTopic(topics);
+        }
+        session.write(MqttMessageBuilder.subAckMessage(
                 message.variableHeader().messageId(),
                 message.payload()
                         .topicSubscriptions()
                         .stream()
                         .map(s1 -> s1.qualityOfService().value())
                         .collect(Collectors.toList())
-        ), false));
+        ), false);
     }
 
     private void loadRetainMessage(MessageRegistry messageRegistry, MqttSession session, String topic) {
         messageRegistry.getRetainMessage(topic).forEach(msg ->
-                session.write(msg.toPublishMessage(session), /*msg.getQos() > 0*/false).subscribe());
+                session.write(msg.toPublishMessage(session), /*msg.getQos() > 0*/false));
     }
 }

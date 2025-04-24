@@ -31,7 +31,7 @@ public class UnsubscribeAckProcessor implements MessageProcessor<MqttUnsubAckMes
     }
 
     @Override
-    public Mono<Void> process(MessageWrapper<MqttUnsubAckMessage> wrapper, MqttSession session, ContextView view) {
-        return session.cancelRetry(MqttMessageType.UNSUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
+    public void process(MessageWrapper<MqttUnsubAckMessage> wrapper, MqttSession session, ContextView view) {
+        session.cancelRetry(MqttMessageType.UNSUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
     }
 }
