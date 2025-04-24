@@ -79,6 +79,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             // 集群节点消息广播
             if (session.getIsCluster()) {
                 send(topics, message, messageRegistry);
+                return;
             }
             // MQTT QoS 处理
             MqttQoS qos = message.fixedHeader().qosLevel();
