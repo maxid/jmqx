@@ -3,6 +3,7 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
@@ -73,25 +74,27 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
                         .subscribeOn(ContextHolder.getDispatchScheduler())
                         .subscribe());
             }
+            // 缓存 Retain 消息
+            if (message.fixedHeader().isRetain()) {
+                messageRegistry.saveRetainMessage(RetainMessage.of(message));
+            }
             // 集群节点消息广播
             if (session.getIsCluster()) {
-                return send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry));
+                return send(topics, message, messageRegistry);
             }
             // MQTT QoS 处理
-            switch (message.fixedHeader().qosLevel()) {
+            MqttQoS qos = message.fixedHeader().qosLevel();
+            switch (qos) {
                 case AT_MOST_ONCE:
-                    return send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry));
+                    return send(topics, message, messageRegistry);
                 case AT_LEAST_ONCE:
                     return session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false)
-                            .then(send(topics, message, messageRegistry, filterRetainMessage(message, messageRegistry)));
+                            .then(send(topics, message, messageRegistry));
                 case EXACTLY_ONCE:
                     if (!session.existQos2Msg(header.packetId())) {
                         return session.cacheQos2Msg(header.packetId(),
-                                        MessageUtils.wrapPublishMessage(
-                                                message, message.fixedHeader().qosLevel(), 0
-                                        ))
-                                .then(filterRetainMessage(message, messageRegistry))
-                                .then(session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), true));
+                                        MessageUtils.wrapPublishMessage(message, qos, 0))
+                                .then(session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false));
                     }
                 default:
                     return Mono.empty();
@@ -108,17 +111,15 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
      * @param subscribeTopics {@link SubscribeTopic}
      * @param message         {@link MqttPublishMessage}
      * @param messageRegistry {@link MessageRegistry}
-     * @param other           {@link Mono}
      * @return Mono
      */
-    private Mono<Void> send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry, Mono<Void> other) {
+    private Mono<Void> send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry) {
         return Mono.when(subscribeTopics.stream()
                         .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
                         .map(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(
                                 message, t2.getQoS(), t2.getSession().generateMessageId()
                         ), t2.getQoS().value() > 0))
-                        .collect(Collectors.toList()))
-                .then(other);
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -136,20 +137,5 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             messageRegistry.saveSessionMessage(SessionMessage.of(session.getClientId(), message));
             return false;
         }
-    }
-
-    /**
-     * 过滤保留消息
-     *
-     * @param message         {@link MqttPublishMessage}
-     * @param messageRegistry {@link MessageRegistry}
-     * @return Mono
-     */
-    private Mono<Void> filterRetainMessage(MqttPublishMessage message, MessageRegistry messageRegistry) {
-        return Mono.fromRunnable(() -> {
-            if (message.fixedHeader().isRetain()) {
-                messageRegistry.saveRetainMessage(RetainMessage.of(message));
-            }
-        });
     }
 }
