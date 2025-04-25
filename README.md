@@ -25,7 +25,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 引入依赖
 ```xml
         <dependency>
-            <groupId>plus.jmqx</groupId>
+            <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
             <version>${latest-version}</version>
         </dependency>
@@ -103,7 +103,7 @@ class BootstrapTest {
 引入依赖
 ```xml
         <dependency>
-            <groupId>plus.jmqx</groupId>
+            <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
             <version>${latest-version}</version>
         </dependency>
