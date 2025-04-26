@@ -19,5 +19,6 @@
         <module>jmqx-parent</module>
         <module>jmqx-broker</module>
         <module>jmqx-cluster</module>
+        <module>jmqx-example/jmqx-spring-boot</module>
     </modules>
 </project>

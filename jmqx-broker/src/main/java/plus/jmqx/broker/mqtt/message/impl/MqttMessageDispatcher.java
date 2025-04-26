@@ -43,7 +43,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     @Override
     public <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context) {
         MqttMessage message = wrapper.getMessage();
-        log.info("【{}】{}",message.fixedHeader().messageType(), session);
+        log.debug("【{}】{}",message.fixedHeader().messageType(), session);
         Optional.ofNullable(types.get(message.fixedHeader().messageType()))
                 .ifPresent(processor -> processor
                         .process(wrapper, session)
