@@ -34,7 +34,7 @@ public class ClusterReceiver {
     public void registry() {
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
         ClusterRegistry cluster = context.getClusterRegistry();
-        MessageDispatcher messageAdapter = context.getMessageDispatcher();
+        MessageDispatcher messageDispatcher = context.getMessageDispatcher();
         if (config.isEnable()) {
             if (cluster instanceof DefaultClusterRegistry) {
                 Flux.interval(Duration.ofSeconds(60))
@@ -49,7 +49,7 @@ public class ClusterReceiver {
                         .subscribe(message -> {
                             if (ClusterMessage.ClusterEvent.PUBLISH.equals(message.getClusterEvent())) {
                                 HeapMqttMessage heapMqttMessage = (HeapMqttMessage) message.getMessage();
-                                messageAdapter.dispatch(ClusterSession.wrapClientId(heapMqttMessage.getClientId()),
+                                messageDispatcher.dispatch(ClusterSession.wrapClientId(heapMqttMessage.getClientId()),
                                         getMqttMessage(heapMqttMessage),
                                         context);
                             } else {

@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 /**
- * 尽量简洁一句描述
+ * 固定主题过滤器
  *
  * @author maxid
  * @since 2025/4/16 10:16

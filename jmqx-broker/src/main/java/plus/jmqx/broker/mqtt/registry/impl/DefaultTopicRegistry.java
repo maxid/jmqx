@@ -22,19 +22,19 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultTopicRegistry implements TopicRegistry {
     /**
-     *
+     * 单级匹配
      */
     private static final String SINGLE_SYMBOL = "+";
     /**
-     *
+     * 多级匹配
      */
     private static final String MULTI_SYMBOL = "#";
     /**
-     *
+     * 固定主题过滤器
      */
     private final TopicFilter fixedTopicFilter;
     /**
-     *
+     * 多级主题过滤器
      */
     private final TopicFilter treeTopicFilter;
 

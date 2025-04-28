@@ -2,9 +2,12 @@ package plus.jmqx.broker.mqtt.message.impl;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
+import plus.jmqx.broker.cluster.ClusterSession;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
@@ -43,15 +46,26 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     @Override
     public <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context) {
         MqttMessage message = wrapper.getMessage();
-        log.debug("【{}】{}",message.fixedHeader().messageType(), session);
+        log.debug("【{}】{}", message.fixedHeader().messageType(), session);
         Optional.ofNullable(types.get(message.fixedHeader().messageType()))
                 .ifPresent(processor -> processor
                         .process(wrapper, session)
                         .contextWrite(view -> view.putNonNull(ReceiveContext.class, context))
                         .subscribeOn(this.scheduler)
-                        .subscribe(v -> {}, err -> {
+                        .subscribe(v -> {
+                        }, err -> {
                             log.error("session {}, message: {}, error: {}", session, message, err.getMessage());
                             ReactorNetty.safeRelease(message.payload());
                         }, () -> ReactorNetty.safeRelease(message.payload())));
+    }
+
+    @Override
+    public void publish(MqttPublishMessage message) {
+        ReceiveContext<?> context = ContextHolder.getContext();
+        if (context == null) {
+            return;
+        }
+        MessageWrapper<MqttMessage> wrapper = new MessageWrapper<>(message, System.currentTimeMillis(), Boolean.TRUE);
+        this.dispatch(ClusterSession.DEFAULT_CLUSTER_SESSION, wrapper, context);
     }
 }

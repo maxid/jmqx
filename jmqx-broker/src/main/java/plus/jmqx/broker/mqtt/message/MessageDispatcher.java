@@ -1,9 +1,11 @@
 package plus.jmqx.broker.mqtt.message;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
+import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
 import plus.jmqx.broker.mqtt.message.interceptor.Intercept;
 import plus.jmqx.broker.mqtt.message.interceptor.MessageProxy;
 import plus.jmqx.broker.spi.DynamicLoader;
@@ -35,6 +37,13 @@ public interface MessageDispatcher {
      */
     @Intercept
     <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context);
+
+    /**
+     * 下发消息
+     *
+     * @param message 消息
+     */
+    void publish(MqttPublishMessage message);
 
     /**
      * 消息处理适配器代理

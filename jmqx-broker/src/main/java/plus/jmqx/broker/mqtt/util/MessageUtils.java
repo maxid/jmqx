@@ -64,7 +64,7 @@ public class MessageUtils {
     }
 
     /**
-     * 生成发布消息
+     * 包装发布消息
      *
      * @param messageId 消息ID
      * @param message   {@link MqttPublishMessage} 发布消息

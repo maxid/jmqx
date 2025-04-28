@@ -62,7 +62,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
             // 分发设备上报消息
             String topicName = header.topicName();
-            if (!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
+            if (!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName) && !wrapper.getClustered()) {
                 context.dispatch(d -> d.onPublish(PublishMessage.builder()
                                 .clientId(session.getClientId())
                                 .username(session.getUsername())
@@ -111,7 +111,9 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
         subscribeTopics.stream()
                 .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
                 .forEach(t2 -> {
+                    log.info("{}", t2.getQoS());
                     MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, t2.getQoS(), t2.getSession().generateMessageId());
+                    log.info("{}", pmsg);
                     t2.getSession().write(pmsg, t2.getQoS().value() > 0);
                 });
     }
