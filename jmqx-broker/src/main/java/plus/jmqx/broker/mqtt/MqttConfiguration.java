@@ -57,7 +57,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 是否开启 Netty Tcp 二进制日志
      */
-    private Boolean             wiretap              = true; // 二进制日志 前提是 smqtt.logLevel = DEBUG
+    private Boolean             wiretap              = true; // 二进制日志 前提是 logLevel = DEBUG
     /**
      * Mqtt 端口
      */
