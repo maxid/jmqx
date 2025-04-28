@@ -27,7 +27,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>${latest-version}</version>
+            <version>1.3.1</version>
         </dependency>
 ```
 编写测试用例
@@ -105,7 +105,7 @@ class BootstrapTest {
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>${latest-version}</version>
+            <version>1.3.1</version>
         </dependency>
 ```
 编写测试用例
