@@ -1,0 +1,42 @@
+logging:
+  level:
+    plus.jmqx.broker.mqtt.message.impl: debug
+
+jmqx:
+  tcp:
+    port: 1883
+    secure-port: 8883
+    websocket-port: 1884
+    websocket-secure-port: 8884
+    websocket-path: /mqtt
+    wiretap: false # 二进制日志 前提是 logLevel = DEBUG
+    boss-thread-size: 1 # boss线程 默认=1
+    work-thread-size: 9 # work线程 默认=cpu核心数+1
+    business-thread-size: 8 # 业务线程数 默认=cpu核心数
+    business-queue-size: 10000 # 业务队列 默认=100000
+    message-max-size: 4194304 # 接收消息的最大限制 默认4194304(4M)
+    low-water-mark: 4000000 # 不建议配置 默认 32768
+    high-water-mark: 80000000 # 不建议配置 默认 65536
+    global-read-write-size: 10000000,100000000 # 全局读写大小限制
+    channel-read-write-size: 10000000,100000000 # 单个channel读写大小限制
+    options: '{"SO_BACKLOG": 2000}'
+#    child-options: '{}'
+  ssl:
+    enable: true
+    mode: classpath # classpath,absolute-path
+    key: /server.key
+    crt: /server.crt
+    ca: /ca.crt
+  auth:
+    fixed:
+      username: jmqx
+      password: jmqx
+  cluster:
+    enable: false
+    url: 127.0.0.1:7771,127.0.0.1:7772
+    port: 7771
+    node: node-1
+    namespace: jmqx
+    external:
+      host: localhost
+      port: 7777
