@@ -111,9 +111,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
         subscribeTopics.stream()
                 .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
                 .forEach(t2 -> {
-                    log.info("{}", t2.getQoS());
                     MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, t2.getQoS(), t2.getSession().generateMessageId());
-                    log.info("{}", pmsg);
                     t2.getSession().write(pmsg, t2.getQoS().value() > 0);
                 });
     }
