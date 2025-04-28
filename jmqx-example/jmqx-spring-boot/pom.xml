@@ -10,7 +10,7 @@
 
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-spring-boot</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
 
     <properties>
         <reactor.version>2024.0.4</reactor.version>
@@ -22,7 +22,7 @@
             <dependency>
                 <groupId>plus.jmqx.iot</groupId>
                 <artifactId>jmqx-broker</artifactId>
-                <version>1.3.0-SNAPSHOT</version>
+                <version>1.4.0-SNAPSHOT</version>
             </dependency>
             <dependency><!--必选：解决与Spring Boot的包冲突-->
                 <groupId>io.projectreactor</groupId>
