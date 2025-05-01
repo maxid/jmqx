@@ -17,7 +17,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 1. 可同时支持 MQTT、MQTTS、MQTT-WS、MQTT-WSS 端口监听，方便不同需求的设备接入
 2. 提供构造器注入用户自定义设备鉴权管理、主题访问控制管理、设备生命周期监听模块，方便与spring boot等框架集成
 3. 方便作为库栈嵌入用户应用（参考 jmqx-example）
-4. 修复了消息QoS、Retained状态错误、消息顺序异常等问题
+4. 修复了订阅消息QoS、Retained状态错误、Retain消息重发、消息顺序异常等问题
 
 ## 使用示例
 - 单元测试方式启动：单节点
@@ -27,7 +27,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.3.1</version>
+            <version>1.4.0</version>
         </dependency>
 ```
 编写测试用例
@@ -42,8 +42,9 @@ class BootstrapTest {
         // 日志配置（可选）
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.DEBUG);
         // 构建配置信息
         MqttConfiguration config = new MqttConfiguration();
         // 设置启用SSL（可选）
@@ -105,7 +106,7 @@ class BootstrapTest {
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.3.1</version>
+            <version>1.4.0</version>
         </dependency>
 ```
 编写测试用例
