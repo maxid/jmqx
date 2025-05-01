@@ -3,6 +3,8 @@ package plus.jmqx.broker.mqtt.message.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
  * @author maxid
  * @since 2025/4/9 16:31
  */
+@Slf4j
 public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
@@ -50,7 +53,7 @@ public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage
         AclManager aclManager = context.getAclManager();
         Set<SubscribeTopic> topics = message.payload().topicSubscriptions()
                 .stream()
-                .peek(s1 -> this.loadRetainMessage(messageRegistry, session, s1.topicFilter()))
+                .peek(s1 -> this.loadRetainMessage(messageRegistry, session, s1))
                 .map(s2 -> new SubscribeTopic(s2.topicFilter(), s2.qualityOfService(), session))
                 .filter(s3 -> aclManager.check(session, s3.getTopicFilter(), AclAction.SUBSCRIBE))
                 .collect(Collectors.toSet());
@@ -67,8 +70,10 @@ public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage
         ), false);
     }
 
-    private void loadRetainMessage(MessageRegistry messageRegistry, MqttSession session, String topic) {
+    private void loadRetainMessage(MessageRegistry messageRegistry, MqttSession session, MqttTopicSubscription subscription) {
+        int topicQos = subscription.qualityOfService().value();
+        String topic = subscription.topicFilter();
         messageRegistry.getRetainMessage(topic).forEach(msg ->
-                session.write(msg.toPublishMessage(session), /*msg.getQos() > 0*/false));
+                session.write(msg.toPublishMessage(session, topicQos), Math.min(topicQos, msg.getQos()) > 0));
     }
 }
