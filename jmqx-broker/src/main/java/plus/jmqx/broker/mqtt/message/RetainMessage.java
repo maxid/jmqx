@@ -54,10 +54,10 @@ public class RetainMessage {
                 .build();
     }
 
-    public MqttPublishMessage toPublishMessage(MqttSession session) {
+    public MqttPublishMessage toPublishMessage(MqttSession session, int topicQos) {
         return MqttMessageBuilder.publishMessage(
                 false,
-                MqttQoS.AT_MOST_ONCE,
+                MqttQoS.valueOf(Math.min(topicQos, this.qos)),
                 retain,
                 qos > 0 ? session.generateMessageId() : 0,
                 topic,
