@@ -4,7 +4,7 @@
     <parent>
         <groupId>plus.jmqx.iot</groupId>
         <artifactId>jmqx-parent</artifactId>
-        <version>1.4.0</version>
+        <version>1.4.1-SNAPSHOT</version>
         <relativePath>jmqx-parent</relativePath>
     </parent>
 
@@ -19,6 +19,6 @@
         <module>jmqx-parent</module>
         <module>jmqx-broker</module>
         <module>jmqx-cluster</module>
-        <!--<module>jmqx-example/jmqx-spring-boot</module>-->
+        <module>jmqx-example/jmqx-spring-boot</module>
     </modules>
 </project>
