@@ -180,3 +180,14 @@ public class BootstrapTest {
 14:22:39.518 [jmqx-event-loop-select-nio-2] INFO plus.jmqx.broker.mqtt.transport.impl.MqttTransport - mqtt broker start success host 0:0:0:0:0:0:0:0 port 2883
 14:22:39.519 [jmqx-event-loop-select-nio-3] INFO plus.jmqx.broker.mqtt.transport.impl.MqttTransport - mqtt-ws broker start success host 0:0:0:0:0:0:0:0 port 2884
 ```
+
+## 生成证书
+> 这理采用[generate-CA.sh](https://github.com/owntracks/tools/blob/master/TLS/generate-CA.sh)来生成双向认证自签证书
+
+从 https://github.com/owntracks/tools/blob/master/TLS/generate-CA.sh 下载证书生成脚本
+```shell
+# 生成服务端证书
+./generate-CA.sh server
+# 生成客户端证书
+./generate-CA.sh client client
+```

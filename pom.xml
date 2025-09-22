@@ -4,7 +4,7 @@
     <parent>
         <groupId>plus.jmqx.iot</groupId>
         <artifactId>jmqx-parent</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>jmqx-parent</relativePath>
     </parent>
 
