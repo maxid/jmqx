@@ -1,8 +1,6 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterSession;
 import plus.jmqx.broker.config.Configuration;
@@ -46,8 +44,10 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     @Override
     public <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context) {
         MqttMessage message = wrapper.getMessage();
-        log.debug("【{}】{}", message.fixedHeader().messageType(), session);
-        Optional.ofNullable(types.get(message.fixedHeader().messageType()))
+        MqttMessageType messageType = message.fixedHeader().messageType();
+        initSession(session, message, messageType);
+        log.debug("【{}】{}", messageType, session);
+        Optional.ofNullable(types.get(messageType))
                 .ifPresent(processor -> processor
                         .process(wrapper, session)
                         .contextWrite(view -> view.putNonNull(ReceiveContext.class, context))
@@ -67,5 +67,16 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         }
         MessageWrapper<MqttMessage> wrapper = new MessageWrapper<>(message, System.currentTimeMillis(), Boolean.TRUE);
         this.dispatch(ClusterSession.DEFAULT_CLUSTER_SESSION, wrapper, context);
+    }
+
+    private void initSession(MqttSession session, MqttMessage mqttMessage, MqttMessageType messageType) {
+        if (MqttMessageType.CONNECT.equals(messageType)) {
+            MqttConnectMessage message = (MqttConnectMessage) mqttMessage;
+            MqttConnectPayload payload = message.payload();
+            String clientId = payload.clientIdentifier();
+            String username = payload.userName();
+            session.setClientId(clientId);
+            session.setUsername(username);
+        }
     }
 }

@@ -3,6 +3,7 @@ package plus.jmqx.broker.mqtt.message.dispatch;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
+import plus.jmqx.broker.mqtt.channel.SessionStatus;
 
 /**
  * 失去连接消息
@@ -14,6 +15,7 @@ import lombok.ToString;
 @Builder
 @ToString
 public class ConnectionLostMessage {
-    private final String clientId;
-    private final String username;
+    private final String        clientId;
+    private final String        username;
+    private final SessionStatus status;
 }

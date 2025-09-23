@@ -36,6 +36,6 @@ public class ClusterSession extends MqttSession {
     @Override
     public String toString() {
         return "ClusterSession{" +
-                ", clientId='" + getClientId() + '\'' + '}';
+                "clientId='" + getClientId() + '\'' + '}';
     }
 }

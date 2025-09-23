@@ -378,7 +378,7 @@ public class MqttSession {
 
     @Override
     public String toString() {
-        return "MqttSession{" + " address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\''
-                + ", status=" + status + ", keepalive=" + keepalive + ", username='" + username + '}';
+        return "MqttSession{" + "address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\''
+                + ", status=" + status + ", keepalive=" + keepalive + ", username='" + username + "'}";
     }
 }

@@ -96,6 +96,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         }
         // 鉴权认证
         if (!authManager.auth(clientId, username, password)) {
+            session.setStatus(SessionStatus.AUTH_FAILED);
             dispatchConnectionLost(session, context);
             badCredentials(session, mqttVersion);
             return;
@@ -133,12 +134,12 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                         .forEach(topic -> {
                             MqttSession s2 = topic.getSession();
                             s2.write(MqttMessageBuilder.publishMessage(
-                                            false,
-                                            topic.getQoS(),
-                                            topic.getQoS() == MqttQoS.AT_MOST_ONCE ? 0 : s2.generateMessageId(),
-                                            will.getWillTopic(),
-                                            Unpooled.wrappedBuffer(will.getWillMessage())
-                                    ), topic.getQoS().value() > 0);
+                                    false,
+                                    topic.getQoS(),
+                                    topic.getQoS() == MqttQoS.AT_MOST_ONCE ? 0 : s2.generateMessageId(),
+                                    will.getWillTopic(),
+                                    Unpooled.wrappedBuffer(will.getWillMessage())
+                            ), topic.getQoS().value() > 0);
                         })));
         // 各注册中心关联会话处理
         registry(session, channelRegistry, topicRegistry);
@@ -273,6 +274,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
         context.dispatch(d -> d.onConnectionLost(ConnectionLostMessage.builder()
                         .clientId(session.getClientId())
                         .username(session.getUsername())
+                        .status(session.getStatus())
                         .build())
                 .subscribeOn(ContextHolder.getDispatchScheduler())
                 .subscribe());

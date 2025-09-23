@@ -12,6 +12,10 @@ public enum SessionStatus {
      */
     INIT,
     /**
+     * 认证失败
+     */
+    AUTH_FAILED,
+    /**
      * 在线
      */
     ONLINE,
