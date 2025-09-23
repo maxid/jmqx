@@ -11,7 +11,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 ## 不同点：
 1. 不提供消息持久化（只提供内存实现，若需要可参考 SMQTT 或 SMQTTX 的实现）
 2. 不提供规则引擎
-3. 不提供读取配置文件
+3. 不提供读取配置文件（参考 jmqx-example 注入配置）
 
 ## 改进点：
 1. 可同时支持 MQTT、MQTTS、MQTT-WS、MQTT-WSS 端口监听，方便不同需求的设备接入
