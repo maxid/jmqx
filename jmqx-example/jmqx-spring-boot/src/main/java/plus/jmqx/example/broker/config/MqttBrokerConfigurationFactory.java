@@ -51,7 +51,7 @@ public class MqttBrokerConfigurationFactory
     @Value(value = "${jmqx.tcp.business-thread-size}")
     private Integer businessThreadSize;
 
-    @Value(value = "${jmqx.tcp.business-queue-size}")
+    @Value(value = "${jmqx.tcp.business-queue-size:100000}")
     private Integer businessQueueSize;
 
     @Value(value = "${jmqx.tcp.message-max-size:4194304}")
@@ -89,6 +89,21 @@ public class MqttBrokerConfigurationFactory
 
     @Value(value = "${jmqx.ssl.ca}")
     private String sslCa;
+
+    @Value(value = "${jmqx.cluster.enable:false}")
+    private Boolean clusterEnabled;
+
+    @Value(value = "${jmqx.cluster.namespace:jmqx}")
+    private String clusterNamespace;
+
+    @Value(value = "${jmqx.cluster.url:}")
+    private String clusterUrl;
+
+    @Value(value = "${jmqx.cluster.port:7771}")
+    private Integer clusterPort;
+
+    @Value(value = "${jmqx.cluster.node:node-1}")
+    private String clusterNode;
 
     @Override
     public Class<?> getObjectType() {
@@ -138,6 +153,13 @@ public class MqttBrokerConfigurationFactory
                     config.setSslCa(sslCa);
                 }
             }
+        }
+        config.getClusterConfig().setEnable(clusterEnabled);
+        if (clusterEnabled) {
+            config.getClusterConfig().setNamespace(clusterNamespace);
+            config.getClusterConfig().setUrl(clusterUrl);
+            config.getClusterConfig().setPort(clusterPort);
+            config.getClusterConfig().setNode(clusterNode);
         }
         return config;
     }
