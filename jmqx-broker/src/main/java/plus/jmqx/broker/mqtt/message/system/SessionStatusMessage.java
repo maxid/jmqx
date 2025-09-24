@@ -32,5 +32,5 @@ public class SessionStatusMessage {
      *
      * @see SessionStatus
      */
-    private SessionStatus channelStatus;
+    private SessionStatus status;
 }

@@ -29,9 +29,9 @@ public class MqttConfiguration implements Configuration {
     /**
      * Netty 业务线程数
      */
-    private Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors();
+    private Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors() * 4;
     /**
-     * Netty 工作队列数
+     * Netty 工作队列数、
      */
     private Integer             businessQueueSize    = 100000;
     /**
@@ -114,7 +114,7 @@ public class MqttConfiguration implements Configuration {
      * 集群配置
      */
     @JsonProperty("cluster")
-    private ClusterConfig       clusterConfig        = ClusterConfig.builder().enable(true).build();
+    private ClusterConfig       clusterConfig        = ClusterConfig.builder().enable(false).build();
 
     @Data
     @Builder

@@ -30,6 +30,11 @@ public class ConnectAckProcessor implements MessageProcessor<MqttConnAckMessage>
     }
 
     @Override
+    public Class<ConnectAckMessageType> getMessageType() {
+        return ConnectAckMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttConnAckMessage> wrapper, MqttSession session, ContextView view) {
         session.cancelRetry(MqttMessageType.CONNECT, -1);
     }

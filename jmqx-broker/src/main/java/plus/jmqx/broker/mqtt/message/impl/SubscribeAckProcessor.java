@@ -30,6 +30,11 @@ public class SubscribeAckProcessor implements MessageProcessor<MqttSubAckMessage
     }
 
     @Override
+    public Class<SubscribeAckMessageType> getMessageType() {
+        return SubscribeAckMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttSubAckMessage> wrapper, MqttSession session, ContextView view) {
         session.cancelRetry(MqttMessageType.SUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
     }

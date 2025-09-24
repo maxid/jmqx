@@ -44,6 +44,11 @@ public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage
     }
 
     @Override
+    public Class<SubscribeMessageType> getMessageType() {
+        return SubscribeMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttSubscribeMessage message = wrapper.getMessage();
         // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE_EVENT).increment();

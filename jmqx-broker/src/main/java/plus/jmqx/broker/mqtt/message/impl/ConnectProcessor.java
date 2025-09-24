@@ -54,6 +54,11 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
     }
 
     @Override
+    public Class<ConnectMessageType> getMessageType() {
+        return ConnectMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttConnectMessage> wrapper, MqttSession session, ContextView view) {
         MqttConnectMessage message = wrapper.getMessage();
         MqttReceiveContext context = (MqttReceiveContext) view.get(ReceiveContext.class);

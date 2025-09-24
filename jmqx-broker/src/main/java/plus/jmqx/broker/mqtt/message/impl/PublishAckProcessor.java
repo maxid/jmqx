@@ -34,6 +34,11 @@ public class PublishAckProcessor implements MessageProcessor<MqttPubAckMessage> 
     }
 
     @Override
+    public Class<PublishAckMessageType> getMessageType() {
+        return PublishAckMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttPubAckMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         MqttPubAckMessage message = wrapper.getMessage();

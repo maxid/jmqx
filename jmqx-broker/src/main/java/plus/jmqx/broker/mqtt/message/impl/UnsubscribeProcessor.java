@@ -36,6 +36,11 @@ public class UnsubscribeProcessor implements MessageProcessor<MqttUnsubscribeMes
     }
 
     @Override
+    public Class<UnsubscribeMessageType> getMessageType() {
+        return UnsubscribeMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttUnsubscribeMessage msg = wrapper.getMessage();
         //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
