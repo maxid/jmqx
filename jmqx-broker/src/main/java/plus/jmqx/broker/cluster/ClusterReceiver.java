@@ -65,8 +65,7 @@ public class ClusterReceiver {
     private MessageWrapper<MqttMessage> getMqttMessage(HeapMqttMessage heapMqttMessage) {
         return new MessageWrapper<>(MqttMessageBuilder.publishMessage(false,
                 MqttQoS.valueOf(heapMqttMessage.getQos()),
-                heapMqttMessage.isRetain()
-                ,
+                heapMqttMessage.isRetain(),
                 0,
                 heapMqttMessage.getTopic(),
                 PooledByteBufAllocator.DEFAULT.buffer().writeBytes(

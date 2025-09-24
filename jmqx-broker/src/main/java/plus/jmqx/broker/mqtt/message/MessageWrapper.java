@@ -1,10 +1,8 @@
 package plus.jmqx.broker.mqtt.message;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
+import plus.jmqx.broker.mqtt.channel.MqttSession;
 
 /**
  * MQTT 消息包装
@@ -15,18 +13,22 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@AllArgsConstructor
+@RequiredArgsConstructor()
 public class MessageWrapper<T extends MqttMessage> {
     /**
      * MQTT 消息
      */
-    private T       message;
+    private final T           message;
     /**
      * 消息时间
      */
-    private long    timestamp;
+    private final long        timestamp;
     /**
      * 是否集群消息
      */
-    private Boolean clustered;
+    private final Boolean     clustered;
+    /**
+     * MQTT 会话
+     */
+    private       MqttSession session;
 }

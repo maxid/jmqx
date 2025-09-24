@@ -45,6 +45,11 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
     }
 
     @Override
+    public Class<PublishMessageType> getMessageType() {
+        return PublishMessageType.class;
+    }
+
+    @Override
     public void process(MessageWrapper<MqttPublishMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         try {
@@ -62,7 +67,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
             Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
             // 分发设备上报消息
             String topicName = header.topicName();
-            if (!Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName) && !wrapper.getClustered()) {
+            if (!wrapper.getClustered() && !Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
                 context.dispatch(d -> d.onPublish(PublishMessage.builder()
                                 .clientId(session.getClientId())
                                 .username(session.getUsername())

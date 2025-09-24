@@ -44,8 +44,8 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     @Override
-    public void registrySubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS qos) {
-        this.registrySubscribeTopic(new SubscribeTopic(topicFilter, qos, mqttChannel));
+    public void registrySubscribeTopic(String topicFilter, MqttSession session, MqttQoS qos) {
+        this.registrySubscribeTopic(new SubscribeTopic(topicFilter, qos, session));
     }
 
     @Override

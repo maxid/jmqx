@@ -11,9 +11,9 @@ jmqx:
     websocket-path: /mqtt
     wiretap: false # 二进制日志 前提是 logLevel = DEBUG
     boss-thread-size: 1 # boss线程 默认=1
-    work-thread-size: 9 # work线程 默认=cpu核心数+1
-    business-thread-size: 8 # 业务线程数 默认=cpu核心数
-    business-queue-size: 10000 # 业务队列 默认=100000
+    work-thread-size: 11 # work线程 默认=cpu核心数+1
+    business-thread-size: 32 # 业务线程数 默认=cpu核心数
+    business-queue-size: 20000000 # 业务队列 默认=100000
     message-max-size: 4194304 # 接收消息的最大限制 默认4194304(4M)
     low-water-mark: 4000000 # 不建议配置 默认 32768
     high-water-mark: 80000000 # 不建议配置 默认 65536

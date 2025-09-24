@@ -9,12 +9,9 @@ import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
-import plus.jmqx.broker.mqtt.message.SessionMessage;
+import plus.jmqx.broker.mqtt.message.*;
 import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
-import plus.jmqx.broker.mqtt.message.MessageWrapper;
-import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import plus.jmqx.broker.mqtt.retry.Ack;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
@@ -50,6 +47,11 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
+    }
+
+    @Override
+    public Class<CommonMessageType> getMessageType() {
+        return CommonMessageType.class;
     }
 
     @Override

@@ -28,6 +28,7 @@ class BootstrapTest {
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.DEBUG);
         MqttConfiguration config = new MqttConfiguration();
+        config.setBusinessQueueSize(Integer.MAX_VALUE);
         config.setSslEnable(true);
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
@@ -36,32 +37,32 @@ class BootstrapTest {
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("{}", message);
+                    //log.info("{}", message);
                 });
             }
 
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("{}", message);
+                    //log.info("{}", message);
                 });
             }
 
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("{}", message);
+                    //log.info("{}", message);
                 });
             }
 
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(() -> {
-                    log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})",
+                    /*log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})",
                             message.getClientId(),
                             message.getUsername(),
                             message.getTopic(),
-                            new String(message.getPayload(), StandardCharsets.UTF_8));
+                            new String(message.getPayload(), StandardCharsets.UTF_8));*/
                 });
             }
         });

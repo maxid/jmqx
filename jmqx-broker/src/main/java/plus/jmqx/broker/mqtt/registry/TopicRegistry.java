@@ -19,16 +19,16 @@ public interface TopicRegistry {
     TopicRegistry INSTANCE = DynamicLoader.findFirst(TopicRegistry.class).orElse(null);
 
     /**
-     * 绑定主题跟channel关系
+     * 绑定主题跟会话关系
      *
      * @param topicFilter 订阅主题
-     * @param mqttChannel {@link MqttSession} 会话
+     * @param session {@link MqttSession} 会话
      * @param qos         {@link MqttQoS} MQTT 质量服务等级
      */
-    void registrySubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS qos);
+    void registrySubscribeTopic(String topicFilter, MqttSession session, MqttQoS qos);
 
     /**
-     * 绑定主题跟channel关系
+     * 绑定主题跟会话关系
      *
      * @param subscribeTopic {@link SubscribeTopic}
      */
@@ -50,7 +50,7 @@ public interface TopicRegistry {
     void removeSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
-     * 获取topic的channels
+     * 获取topic的会话
      *
      * @param topicName topic name
      * @param qos       {@link MqttQoS}

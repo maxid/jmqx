@@ -1,5 +1,6 @@
 package plus.jmqx.broker.mqtt.context;
 
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.mqtt.message.MessageTypeWrapper;
 import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
@@ -28,6 +30,7 @@ import plus.jmqx.broker.mqtt.retry.TimeAckManager;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.DefaultTopicRegistry;
 import plus.jmqx.broker.mqtt.transport.Transport;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.resources.LoopResources;
@@ -160,12 +163,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     private MessageDispatcher messageDispatcher() {
-        Scheduler scheduler = Schedulers.newBoundedElastic(
-                configuration.getBusinessThreadSize(),
-                configuration.getBusinessQueueSize(),
-                "jmqx-business-io"
-        );
-        return Optional.ofNullable(MessageDispatcher.INSTANCE).orElse(new MqttMessageDispatcher(scheduler)).proxy();
+        Integer tSize = configuration.getBusinessThreadSize();
+        Integer qSize = configuration.getBusinessQueueSize();
+        return Optional.ofNullable(MessageDispatcher.INSTANCE).orElse(new MqttMessageDispatcher(tSize, qSize)).proxy();
     }
 
     private ClusterRegistry clusterRegistry() {
