@@ -27,7 +27,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </dependency>
 ```
 编写测试用例
