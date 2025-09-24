@@ -106,7 +106,7 @@ class BootstrapTest {
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </dependency>
 ```
 编写测试用例
