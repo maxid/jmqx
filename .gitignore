@@ -270,3 +270,4 @@ dist
 .pnp.*
 
 .xcodemap
+.flattened-pom.xml
