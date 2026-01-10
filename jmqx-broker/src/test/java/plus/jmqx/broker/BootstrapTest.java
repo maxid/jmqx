@@ -30,6 +30,9 @@ class BootstrapTest {
         MqttConfiguration config = new MqttConfiguration();
         config.setBusinessQueueSize(Integer.MAX_VALUE);
         config.setSslEnable(true);
+        // config.setPort(0);
+        // config.setSecurePort(0);
+        // config.setWebsocketSecurePort(0);
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());

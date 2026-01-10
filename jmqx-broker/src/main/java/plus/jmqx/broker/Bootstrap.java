@@ -69,10 +69,7 @@ public class Bootstrap {
                 "jmqx-dispatch-io"
         ));
         ContextHolder.setPlatformDispatcher(platformDispatcher);
-        return MqttTransport.startMqtt(config)
-                .start()
-                .doOnError(err -> log.error("start mqtt error", err))
-                .doOnSuccess(transports::add)
+        return startMqtt(config)
                 .then(startMqtts(config))
                 .then(startWs(config))
                 .then(startWss(config))
@@ -100,8 +97,19 @@ public class Bootstrap {
         transports.forEach(Transport::dispose);
     }
 
+    private Mono<Void> startMqtt(MqttConfiguration config) {
+        if (config.getPort() > 0) {
+            return MqttTransport.startMqtt(config)
+                    .start()
+                    .doOnSuccess(transports::add)
+                    .doOnError(err -> log.error("start mqtt error", err))
+                    .then();
+        }
+        return Mono.empty();
+    }
+
     private Mono<Void> startMqtts(MqttConfiguration config) {
-        if (config.getSslEnable()) {
+        if (config.getSslEnable() && config.getSecurePort() > 0) {
             return MqttTransport.startMqtts(config)
                     .start()
                     .doOnSuccess(transports::add)
@@ -112,15 +120,18 @@ public class Bootstrap {
     }
 
     private Mono<Void> startWs(MqttConfiguration config) {
-        return MqttTransport.startMqttWs(config)
-                .start()
-                .doOnSuccess(transports::add)
-                .doOnError(err -> log.error("start mqtt ws error", err))
-                .then();
+        if (config.getWebsocketPort() > 0) {
+            return MqttTransport.startMqttWs(config)
+                    .start()
+                    .doOnSuccess(transports::add)
+                    .doOnError(err -> log.error("start mqtt ws error", err))
+                    .then();
+        }
+        return Mono.empty();
     }
 
     private Mono<Void> startWss(MqttConfiguration config) {
-        if (config.getSslEnable()) {
+        if (config.getSslEnable() && config.getWebsocketSecurePort() > 0) {
             return MqttTransport.startMqttWss(config)
                     .start()
                     .doOnSuccess(transports::add)
