@@ -18,6 +18,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 2. 提供构造器注入用户自定义设备鉴权管理、主题访问控制管理、设备生命周期监听模块，方便与spring boot等框架集成
 3. 方便作为库栈嵌入用户应用（参考 jmqx-example）
 4. 修复了订阅消息QoS、Retained状态错误、Retain消息重发、消息顺序异常等问题
+5. 同一进程内可以通过设置不同命名空间启动多个实例（2026-1-11）
 
 ## 使用示例
 - 单元测试方式启动：单节点
@@ -27,7 +28,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.2</version>
+            <version>1.4.3</version>
         </dependency>
 ```
 编写测试用例
@@ -106,7 +107,7 @@ class BootstrapTest {
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.2</version>
+            <version>1.4.3</version>
         </dependency>
 ```
 编写测试用例
