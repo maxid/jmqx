@@ -1,6 +1,5 @@
 package plus.jmqx.broker.mqtt.context;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import lombok.Getter;
@@ -13,26 +12,22 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.mqtt.message.MessageTypeWrapper;
-import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
-import plus.jmqx.broker.mqtt.registry.SessionRegistry;
-import plus.jmqx.broker.mqtt.registry.EventRegistry;
-import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
-import plus.jmqx.broker.mqtt.registry.MessageRegistry;
-import plus.jmqx.broker.mqtt.registry.impl.DefaultMessageRegistry;
+import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher;
+import plus.jmqx.broker.mqtt.registry.EventRegistry;
+import plus.jmqx.broker.mqtt.registry.MessageRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
+import plus.jmqx.broker.mqtt.registry.TopicRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.DefaultMessageRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.DefaultTopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.retry.TimeAckManager;
-import plus.jmqx.broker.mqtt.registry.TopicRegistry;
-import plus.jmqx.broker.mqtt.registry.impl.DefaultTopicRegistry;
 import plus.jmqx.broker.mqtt.transport.Transport;
-import reactor.core.publisher.Sinks;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 import reactor.netty.resources.LoopResources;
 
 import java.util.Optional;
@@ -123,10 +118,16 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      *
      * @param consumer 订阅
      */
+    @Override
     public void dispatch(Consumer<PlatformDispatcher> consumer) {
-        Optional.ofNullable(ContextHolder.getPlatformDispatcher()).ifPresent(consumer);
+        Optional.ofNullable(contextHolder().getPlatformDispatcher()).ifPresent(consumer);
     }
 
+    /**
+     * 流量处理程序加载器
+     *
+     * @return 流量处理程序加载器
+     */
     private TrafficHandlerLoader trafficHandlerLoader() {
         if (configuration.getGlobalReadWriteSize() == null && configuration.getChannelReadWriteSize() == null) {
             return new CacheTrafficHandlerLoader(new GlobalTrafficShapingHandler(
@@ -162,39 +163,89 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         }
     }
 
+    /**
+     * 消息调度器
+     *
+     * @return 消息调度器
+     */
     private MessageDispatcher messageDispatcher() {
         Integer tSize = configuration.getBusinessThreadSize();
         Integer qSize = configuration.getBusinessQueueSize();
-        return Optional.ofNullable(MessageDispatcher.INSTANCE).orElse(new MqttMessageDispatcher(tSize, qSize)).proxy();
+        return Optional.ofNullable(MessageDispatcher.INSTANCE)
+                .orElse(new MqttMessageDispatcher(configuration, tSize, qSize)).proxy();
     }
 
+    /**
+     * 集群注册中心
+     *
+     * @return 集群注册中心
+     */
     private ClusterRegistry clusterRegistry() {
         return Optional.ofNullable(ClusterRegistry.INSTANCE).orElseGet(DefaultClusterRegistry::new);
     }
 
+    /**
+     * 事件注册中心
+     *
+     * @return 事件注册中心
+     */
     private EventRegistry eventRegistry() {
         return Event::sender;
     }
 
+    /**
+     * 会话注册中心
+     *
+     * @return 会话注册中心
+     */
     private SessionRegistry sessionRegistry() {
         return Optional.ofNullable(SessionRegistry.INSTANCE).orElseGet(DefaultSessionRegistry::new);
     }
 
+    /**
+     * 主题注册中心
+     *
+     * @return 主题注册中心
+     */
     private TopicRegistry topicRegistry() {
         return Optional.ofNullable(TopicRegistry.INSTANCE).orElse(new DefaultTopicRegistry());
     }
 
+    /**
+     * 消息注册中心
+     *
+     * @return 消息注册中心
+     */
     private MessageRegistry messageRegistry() {
         return Optional.ofNullable(MessageRegistry.INSTANCE).orElseGet(DefaultMessageRegistry::new);
     }
 
+    /**
+     * 主题访问控制管理器
+     *
+     * @return 主题访问控制管理器
+     */
     private AclManager aclManager() {
-        return Optional.ofNullable(ContextHolder.getAclManager())
+        return Optional.ofNullable(contextHolder().getAclManager())
                 .orElse(Optional.ofNullable(AclManager.INSTANCE).orElseGet(DefaultAclManager::new));
     }
 
+    /**
+     * 连接认证管理器
+     *
+     * @return 连接认证管理器
+     */
     private AuthManager authManager() {
-        return Optional.ofNullable(ContextHolder.getAuthManager())
+        return Optional.ofNullable(contextHolder().getAuthManager())
                 .orElse(Optional.ofNullable(AuthManager.INSTANCE).orElseGet(DefaultAuthManager::new));
+    }
+
+    /**
+     * 上下文
+     *
+     * @return 上下文
+     */
+    private ContextHolder contextHolder() {
+        return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace());
     }
 }

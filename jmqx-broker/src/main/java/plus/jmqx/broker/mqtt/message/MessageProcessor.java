@@ -4,6 +4,8 @@ import io.netty.handler.codec.mqtt.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
@@ -16,6 +18,29 @@ import java.util.List;
  * @since 2025/4/8 17:41
  */
 public interface MessageProcessor<T extends MqttMessage> {
+
+    /**
+     * 获取命名空间
+     *
+     * @return 命名空间
+     */
+    String getNamespace();
+
+    /**
+     * 设置命名空间
+     *
+     * @param namespace 命名空间
+     */
+    void setNamespace(String namespace);
+
+    /**
+     * 获取上下文
+     *
+     * @return 上下文
+     */
+    default ContextHolder contextHolder() {
+        return NamespaceContextHolder.get(getNamespace());
+    }
 
     /**
      * 获取消息处理器适配的消息类型
@@ -54,6 +79,9 @@ public interface MessageProcessor<T extends MqttMessage> {
      */
     void process(MessageWrapper<T> wrapper, MqttSession session, ContextView view);
 
+    /**
+     * 通用消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class CommonMessageType implements MessageTypeWrapper<MqttMessage> {
@@ -64,6 +92,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 连接确认消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class ConnectAckMessageType implements MessageTypeWrapper<MqttConnAckMessage> {
@@ -74,6 +105,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 连接消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class ConnectMessageType implements MessageTypeWrapper<MqttConnectMessage> {
@@ -84,6 +118,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 发布确认消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class PublishAckMessageType implements MessageTypeWrapper<MqttPubAckMessage> {
@@ -94,6 +131,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 发布消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class PublishMessageType implements MessageTypeWrapper<MqttPublishMessage> {
@@ -104,6 +144,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 订阅确认消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class SubscribeAckMessageType implements MessageTypeWrapper<MqttSubAckMessage> {
@@ -114,6 +157,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 订阅消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class SubscribeMessageType implements MessageTypeWrapper<MqttSubscribeMessage> {
@@ -124,6 +170,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 去订阅确认消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class UnsubscribeAckMessageType implements MessageTypeWrapper<MqttUnsubAckMessage> {
@@ -134,6 +183,9 @@ public interface MessageProcessor<T extends MqttMessage> {
         }
     }
 
+    /**
+     * 去订阅消息类型
+     */
     @Data
     @RequiredArgsConstructor
     class UnsubscribeMessageType implements MessageTypeWrapper<MqttUnsubscribeMessage> {

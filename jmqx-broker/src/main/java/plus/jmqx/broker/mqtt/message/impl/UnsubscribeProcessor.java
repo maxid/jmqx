@@ -5,12 +5,11 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
-import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
-import reactor.core.publisher.Mono;
+import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ import java.util.List;
  * @author maxid
  * @since 2025/4/9 16:33
  */
-public class UnsubscribeProcessor implements MessageProcessor<MqttUnsubscribeMessage> {
+public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscribeMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 

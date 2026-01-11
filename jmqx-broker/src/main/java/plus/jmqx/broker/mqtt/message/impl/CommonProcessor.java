@@ -5,16 +5,18 @@ import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
-import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
-import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.*;
+import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
+import plus.jmqx.broker.mqtt.message.SessionMessage;
 import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
+import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.retry.Ack;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import reactor.netty.Connection;
 import reactor.util.context.ContextView;
@@ -31,7 +33,7 @@ import java.util.Set;
  * @since 2025/4/9 15:28
  */
 @Slf4j
-public class CommonProcessor implements MessageProcessor<MqttMessage> {
+public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
@@ -73,7 +75,7 @@ public class CommonProcessor implements MessageProcessor<MqttMessage> {
                                 .clientId(session.getClientId())
                                 .username(session.getUsername())
                                 .build())
-                        .subscribeOn(ContextHolder.getDispatchScheduler())
+                        .subscribeOn(contextHolder().getDispatchScheduler())
                         .subscribe());
                 break;
             case PUBREC:

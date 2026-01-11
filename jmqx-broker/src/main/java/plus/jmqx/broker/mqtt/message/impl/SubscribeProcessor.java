@@ -9,13 +9,12 @@ import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
  * @since 2025/4/9 16:31
  */
 @Slf4j
-public class SubscribeProcessor implements MessageProcessor<MqttSubscribeMessage> {
+public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 

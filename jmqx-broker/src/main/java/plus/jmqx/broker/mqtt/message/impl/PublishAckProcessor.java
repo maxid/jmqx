@@ -5,8 +5,8 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.retry.Ack;
 import reactor.util.context.ContextView;
 
@@ -20,7 +20,7 @@ import java.util.Optional;
  * @author maxid
  * @since 2025/4/9 16:30
  */
-public class PublishAckProcessor implements MessageProcessor<MqttPubAckMessage> {
+public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 

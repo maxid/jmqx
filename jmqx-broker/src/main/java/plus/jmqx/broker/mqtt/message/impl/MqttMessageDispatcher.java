@@ -6,6 +6,7 @@ import plus.jmqx.broker.cluster.ClusterSession;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
@@ -19,9 +20,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ReactorNetty;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -35,13 +33,17 @@ public class MqttMessageDispatcher implements MessageDispatcher {
 
     private final Scheduler                                   scheduler;
     private final Sinks.Many<MessageTypeWrapper<MqttMessage>> acceptor;
+    private final Configuration                               config;
 
     @SuppressWarnings("unchecked")
-    public MqttMessageDispatcher(Integer threadSize, Integer queueSize) {
+    public MqttMessageDispatcher(Configuration config, Integer threadSize, Integer queueSize) {
+        this.config = config;
         this.scheduler = Schedulers.newParallel("jmqx-acceptor-io", threadSize);
         this.acceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
         DynamicLoader.findAll(MessageProcessor.class)
-                .forEach(p -> acceptor.asFlux()
+                .forEach(p -> {
+                    p.setNamespace(config.getClusterConfig().getNamespace());
+                    acceptor.asFlux()
                         .doOnError(e -> log.error("MqttMessageDispatcher consumer", e))
                         .onErrorResume(e -> Mono.empty())
                         .ofType(p.getMessageType())
@@ -52,7 +54,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
                             MqttSession session = wrapper.getSession();
                             MqttMessage message = wrapper.getMessage();
                             processor.process(wrapper, session)
-                                    .contextWrite(view -> view.putNonNull(ReceiveContext.class, ContextHolder.getContext()))
+                                    .contextWrite(view -> view.putNonNull(ReceiveContext.class, contextHolder().getContext()))
                                     .onErrorContinue((e, o) -> log.error("MqttMessageDispatcher", e))
                                     // TODO 待性能优化
                                     .subscribe(v -> {
@@ -60,9 +62,18 @@ public class MqttMessageDispatcher implements MessageDispatcher {
                                         log.error("session {}, message: {}, error: {}", session, message, e.getMessage());
                                         ReactorNetty.safeRelease(message.payload());
                                     }, () -> ReactorNetty.safeRelease(message.payload()));
-                        }));
+                        });
+                });
     }
 
+    /**
+     * 根据消息类型分发消息至相应消息处理器进行消息处理
+     *
+     * @param session {@link MqttSession} 连接会话
+     * @param wrapper {@link MessageWrapper} 消息
+     * @param context {@link ReceiveContext} 上下文
+     * @param <C>     配置类型
+     */
     @Override
     public <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context) {
         MqttMessage message = wrapper.getMessage();
@@ -72,9 +83,14 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         this.acceptor.emitNext(wrapper(wrapper), RetryFailureHandler.RETRY_NON_SERIALIZED);
     }
 
+    /**
+     * 下发消息
+     *
+     * @param message 消息
+     */
     @Override
     public void publish(MqttPublishMessage message) {
-        ReceiveContext<?> context = ContextHolder.getContext();
+        ReceiveContext<?> context = contextHolder().getContext();
         if (context == null) {
             return;
         }
@@ -82,6 +98,13 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         this.dispatch(ClusterSession.DEFAULT_CLUSTER_SESSION, wrapper, context);
     }
 
+    /**
+     * 初始化会话
+     *
+     * @param session     会话
+     * @param mqttMessage Mqtt 消息
+     * @param messageType Mqtt 消息类型
+     */
     private void initSession(MqttSession session, MqttMessage mqttMessage, MqttMessageType messageType) {
         if (MqttMessageType.CONNECT.equals(messageType)) {
             MqttConnectMessage message = (MqttConnectMessage) mqttMessage;
@@ -96,6 +119,12 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         }
     }
 
+    /**
+     * 消息类型包装器
+     *
+     * @param wrapper 包装器
+     * @return 消息类型包装器
+     */
     private MessageTypeWrapper<MqttMessage> wrapper(MessageWrapper<MqttMessage> wrapper) {
         MqttMessageType messageType = wrapper.getMessage().fixedHeader().messageType();
         switch (messageType) {
@@ -124,6 +153,9 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         }
     }
 
+    /**
+     * 失败重试处理器
+     */
     public static class RetryFailureHandler implements Sinks.EmitFailureHandler {
 
         public static final RetryFailureHandler RETRY_NON_SERIALIZED = new RetryFailureHandler();
@@ -136,5 +168,14 @@ public class MqttMessageDispatcher implements MessageDispatcher {
             LockSupport.parkNanos(10);
             return emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED;
         }
+    }
+
+    /**
+     * 上下文
+     *
+     * @return 上下文
+     */
+    private ContextHolder contextHolder() {
+        return NamespaceContextHolder.get(config.getClusterConfig().getNamespace());
     }
 }

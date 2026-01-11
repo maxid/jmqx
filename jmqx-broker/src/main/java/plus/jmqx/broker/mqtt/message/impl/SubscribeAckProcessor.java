@@ -3,8 +3,8 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.List;
  * @author maxid
  * @since 2025/4/9 16:31
  */
-public class SubscribeAckProcessor implements MessageProcessor<MqttSubAckMessage> {
+public class SubscribeAckProcessor extends NamespceMessageProcessor<MqttSubAckMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 

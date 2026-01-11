@@ -7,6 +7,7 @@ import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.transport.Transport;
 import plus.jmqx.broker.mqtt.transport.impl.MqttTransport;
@@ -60,15 +61,16 @@ public class Bootstrap {
      *
      * @return 服务
      */
-    public Mono<Bootstrap> start() {
-        ContextHolder.setAclManager(aclManager);
-        ContextHolder.setAuthManager(authManager);
-        ContextHolder.setDispatchScheduler(Schedulers.newBoundedElastic(
+    public Mono<Bootstrap> start() throws Exception {
+        ContextHolder holder = contextHolder();
+        holder.setAclManager(aclManager);
+        holder.setAuthManager(authManager);
+        holder.setDispatchScheduler(Schedulers.newBoundedElastic(
                 config.getBusinessThreadSize(),
                 config.getBusinessQueueSize(),
                 "jmqx-dispatch-io"
         ));
-        ContextHolder.setPlatformDispatcher(platformDispatcher);
+        holder.setPlatformDispatcher(platformDispatcher);
         return startMqtt(config)
                 .then(startMqtts(config))
                 .then(startWs(config))
@@ -82,7 +84,7 @@ public class Bootstrap {
     /**
      * 启动服务，并阻塞
      */
-    public void startAwait() {
+    public void startAwait() throws Exception {
         this.start().doOnError(err -> {
             log.error("bootstrap server start error", err);
             START_ONLY_MQTT.tryEmitEmpty();
@@ -97,6 +99,12 @@ public class Bootstrap {
         transports.forEach(Transport::dispose);
     }
 
+    /**
+     * 启用 Mqtt 服务
+     *
+     * @param config 配置
+     * @return Mono
+     */
     private Mono<Void> startMqtt(MqttConfiguration config) {
         if (config.getPort() > 0) {
             return MqttTransport.startMqtt(config)
@@ -108,6 +116,12 @@ public class Bootstrap {
         return Mono.empty();
     }
 
+    /**
+     * 启用 Mqtts 服务
+     *
+     * @param config 配置
+     * @return Mono
+     */
     private Mono<Void> startMqtts(MqttConfiguration config) {
         if (config.getSslEnable() && config.getSecurePort() > 0) {
             return MqttTransport.startMqtts(config)
@@ -119,6 +133,12 @@ public class Bootstrap {
         return Mono.empty();
     }
 
+    /**
+     * 启用 Mqtt-Ws 服务
+     *
+     * @param config 配置
+     * @return Mono
+     */
     private Mono<Void> startWs(MqttConfiguration config) {
         if (config.getWebsocketPort() > 0) {
             return MqttTransport.startMqttWs(config)
@@ -130,6 +150,12 @@ public class Bootstrap {
         return Mono.empty();
     }
 
+    /**
+     * 启用 Mqtt-Wss 服务
+     *
+     * @param config 配置
+     * @return Mono
+     */
     private Mono<Void> startWss(MqttConfiguration config) {
         if (config.getSslEnable() && config.getWebsocketSecurePort() > 0) {
             return MqttTransport.startMqttWss(config)
@@ -139,5 +165,16 @@ public class Bootstrap {
                     .then();
         }
         return Mono.empty();
+    }
+
+    /**
+     * 上下文
+     *
+     * @return 上下文
+     */
+    private ContextHolder contextHolder() throws Exception {
+        String namespace = config.getClusterConfig().getNamespace();
+        NamespaceContextHolder.checkNamespace(namespace);
+        return NamespaceContextHolder.get(namespace);
     }
 }

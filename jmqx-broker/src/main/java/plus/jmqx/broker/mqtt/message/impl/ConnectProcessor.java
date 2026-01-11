@@ -6,20 +6,19 @@ import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.config.ConnectMode;
-import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
-import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.CloseMqttMessage;
-import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
 import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
-import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
@@ -38,7 +37,7 @@ import java.util.stream.Collectors;
  * @since 2025/4/9 16:29
  */
 @Slf4j
-public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
+public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
@@ -161,7 +160,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                         .protocolName(header.name())
                         .version(header.version())
                         .build())
-                .subscribeOn(ContextHolder.getDispatchScheduler())
+                .subscribeOn(contextHolder().getDispatchScheduler())
                 .subscribe());
         // 连接确认
         ok(session, context, mqttVersion);
@@ -281,7 +280,7 @@ public class ConnectProcessor implements MessageProcessor<MqttConnectMessage> {
                         .username(session.getUsername())
                         .status(session.getStatus())
                         .build())
-                .subscribeOn(ContextHolder.getDispatchScheduler())
+                .subscribeOn(contextHolder().getDispatchScheduler())
                 .subscribe());
     }
 }
