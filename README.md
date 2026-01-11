@@ -143,8 +143,8 @@ public class BootstrapTest {
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         MqttConfiguration config = new MqttConfiguration();
         config.setPort(2883);
-        config.setSecurePort(9883);
-        config.setWebsocketPort(2884);
+        config.setSecurePort(2884);
+        config.setWebsocketPort(9883);
         config.setWebsocketSecurePort(9884);
         config.getClusterConfig().setEnable(true);
         config.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
