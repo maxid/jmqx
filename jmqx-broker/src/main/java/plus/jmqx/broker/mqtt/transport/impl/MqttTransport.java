@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
+import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.transport.Transport;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
@@ -75,7 +76,13 @@ public class MqttTransport implements Transport<MqttConfiguration> {
         return new MqttTransport(new MqttWssReceiver(), config);
     }
 
+    /**
+     * 启动传输
+     *
+     * @return 传输
+     */
     @Override
+    @SuppressWarnings("rawtypes")
     public Mono<Transport> start() {
         return Mono.deferContextual(view -> receiver.bind())
                 .doOnNext(this::setDisposableServer)
@@ -88,15 +95,23 @@ public class MqttTransport implements Transport<MqttConfiguration> {
                 .contextWrite(context -> context.put(MqttReceiveContext.class, this.context(configuration)));
     }
 
+    /**
+     * 初始化服务上下文
+     *
+     * @param configuration 配置信息
+     * @return 服务上下文
+     */
     @Override
     @SuppressWarnings("unchecked")
     public ReceiveContext<MqttConfiguration> context(MqttConfiguration configuration) {
         synchronized (this) {
-            if (ContextHolder.getContext() == null) {
+            String namespace = configuration.getClusterConfig().getNamespace();
+            ContextHolder holder = NamespaceContextHolder.get(namespace);
+            if (holder.getContext() == null) {
                 MqttReceiveContext context = new MqttReceiveContext(configuration, this);
-                ContextHolder.setContext(context);
+                holder.setContext(context);
             }
-            return (ReceiveContext<MqttConfiguration>) ContextHolder.getContext();
+            return (ReceiveContext<MqttConfiguration>) holder.getContext();
         }
     }
 
@@ -115,6 +130,11 @@ public class MqttTransport implements Transport<MqttConfiguration> {
         return this.disposableServer.isDisposed();
     }
 
+    /**
+     * 服务器释放配置
+     *
+     * @param disposableServer 服务器释放配置
+     */
     private void setDisposableServer(DisposableServer disposableServer) {
         this.disposableServer = disposableServer;
     }

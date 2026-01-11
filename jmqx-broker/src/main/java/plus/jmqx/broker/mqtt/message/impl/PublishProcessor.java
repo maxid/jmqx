@@ -7,9 +7,8 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
-import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
-import plus.jmqx.broker.mqtt.context.ContextHolder;
+import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.*;
 import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
@@ -31,7 +30,7 @@ import java.util.Set;
  * @since 2025/4/9 16:30
  */
 @Slf4j
-public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
+public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessage> {
 
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
@@ -74,7 +73,7 @@ public class PublishProcessor implements MessageProcessor<MqttPublishMessage> {
                                 .topic(header.topicName())
                                 .payload(MessageUtils.copyReleaseByteBuf(message.payload()))
                                 .build())
-                        .subscribeOn(ContextHolder.getDispatchScheduler())
+                        .subscribeOn(contextHolder().getDispatchScheduler())
                         .subscribe());
             }
             // 缓存 Retain 消息

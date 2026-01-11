@@ -20,23 +20,57 @@ import java.util.Objects;
  */
 @Slf4j
 class BootstrapTest {
+
     @Test
     void brokerTest() throws Exception {
+        setLogContext();
+
+        MqttConfiguration config1 = config("n1", 1883, 1884, 8883, 8884);
+        Bootstrap bootstrap1 = new Bootstrap(config1, dispatcher());
+        bootstrap1.start().block();
+
+        MqttConfiguration config2 = config("n2", 2883, 2884, 9883, 9884);
+        Bootstrap bootstrap2 = new Bootstrap(config2, dispatcher());
+        bootstrap2.start().block();
+
+        Thread.sleep(3600 * 1000);
+        bootstrap1.shutdown();
+        bootstrap2.shutdown();
+    }
+
+    private void setLogContext() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.DEBUG);
+    }
+
+    private MqttConfiguration config(String namespace, int mqttPort, int mqttsPort, int wsPort, int wssPort) {
         MqttConfiguration config = new MqttConfiguration();
         config.setBusinessQueueSize(Integer.MAX_VALUE);
         config.setSslEnable(true);
-        // config.setPort(0);
-        // config.setSecurePort(0);
-        // config.setWebsocketSecurePort(0);
+        if (mqttPort > 0) {
+            config.setPort(mqttPort);
+        }
+        if (mqttsPort > 0) {
+            config.setSecurePort(mqttsPort);
+        }
+        if (wsPort > 0) {
+            config.setWebsocketPort(wsPort);
+        }
+        if (wssPort > 0) {
+            config.setWebsocketSecurePort(wssPort);
+        }
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
-        Bootstrap bootstrap = new Bootstrap(config, new PlatformDispatcher() {
+        config.getClusterConfig().setNamespace(namespace);
+        return config;
+    }
+
+    private PlatformDispatcher dispatcher() {
+        return new PlatformDispatcher() {
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.fromRunnable(() -> {
@@ -68,9 +102,7 @@ class BootstrapTest {
                             new String(message.getPayload(), StandardCharsets.UTF_8));
                 });
             }
-        });
-        bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
-        bootstrap.shutdown();
+        };
     }
+
 }

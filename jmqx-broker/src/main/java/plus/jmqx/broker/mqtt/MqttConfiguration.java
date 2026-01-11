@@ -19,102 +19,109 @@ import java.util.Map;
 @Data
 public class MqttConfiguration implements Configuration {
     /**
+     * 默认命名空间
+     */
+    public static final String              DEFAULT_NAMESPACE    = "default";
+    /**
      * Netty Boss 线程数
      */
-    private Integer             bossThreadSize       = Runtime.getRuntime().availableProcessors();
+    private             Integer             bossThreadSize       = Runtime.getRuntime().availableProcessors();
     /**
      * Netty Work 线程数
      */
-    private Integer             workThreadSize       = Runtime.getRuntime().availableProcessors() * 2;
+    private             Integer             workThreadSize       = Runtime.getRuntime().availableProcessors() * 2;
     /**
      * Netty 业务线程数
      */
-    private Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors() * 4;
+    private             Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors() * 4;
     /**
      * Netty 工作队列数、
      */
-    private Integer             businessQueueSize    = 100000;
+    private             Integer             businessQueueSize    = 100000;
     /**
      * 消息最大限制值
      */
-    private Integer             messageMaxSize       = 4194304;
+    private             Integer             messageMaxSize       = 4194304;
     /**
-     * 全局读写限制
+     * 全局读写大小限制
      */
-    private String              globalReadWriteSize  = "10000000,100000000"; // 全局读写大小限制
+    private             String              globalReadWriteSize  = "10000000,100000000";
     /**
-     * 单个 Channel 读写限制
+     * 单个 channel 读写大小限制
      */
-    private String              channelReadWriteSize = "10000000,100000000"; // 单个channel读写大小限制
+    private             String              channelReadWriteSize = "10000000,100000000";
     /**
-     * Netty 低水位
+     * Netty 低水位，不建议配置 默认 32768
      */
-    private Integer             lowWaterMark         = 4000000; // 不建议配置 默认 32768
+    private             Integer             lowWaterMark         = 4000000;
     /**
-     * Netty 高水位
+     * Netty 高水位，不建议配置 默认 65536
      */
-    private Integer             highWaterMark        = 80000000; // 不建议配置 默认 65536
+    private             Integer             highWaterMark        = 80000000;
     /**
-     * 是否开启 Netty Tcp 二进制日志
+     * 是否开启 Netty Tcp 二进制日志，前提是 logLevel = DEBUG
      */
-    private Boolean             wiretap              = true; // 二进制日志 前提是 logLevel = DEBUG
+    private             Boolean             wiretap              = true;
     /**
-     * Mqtt 端口
+     * Mqtt 端口，IANA MQTT 保留端口
      */
-    private Integer             port                 = 1883; // IANA MQTT 保留端口
+    private             Integer             port                 = 1883;
     /**
-     * Mqtts 端口
+     * Mqtts 端口，IANA MQTTS 保留端口
      */
-    private Integer             securePort           = 8883; // IANA MQTTS 保留端口
+    private             Integer             securePort           = 8883;
     /**
-     * Mqtt Ws 端口
+     * Mqtt Ws 端口，自定义 MQTT WS 服务端口
      */
-    private Integer             websocketPort        = 1884; // 自定义 MQTT WS 服务端口
+    private             Integer             websocketPort        = 1884;
     /**
-     * Mqtt Wss 端口
+     * Mqtt Wss 端口，自定义 MQTT WSS 服务端口
      */
-    private Integer             websocketSecurePort  = 8884; // 自定义 MQTT WSS 服务端口
+    private             Integer             websocketSecurePort  = 8884;
     /**
-     * Mqtt Wss 端口
+     * Mqtt Ws 端点地址
      */
-    private String              websocketPath        = "/mqtt";
+    private             String              websocketPath        = "/mqtt";
     /**
      * 连接模式
      */
-    private ConnectMode         connectMode          = ConnectMode.UNIQUE;
+    private             ConnectMode         connectMode          = ConnectMode.UNIQUE;
     /**
      * 指定时间窗内不踢出
      */
-    private Integer             notKickSeconds       = 30;
+    private             Integer             notKickSeconds       = 30;
     /**
      * Netty Option 配置
      */
-    private Map<String, Object> options;
+    private             Map<String, Object> options;
     /**
      * Netty Child Option 配置
      */
-    private Map<String, Object> childOptions;
+    private             Map<String, Object> childOptions;
     /**
      * 是否启用 SSL
      */
-    private Boolean             sslEnable            = false;
+    private             Boolean             sslEnable            = false;
     /**
      * CA 证书路径
      */
-    private String              sslCa;
+    private             String              sslCa;
     /**
      * SSL 证书路径
      */
-    private String              sslCrt;
+    private             String              sslCrt;
     /**
      * SSL KEY 路径
      */
-    private String              sslKey;
+    private             String              sslKey;
     /**
      * 集群配置
      */
     @JsonProperty("cluster")
-    private ClusterConfig       clusterConfig        = ClusterConfig.builder().enable(false).build();
+    private             ClusterConfig       clusterConfig        = ClusterConfig.builder()
+            .enable(false)
+            .namespace(DEFAULT_NAMESPACE)
+            .build();
 
     @Data
     @Builder
