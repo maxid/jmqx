@@ -10,6 +10,36 @@
 
     <artifactId>jmqx-spring-boot</artifactId>
 
+    <name>jmqx-spring-boot</name>
+    <url>https://github.com/maxid/jmqx</url>
+    <description>Jmqx lightweight MQTT Broker</description>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/maxid/jmqx</url>
+        <connection>scm:git:https://github.com/maxid/jmqx.git</connection>
+        <developerConnection>scm:git:https://github.com/maxid/jmqx.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>maxid</name>
+            <email>maxid@qq.com</email>
+            <organizationUrl>https://github.com/maxid/jmqx</organizationUrl>
+            <roles>
+                <role>owner</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
+
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
         <reactor.version>2024.0.4</reactor.version>
