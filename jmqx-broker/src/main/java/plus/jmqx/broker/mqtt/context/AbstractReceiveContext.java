@@ -181,7 +181,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 集群注册中心
      */
     private ClusterRegistry clusterRegistry() {
-        return Optional.ofNullable(ClusterRegistry.INSTANCE).orElseGet(DefaultClusterRegistry::new);
+        ClusterRegistry instance = configuration.getClusterConfig().isEnabled() ? ClusterRegistry.INSTANCE : null;
+        return Optional.ofNullable(instance).orElseGet(DefaultClusterRegistry::new);
     }
 
     /**

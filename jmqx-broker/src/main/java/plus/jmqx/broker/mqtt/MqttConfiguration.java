@@ -21,7 +21,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 默认命名空间
      */
-    public static final String              DEFAULT_NAMESPACE    = "default";
+    public static final String              DEFAULT_NAMESPACE    = "jmqx-broker";
     /**
      * Netty Boss 线程数
      */
@@ -119,7 +119,7 @@ public class MqttConfiguration implements Configuration {
      */
     @JsonProperty("cluster")
     private             ClusterConfig       clusterConfig        = ClusterConfig.builder()
-            .enable(false)
+            .enabled(false)
             .namespace(DEFAULT_NAMESPACE)
             .build();
 
@@ -131,7 +131,7 @@ public class MqttConfiguration implements Configuration {
         /**
          * 开启集群
          */
-        private boolean         enable;
+        private boolean         enabled;
         /**
          * 集群url
          */

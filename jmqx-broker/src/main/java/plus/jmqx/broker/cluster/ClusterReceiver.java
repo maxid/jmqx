@@ -35,7 +35,7 @@ public class ClusterReceiver {
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
         ClusterRegistry cluster = context.getClusterRegistry();
         MessageDispatcher messageDispatcher = context.getMessageDispatcher();
-        if (config.isEnable()) {
+        if (config.isEnabled()) {
             if (cluster instanceof DefaultClusterRegistry) {
                 Flux.interval(Duration.ofSeconds(60))
                         .subscribe(index -> log.debug("Using fake cluster mode base on DefaultClusterRegistry."));

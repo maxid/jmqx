@@ -53,7 +53,7 @@ public class MessageProxy {
             MqttMessage message = wrapper.getMessage();
             if (!wrapper.getClustered() && message instanceof MqttPublishMessage) {
                 MqttPublishMessage publishMessage = (MqttPublishMessage) message;
-                if(context.getConfiguration().getClusterConfig().isEnable()) {
+                if(context.getConfiguration().getClusterConfig().isEnabled()) {
                     HeapMqttMessage heapMqttMessage = this.clusterMessage(publishMessage, session, wrapper.getTimestamp());
                     context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage))
                             .subscribeOn(Schedulers.boundedElastic())

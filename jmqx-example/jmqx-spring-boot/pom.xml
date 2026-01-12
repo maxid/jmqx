@@ -12,7 +12,7 @@
 
     <name>jmqx-spring-boot</name>
     <url>https://github.com/maxid/jmqx</url>
-    <description>Jmqx lightweight MQTT Broker</description>
+    <description>Jmqx lightweight MQTT Broker spring boot integration example</description>
 
     <licenses>
         <license>
