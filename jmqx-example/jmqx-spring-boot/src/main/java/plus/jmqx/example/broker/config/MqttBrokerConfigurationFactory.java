@@ -154,7 +154,7 @@ public class MqttBrokerConfigurationFactory
                 }
             }
         }
-        config.getClusterConfig().setEnable(clusterEnabled);
+        config.getClusterConfig().setEnabled(clusterEnabled);
         if (clusterEnabled) {
             config.getClusterConfig().setNamespace(clusterNamespace);
             config.getClusterConfig().setUrl(clusterUrl);
