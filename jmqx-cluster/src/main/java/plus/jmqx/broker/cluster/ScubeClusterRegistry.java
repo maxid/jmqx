@@ -83,7 +83,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
     @Override
     public Mono<Void> spreadMessage(ClusterMessage clusterMessage) {
-        log.info("cluster send message {} ", clusterMessage);
+        log.debug("cluster send message {} ", clusterMessage);
         return Mono.when(cluster.otherMembers()
                 .stream()
                 .map(member -> Optional.ofNullable(cluster)
@@ -108,13 +108,13 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
         @Override
         public void onMessage(Message message) {
-            log.info("cluster accept message {} ", message);
+            log.debug("cluster accept message {} ", message);
             messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
         }
 
         @Override
         public void onGossip(Message message) {
-            log.info("cluster accept message {} ", message);
+            log.debug("cluster accept gossip message {} ", message);
             messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
         }
 

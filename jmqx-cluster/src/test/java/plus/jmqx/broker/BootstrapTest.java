@@ -20,6 +20,7 @@ public class BootstrapTest {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         MqttConfiguration config = new MqttConfiguration();
         config.getClusterConfig().setEnabled(true);
@@ -38,6 +39,7 @@ public class BootstrapTest {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         MqttConfiguration config = new MqttConfiguration();
         config.setPort(2883);
@@ -60,6 +62,7 @@ public class BootstrapTest {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         MqttConfiguration config = new MqttConfiguration();
         config.setPort(3883);
