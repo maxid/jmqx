@@ -50,18 +50,10 @@ class BootstrapTest {
         MqttConfiguration config = new MqttConfiguration();
         config.setBusinessQueueSize(Integer.MAX_VALUE);
         config.setSslEnable(true);
-        if (mqttPort > 0) {
-            config.setPort(mqttPort);
-        }
-        if (mqttsPort > 0) {
-            config.setSecurePort(mqttsPort);
-        }
-        if (wsPort > 0) {
-            config.setWebsocketPort(wsPort);
-        }
-        if (wssPort > 0) {
-            config.setWebsocketSecurePort(wssPort);
-        }
+        config.setPort(mqttPort);
+        config.setSecurePort(mqttsPort);
+        config.setWebsocketPort(wsPort);
+        config.setWebsocketSecurePort(wssPort);
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());

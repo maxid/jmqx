@@ -10,6 +10,7 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
 import plus.jmqx.broker.mqtt.transport.handler.OptionHandler;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
+import plus.jmqx.broker.util.PortUtil;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.tcp.TcpServer;
@@ -37,6 +38,7 @@ public class MqttReceiver extends OptionHandler implements Receiver {
     private TcpServer serv(ContextView view) {
         MqttReceiveContext context = view.get(MqttReceiveContext.class);
         MqttConfiguration config = context.getConfiguration();
+        config.setPort(PortUtil.getAvailablePort(config.getPort()));
         WriteBufferWaterMark waterMark = new WriteBufferWaterMark(config.getLowWaterMark(), config.getHighWaterMark());
         TcpServer server = initTcpServer(config);
         return server.port(config.getPort())
