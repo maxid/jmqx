@@ -11,6 +11,7 @@ import io.scalecube.reactor.RetryNonSerializedEmitFailureHandler;
 import io.scalecube.transport.netty.tcp.TcpTransportFactory;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
+import plus.jmqx.broker.util.PortUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -39,6 +40,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
     @Override
     public void registry(MqttConfiguration.ClusterConfig clusterConfig) {
+        clusterConfig.setPort(PortUtil.getAvailablePort(clusterConfig.getPort()));
         this.cluster = new ClusterImpl()
                 .config(opts ->
                         opts.memberAlias(clusterConfig.getNode())
