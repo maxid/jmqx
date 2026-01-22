@@ -186,7 +186,7 @@ public class BootstrapTest {
 ```
 
 ## 生成证书
-> 这理采用[generate-CA.sh](https://github.com/owntracks/tools/blob/master/TLS/generate-CA.sh)来生成双向认证自签证书
+> 这里采用[generate-CA.sh](https://github.com/owntracks/tools/blob/master/TLS/generate-CA.sh)来生成双向认证自签证书
 
 从 https://github.com/owntracks/tools/blob/master/TLS/generate-CA.sh 下载证书生成脚本
 ```shell
