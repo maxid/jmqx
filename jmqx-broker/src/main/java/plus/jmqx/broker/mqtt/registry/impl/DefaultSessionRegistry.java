@@ -33,7 +33,8 @@ public class DefaultSessionRegistry implements SessionRegistry {
 
     @Override
     public boolean exists(String clientId) {
-        return sessions.containsKey(clientId) && sessions.get(clientId).getStatus() == SessionStatus.ONLINE;
+        MqttSession session = sessions.get(clientId);
+        return session != null && session.getStatus() == SessionStatus.ONLINE;
     }
 
     @Override

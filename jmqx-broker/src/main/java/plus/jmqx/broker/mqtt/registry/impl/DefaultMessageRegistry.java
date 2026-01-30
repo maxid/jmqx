@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -41,10 +42,11 @@ public class DefaultMessageRegistry implements MessageRegistry {
 
     @Override
     public List<RetainMessage> getRetainMessage(String topic) {
-        return retainMessages.keySet()
+        Pattern pattern = Pattern.compile(TopicRegexUtils.regexTopic(topic));
+        return retainMessages.entrySet()
                 .stream()
-                .filter(key -> key.matches(TopicRegexUtils.regexTopic(topic)))
-                .map(retainMessages::get)
+                .filter(entry -> pattern.matcher(entry.getKey()).matches())
+                .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
     }
 }

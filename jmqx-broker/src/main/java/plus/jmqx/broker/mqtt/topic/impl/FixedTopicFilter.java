@@ -26,7 +26,10 @@ public class FixedTopicFilter implements TopicFilter {
 
     @Override
     public Set<SubscribeTopic> getSubscribeByTopic(String topic, MqttQoS mqttQoS) {
-        CopyOnWriteArraySet<SubscribeTopic> channels = topicChannels.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<>());
+        CopyOnWriteArraySet<SubscribeTopic> channels = topicChannels.get(topic);
+        if (channels == null || channels.isEmpty()) {
+            return new java.util.HashSet<>();
+        }
         return channels.stream().map(tp -> tp.compareQos(mqttQoS)).collect(Collectors.toSet());
     }
 
