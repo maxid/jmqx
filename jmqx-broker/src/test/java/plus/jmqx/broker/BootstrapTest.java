@@ -22,7 +22,7 @@ import java.util.Objects;
 class BootstrapTest {
 
     @Test
-    void brokerTest() throws Exception {
+    void testBroker() throws Exception {
         setLogContext();
 
         MqttConfiguration config1 = config("n1", 1883, 1884, 8883, 8884);
@@ -36,6 +36,18 @@ class BootstrapTest {
         Thread.sleep(3600 * 1000);
         bootstrap1.shutdown();
         bootstrap2.shutdown();
+    }
+
+    @Test
+    void testBrokerStress() throws Exception {
+        setLogContext();
+
+        MqttConfiguration config1 = config("n1", 1883, 1884, 8883, 8884);
+        Bootstrap bootstrap1 = new Bootstrap(config1, stressDispatcher());
+        bootstrap1.start().block();
+
+        Thread.sleep(3600 * 1000);
+        bootstrap1.shutdown();
     }
 
     private void setLogContext() {
@@ -93,6 +105,30 @@ class BootstrapTest {
                             message.getTopic(),
                             new String(message.getPayload(), StandardCharsets.UTF_8));
                 });
+            }
+        };
+    }
+
+    private PlatformDispatcher stressDispatcher() {
+        return new PlatformDispatcher() {
+            @Override
+            public Mono<Void> onConnect(ConnectMessage message) {
+                return Mono.fromRunnable(() -> {});
+            }
+
+            @Override
+            public Mono<Void> onDisconnect(DisconnectMessage message) {
+                return Mono.fromRunnable(() -> {});
+            }
+
+            @Override
+            public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
+                return Mono.fromRunnable(() -> {});
+            }
+
+            @Override
+            public Mono<Void> onPublish(PublishMessage message) {
+                return Mono.fromRunnable(() -> {});
             }
         };
     }
