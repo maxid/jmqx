@@ -81,7 +81,7 @@ public class MqttSession {
     private TimeAckManager timeAckManager;
 
     /**
-     * 取消或处置底层任务或资源
+     * 取消或处置底层任务或资源。
      */
     public void disposableClose() {
         if (closeDisposable != null && !closeDisposable.isDisposed()) {
@@ -92,7 +92,7 @@ public class MqttSession {
     /**
      * 连接是否活跃
      *
-     * @return {@link Boolean} 连接是否活跃
+     * @return 是否活跃
      */
     public boolean isActive() {
         return connection == null && !connection.isDisposed();
@@ -101,9 +101,9 @@ public class MqttSession {
     /**
      * 初始化 MQTT 连接会话
      *
-     * @param connection     {@link Connection}  连接
-     * @param timeAckManager {@link TimeAckManager} 确认管理器
-     * @return {@link MqttSession} MQTT 连接会话
+     * @param connection     连接
+     * @param timeAckManager 确认管理器
+     * @return MQTT 连接会话
      */
     public static MqttSession init(Connection connection, TimeAckManager timeAckManager) {
         MqttSession session = new MqttSession();
@@ -122,8 +122,8 @@ public class MqttSession {
     /**
      * 缓存 QoS 2 消息
      *
-     * @param messageId      {@link Integer}  消息 ID
-     * @param publishMessage {@link MqttPublishMessage} 发布消息
+     * @param messageId      消息 ID
+     * @param publishMessage 发布消息
      */
     public void cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
         qos2MsgCache.put(messageId, publishMessage);
@@ -132,8 +132,8 @@ public class MqttSession {
     /**
      * 缓存中是否存在 QoS 2 消息
      *
-     * @param messageId {@link Integer}  消息 ID
-     * @return {@link Boolean} 否存在 QoS 2 消息
+     * @param messageId 消息 ID
+     * @return 是否存在 QoS 2 消息
      */
     public Boolean existQos2Msg(int messageId) {
         return qos2MsgCache.containsKey(messageId);
@@ -142,8 +142,8 @@ public class MqttSession {
     /**
      * 从缓存中移除 QoS 2 消息
      *
-     * @param messageId {@link Integer}  消息 ID
-     * @return {@link MqttPublishMessage}
+     * @param messageId 消息 ID
+     * @return 发布消息
      */
     public MqttPublishMessage removeQos2Msg(int messageId) {
         return qos2MsgCache.remove(messageId);
@@ -166,7 +166,7 @@ public class MqttSession {
     /**
      * 注册关闭设备连接延时事件
      *
-     * @return {@link MqttSession}
+     * @return 当前会话
      */
     public MqttSession registryDelayTcpClose() {
         // registry tcp close event
@@ -182,7 +182,7 @@ public class MqttSession {
     /**
      * 注册关闭连接时要执行的任务
      *
-     * @param consumer {@link Consumer}
+     * @param consumer 关闭回调
      */
     public void registryClose(Consumer<MqttSession> consumer) {
         this.connection.onDispose(() -> consumer.accept(this));
@@ -191,7 +191,7 @@ public class MqttSession {
     /**
      * 会话是否活跃
      *
-     * @return {@link Boolean} 会话是否活跃
+     * @return 是否活跃
      */
     public boolean active() {
         return status == SessionStatus.ONLINE;
@@ -200,7 +200,7 @@ public class MqttSession {
     /**
      * 生成序列消息 ID
      *
-     * @return {@link Integer} 消息 ID
+     * @return 消息 ID
      */
     public int generateMessageId() {
         int value;
@@ -262,8 +262,8 @@ public class MqttSession {
     /**
      * 取消重发
      *
-     * @param type      type
-     * @param messageId 消息Id
+     * @param type      消息类型
+     * @param messageId 消息 ID
      */
     public void cancelRetry(MqttMessageType type, Integer messageId) {
         this.removeReply(type, messageId);
@@ -272,8 +272,8 @@ public class MqttSession {
     /**
      * 删除重发
      *
-     * @param type      type
-     * @param messageId messageId
+     * @param type      消息类型
+     * @param messageId 消息 ID
      */
     private void removeReply(MqttMessageType type, Integer messageId) {
         Optional.ofNullable(replyMqttMessageMap.get(type)).map(messageIds -> messageIds.remove(messageId)).ifPresent(Disposable::dispose);
@@ -290,6 +290,9 @@ public class MqttSession {
         }
     }
 
+    /**
+     * 清理所有回复相关资源。
+     */
     private void clearReplyMessage() {
         replyMqttMessageMap.values().forEach(maps -> maps.values().forEach(Disposable::dispose));
         replyMqttMessageMap.clear();
@@ -300,12 +303,22 @@ public class MqttSession {
      */
     private static class MqttMessageSink {
 
+        /**
+         * 构造消息发送器。
+         */
         private MqttMessageSink() {
         }
 
         public static MqttMessageSink MQTT_SINK = new MqttMessageSink();
 
 
+        /**
+         * 发送消息并按需注册重试。
+         *
+         * @param mqttMessage 消息体
+         * @param session     会话
+         * @param retry       是否重试
+         */
         public void sendMessage(MqttMessage mqttMessage, MqttSession session, boolean retry) {
             if (log.isDebugEnabled()) {
                 log.debug("write channel {} message {}", session.getConnection(), mqttMessage);
@@ -329,6 +342,12 @@ public class MqttSession {
             }
         }
 
+        /**
+         * 获取消息 ID。
+         *
+         * @param mqttMessage 消息体
+         * @return 消息 ID
+         */
         private int getMessageId(MqttMessage mqttMessage) {
             Object object = mqttMessage.variableHeader();
             if (object instanceof MqttPublishVariableHeader) {
@@ -341,6 +360,12 @@ public class MqttSession {
         }
 
 
+        /**
+         * 获取重试时的回复消息。
+         *
+         * @param mqttMessage 原消息
+         * @return 回复消息
+         */
         private MqttMessage getReplyMqttMessage(MqttMessage mqttMessage) {
             if (mqttMessage instanceof MqttPublishMessage) {
                 return ((MqttPublishMessage) mqttMessage).copy().retain(Integer.MAX_VALUE >> 2);
@@ -351,11 +376,12 @@ public class MqttSession {
 
 
         /**
-         * Set resend flag
+         * 设置重发标记并构建副本。
          *
-         * @param mqttMessage {@link MqttMessage}
-         * @return 消息体
+         * @param mqttMessage 原消息
+         * @return 带重发标记的消息
          */
+        @SuppressWarnings("unused")
         private MqttMessage getDupMessage(MqttMessage mqttMessage) {
             MqttFixedHeader oldFixedHeader = mqttMessage.fixedHeader();
             MqttFixedHeader fixedHeader = new MqttFixedHeader(oldFixedHeader.messageType(), true, oldFixedHeader.qosLevel(), oldFixedHeader.isRetain(), oldFixedHeader.remainingLength());
@@ -376,6 +402,11 @@ public class MqttSession {
 
     }
 
+    /**
+     * 输出会话信息。
+     *
+     * @return 会话字符串
+     */
     @Override
     public String toString() {
         return "MqttSession{" + "address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\''

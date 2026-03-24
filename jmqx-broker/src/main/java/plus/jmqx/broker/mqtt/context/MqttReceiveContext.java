@@ -23,12 +23,23 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
 
     private final ClusterReceiver clusterReceiver;
 
+    /**
+     * 创建 MQTT 上下文并注册集群接收器。
+     *
+     * @param configuration MQTT 配置
+     * @param transport     传输实现
+     */
     public MqttReceiveContext(MqttConfiguration configuration, Transport<MqttConfiguration> transport) {
         super(configuration, transport);
         this.clusterReceiver = new ClusterReceiver(this);
         this.clusterReceiver.registry();
     }
 
+    /**
+     * 绑定会话并订阅其入站消息流。
+     *
+     * @param session 会话
+     */
     public void apply(MqttSession session) {
         session.registryDelayTcpClose()
                 .getConnection()
@@ -40,8 +51,15 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
                 .subscribe(mqttMessage -> this.accept(session, new MessageWrapper<>(mqttMessage, System.currentTimeMillis(), Boolean.FALSE)));
     }
 
+    /**
+     * 接收并分发消息到消息处理器。
+     *
+     * @param session 会话
+     * @param message 消息包装
+     */
     @Override
     public void accept(MqttSession session, MessageWrapper<MqttMessage> message) {
         this.getMessageDispatcher().dispatch(session, message, this);
     }
+
 }

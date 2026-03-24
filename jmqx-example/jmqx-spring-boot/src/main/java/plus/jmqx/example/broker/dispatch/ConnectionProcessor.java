@@ -14,6 +14,11 @@ import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
 @Component
 public class ConnectionProcessor {
 
+    /**
+     * 处理设备上线消息。
+     *
+     * @param message 连接消息
+     */
     public void process(ConnectMessage message) {
         log.info("【设备上线】{}", message);
     }

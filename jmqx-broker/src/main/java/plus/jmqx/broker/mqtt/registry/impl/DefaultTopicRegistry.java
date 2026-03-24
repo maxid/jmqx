@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class DefaultTopicRegistry implements TopicRegistry {
+
     /**
      * 单级匹配
      */
@@ -38,16 +39,31 @@ public class DefaultTopicRegistry implements TopicRegistry {
      */
     private final TopicFilter treeTopicFilter;
 
+    /**
+     * 创建默认主题注册中心。
+     */
     public DefaultTopicRegistry() {
         this.fixedTopicFilter = new FixedTopicFilter();
         this.treeTopicFilter = new TreeTopicFilter();
     }
 
+    /**
+     * 注册订阅主题。
+     *
+     * @param topicFilter 主题过滤器
+     * @param session     会话
+     * @param qos         订阅 QoS
+     */
     @Override
     public void registrySubscribeTopic(String topicFilter, MqttSession session, MqttQoS qos) {
         this.registrySubscribeTopic(new SubscribeTopic(topicFilter, qos, session));
     }
 
+    /**
+     * 注册订阅对象。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void registrySubscribeTopic(SubscribeTopic subscribeTopic) {
         if (subscribeTopic.getTopicFilter().contains(SINGLE_SYMBOL) || subscribeTopic.getTopicFilter().contains(MULTI_SYMBOL)) {
@@ -57,6 +73,11 @@ public class DefaultTopicRegistry implements TopicRegistry {
         }
     }
 
+    /**
+     * 清理会话的全部订阅。
+     *
+     * @param mqttChannel 会话
+     */
     @Override
     public void clear(MqttSession mqttChannel) {
         Set<SubscribeTopic> topics = mqttChannel.getTopics();
@@ -66,6 +87,11 @@ public class DefaultTopicRegistry implements TopicRegistry {
         topics.forEach(this::removeSubscribeTopic);
     }
 
+    /**
+     * 移除订阅对象。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void removeSubscribeTopic(SubscribeTopic subscribeTopic) {
         if (subscribeTopic.getTopicFilter().contains(SINGLE_SYMBOL) || subscribeTopic.getTopicFilter().contains(MULTI_SYMBOL)) {
@@ -75,6 +101,13 @@ public class DefaultTopicRegistry implements TopicRegistry {
         }
     }
 
+    /**
+     * 根据主题查询订阅列表。
+     *
+     * @param topicName 主题
+     * @param qos       QoS
+     * @return 订阅集合
+     */
     @Override
     public Set<SubscribeTopic> getSubscribesByTopic(String topicName, MqttQoS qos) {
         Set<SubscribeTopic> subscribeTopics = fixedTopicFilter.getSubscribeByTopic(topicName, qos);
@@ -86,11 +119,21 @@ public class DefaultTopicRegistry implements TopicRegistry {
         return merged;
     }
 
+    /**
+     * 批量注册订阅。
+     *
+     * @param mqttTopicSubscriptions 订阅集合
+     */
     @Override
     public void registrySubscribesTopic(Set<SubscribeTopic> mqttTopicSubscriptions) {
         mqttTopicSubscriptions.forEach(this::registrySubscribeTopic);
     }
 
+    /**
+     * 获取所有主题与会话映射。
+     *
+     * @return 主题映射
+     */
     @Override
     public Map<String, Set<MqttSession>> getAllTopics() {
         Set<SubscribeTopic> subscribeTopics = fixedTopicFilter.getAllSubscribesTopic();
@@ -103,6 +146,11 @@ public class DefaultTopicRegistry implements TopicRegistry {
                         Collectors.mapping(SubscribeTopic::getSession, Collectors.toSet())));
     }
 
+    /**
+     * 统计订阅数量。
+     *
+     * @return 订阅数量
+     */
     @Override
     public Integer counts() {
         return fixedTopicFilter.count() + treeTopicFilter.count();

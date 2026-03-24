@@ -60,31 +60,61 @@ class MqttNetworkProtocolTest {
 
     private static final String TOPIC = "network/test";
 
+    /**
+     * MQTT 3.1 连接/订阅/发布链路测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void mqtt31ConnectSubscribePublish() throws Exception {
         runConnectSubscribePublish(MqttVersion.MQTT_3_1);
     }
 
+    /**
+     * MQTT 3.1.1 连接/订阅/发布链路测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void mqtt311ConnectSubscribePublish() throws Exception {
         runConnectSubscribePublish(MqttVersion.MQTT_3_1_1);
     }
 
+    /**
+     * MQTT 5 连接/订阅/发布链路测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void mqtt5ConnectSubscribePublish() throws Exception {
         runConnectSubscribePublish(MqttVersion.MQTT_5);
     }
 
+    /**
+     * QoS1 发布/ACK 流程测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void qos1PublishAckFlow() throws Exception {
         runPublishWithQos(MqttQoS.AT_LEAST_ONCE);
     }
 
+    /**
+     * QoS2 发布/REC/REL/COMP 流程测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void qos2PublishRecRelCompFlow() throws Exception {
         runPublishWithQos(MqttQoS.EXACTLY_ONCE);
     }
 
+    /**
+     * 断线重连后会话保持测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void sessionPersistenceWithDisconnect() throws Exception {
         int port = randomPort();
@@ -120,6 +150,11 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * 保留消息对后订阅者投递测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void retainMessageDeliveredToLateSubscriber() throws Exception {
         int port = randomPort();
@@ -151,6 +186,11 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * KeepAlive 触发断开测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void keepAliveTriggersDisconnect() throws Exception {
         int port = randomPort();
@@ -167,6 +207,11 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * QoS2 重复 PUBREL 不应重复投递测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void qos2DuplicatePubRelDoesNotDuplicateDelivery() throws Exception {
         int port = randomPort();
@@ -201,6 +246,11 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * 连接异常断开时遗嘱消息投递测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void willMessagePublishedOnUnexpectedDisconnect() throws Exception {
         int port = randomPort();
@@ -229,6 +279,12 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * 执行连接/订阅/发布链路。
+     *
+     * @param version MQTT 协议版本
+     * @throws Exception 测试异常
+     */
     private void runConnectSubscribePublish(MqttVersion version) throws Exception {
         int port = randomPort();
         MqttConfiguration config = createConfig(port);
@@ -258,6 +314,12 @@ class MqttNetworkProtocolTest {
         bootstrap.shutdown();
     }
 
+    /**
+     * 执行指定 QoS 发布流程。
+     *
+     * @param qos QoS 等级
+     * @throws Exception 测试异常
+     */
     private void runPublishWithQos(MqttQoS qos) throws Exception {
         int port = randomPort();
         MqttConfiguration config = createConfig(port);
@@ -287,12 +349,25 @@ class MqttNetworkProtocolTest {
         subscriber.close();
         bootstrap.shutdown();
     }
+
+    /**
+     * 获取可用随机端口。
+     *
+     * @return 端口
+     * @throws IOException IO 异常
+     */
     private static int randomPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
     }
 
+    /**
+     * 创建测试配置。
+     *
+     * @param port 端口
+     * @return MQTT 配置
+     */
     private static MqttConfiguration createConfig(int port) {
         MqttConfiguration config = new MqttConfiguration();
         config.setSslEnable(false);
@@ -305,23 +380,52 @@ class MqttNetworkProtocolTest {
         return config;
     }
 
+    /**
+     * 构造空实现分发器。
+     *
+     * @return 分发器
+     */
     private static PlatformDispatcher noopDispatcher() {
         return new PlatformDispatcher() {
+            /**
+             * 处理连接消息。
+             *
+             * @param message 连接消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理断开消息。
+             *
+             * @param message 断开消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理连接丢失消息。
+             *
+             * @param message 连接丢失消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理发布消息。
+             *
+             * @param message 发布消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.empty();
@@ -337,11 +441,24 @@ class MqttNetworkProtocolTest {
         private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
         private int packetId = 1;
 
+        /**
+         * 构造测试客户端。
+         *
+         * @param clientId 客户端 ID
+         * @param port     端口
+         */
         private MqttClient(String clientId, int port) {
             this.clientId = clientId;
             this.port = port;
         }
 
+        /**
+         * 连接并完成握手。
+         *
+         * @param version          MQTT 版本
+         * @param cleanSession     清理会话
+         * @param keepAliveSeconds KeepAlive 秒数
+         */
         void connect(MqttVersion version, boolean cleanSession, int keepAliveSeconds) {
             this.connection = TcpClient.create()
                     .resolver(NoopAddressResolverGroup.INSTANCE)
@@ -366,6 +483,12 @@ class MqttNetworkProtocolTest {
             assertEquals(MqttConnectReturnCode.CONNECTION_ACCEPTED, ack.variableHeader().connectReturnCode());
         }
 
+        /**
+         * 订阅主题。
+         *
+         * @param topic 主题
+         * @param qos   QoS 等级
+         */
         void subscribe(String topic, MqttQoS qos) {
             MqttMessage subscribe = MqttMessageBuilder.subMessage(
                     nextPacketId(),
@@ -378,6 +501,14 @@ class MqttNetworkProtocolTest {
             assertNotNull(ack);
         }
 
+        /**
+         * 发布消息。
+         *
+         * @param topic   主题
+         * @param payload 负载
+         * @param qos     QoS 等级
+         * @return 消息 ID
+         */
         int publish(String topic, String payload, MqttQoS qos) {
             byte[] bytes = payload.getBytes();
             MqttFixedHeader fixedHeader = new MqttFixedHeader(
@@ -394,6 +525,13 @@ class MqttNetworkProtocolTest {
             return messageId;
         }
 
+        /**
+         * 发布保留消息。
+         *
+         * @param topic   主题
+         * @param payload 负载
+         * @param qos     QoS 等级
+         */
         void publishWithRetain(String topic, String payload, MqttQoS qos) {
             byte[] bytes = payload.getBytes();
             MqttFixedHeader fixedHeader = new MqttFixedHeader(
@@ -409,11 +547,22 @@ class MqttNetworkProtocolTest {
             writeAndFlush(message);
         }
 
+        /**
+         * 等待发布消息。
+         *
+         * @param timeout 超时时间
+         * @return 发布消息
+         */
         MqttPublishMessage awaitPublish(Duration timeout) {
             MqttMessage message = awaitMessage(msg -> msg instanceof MqttPublishMessage, timeout);
             return (MqttPublishMessage) message;
         }
 
+        /**
+         * 发送发布确认流程。
+         *
+         * @param message 发布消息
+         */
         void ackPublish(MqttPublishMessage message) {
             MqttQoS qos = message.fixedHeader().qosLevel();
             if (qos == MqttQoS.AT_LEAST_ONCE) {
@@ -433,6 +582,11 @@ class MqttNetworkProtocolTest {
             }
         }
 
+        /**
+         * 等待发布 ACK 流程完成。
+         *
+         * @param qos QoS 等级
+         */
         void waitPublishAckFlow(MqttQoS qos) {
             if (qos == MqttQoS.AT_LEAST_ONCE) {
                 MqttMessage pubAck = awaitMessage(
@@ -456,6 +610,9 @@ class MqttNetworkProtocolTest {
             }
         }
 
+        /**
+         * 等待 PUBACK。
+         */
         void waitPubAck() {
             MqttMessage pubAck = awaitMessage(
                     msg -> msg.fixedHeader().messageType() == MqttMessageType.PUBACK,
@@ -464,33 +621,58 @@ class MqttNetworkProtocolTest {
             assertNotNull(pubAck);
         }
 
+        /**
+         * 主动断开连接。
+         */
         void disconnect() {
             MqttMessage disconnect = new MqttMessage(new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0));
             writeAndFlush(disconnect);
             close();
         }
 
+        /**
+         * 非正常断开连接。
+         */
         void closeAbrupt() {
             if (connection != null && !connection.isDisposed()) {
                 connection.disposeNow();
             }
         }
 
+        /**
+         * 关闭连接。
+         */
         void close() {
             if (connection != null && !connection.isDisposed()) {
                 connection.disposeNow();
             }
         }
 
+        /**
+         * 生成消息 ID。
+         *
+         * @return 消息 ID
+         */
         private int nextPacketId() {
             return packetId++;
         }
 
+        /**
+         * 等待连接断开。
+         *
+         * @param timeout 超时时间
+         * @return 是否断开
+         */
         boolean waitForDisconnect(Duration timeout) {
             connection.onDispose().block(timeout);
             return connection.isDisposed();
         }
 
+        /**
+         * 发送 PUBREL 并等待 PUBCOMP。
+         *
+         * @param messageId 消息 ID
+         */
         void sendPubRel(int messageId) {
             writeAndFlush(MqttMessageBuilder.publishRelMessage(messageId));
             MqttMessage pubComp = awaitMessage(
@@ -500,6 +682,17 @@ class MqttNetworkProtocolTest {
             assertNotNull(pubComp);
         }
 
+        /**
+         * 建立带遗嘱的连接。
+         *
+         * @param version          MQTT 版本
+         * @param cleanSession     清理会话
+         * @param keepAliveSeconds KeepAlive 秒数
+         * @param willTopic        遗嘱主题
+         * @param willPayload      遗嘱负载
+         * @param willQos          遗嘱 QoS
+         * @param willRetain       遗嘱保留
+         */
         void connectWithWill(MqttVersion version, boolean cleanSession, int keepAliveSeconds, String willTopic, String willPayload, MqttQoS willQos, boolean willRetain) {
             this.connection = TcpClient.create()
                     .resolver(NoopAddressResolverGroup.INSTANCE)
@@ -524,10 +717,18 @@ class MqttNetworkProtocolTest {
             assertEquals(MqttConnectReturnCode.CONNECTION_ACCEPTED, ack.variableHeader().connectReturnCode());
         }
 
+        /**
+         * 写入并刷新消息。
+         *
+         * @param message 消息
+         */
         private void writeAndFlush(MqttMessage message) {
             connection.channel().writeAndFlush(message).syncUninterruptibly();
         }
 
+        /**
+         * 确保 MQTT 编解码器存在。
+         */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
             if (connection.channel().pipeline().get(bridgeName) != null) {
@@ -539,6 +740,13 @@ class MqttNetworkProtocolTest {
                 }
                 if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                     connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
+                        /**
+                         * 处理入站消息并保留引用。
+                         *
+                         * @param ctx 上下文
+                         * @param msg 消息
+                         * @throws Exception 处理异常
+                         */
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                             if (msg instanceof ReferenceCounted) {
@@ -558,6 +766,13 @@ class MqttNetworkProtocolTest {
             }
             if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                 connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
+                    /**
+                     * 处理入站消息并保留引用。
+                     *
+                     * @param ctx 上下文
+                     * @param msg 消息
+                     * @throws Exception 处理异常
+                     */
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                         if (msg instanceof ReferenceCounted) {
@@ -569,6 +784,12 @@ class MqttNetworkProtocolTest {
             }
         }
 
+        /**
+         * 复制发布消息并释放原消息。
+         *
+         * @param message 原消息
+         * @return 复制消息
+         */
         private MqttPublishMessage copyPublishMessage(MqttPublishMessage message) {
             try {
                 ByteBuf payload = message.payload();
@@ -581,6 +802,11 @@ class MqttNetworkProtocolTest {
             }
         }
 
+        /**
+         * 处理入站消息并入队。
+         *
+         * @param message 入站消息
+         */
         private void onInbound(MqttMessage message) {
             if (message instanceof MqttPublishMessage) {
                 inbox.add(copyPublishMessage((MqttPublishMessage) message));
@@ -589,6 +815,13 @@ class MqttNetworkProtocolTest {
             }
         }
 
+        /**
+         * 等待匹配消息。
+         *
+         * @param predicate 过滤条件
+         * @param timeout   超时时间
+         * @return 消息
+         */
         private MqttMessage awaitMessage(Predicate<MqttMessage> predicate, Duration timeout) {
             long deadline = System.nanoTime() + timeout.toNanos();
             while (System.nanoTime() < deadline) {
@@ -609,6 +842,15 @@ class MqttNetworkProtocolTest {
             return null;
         }
 
+        /**
+         * 构造 CONNECT 消息。
+         *
+         * @param version          MQTT 版本
+         * @param clientId         客户端 ID
+         * @param cleanSession     清理会话
+         * @param keepAliveSeconds KeepAlive 秒数
+         * @return CONNECT 消息
+         */
         private static MqttConnectMessage connectMessage(MqttVersion version, String clientId, boolean cleanSession, int keepAliveSeconds) {
             MqttConnectVariableHeader header = new MqttConnectVariableHeader(
                     version.protocolName(),
@@ -638,6 +880,19 @@ class MqttNetworkProtocolTest {
             return new MqttConnectMessage(fixedHeader, header, payload);
         }
 
+        /**
+         * 构造带遗嘱的 CONNECT 消息。
+         *
+         * @param version          MQTT 版本
+         * @param clientId         客户端 ID
+         * @param cleanSession     清理会话
+         * @param keepAliveSeconds KeepAlive 秒数
+         * @param willTopic        遗嘱主题
+         * @param willPayload      遗嘱负载
+         * @param willQos          遗嘱 QoS
+         * @param willRetain       遗嘱保留
+         * @return CONNECT 消息
+         */
         private static MqttConnectMessage connectMessageWithWill(MqttVersion version,
                                                                 String clientId,
                                                                 boolean cleanSession,

@@ -20,10 +20,18 @@ import java.util.stream.Collectors;
  * @since 2025/4/16 10:16
  */
 public class FixedTopicFilter implements TopicFilter {
+
     private final LongAdder subscribeNumber = new LongAdder();
 
     private final Map<String, Set<SubscribeTopic>> topicChannels = new ConcurrentHashMap<>();
 
+    /**
+     * 根据固定主题获取订阅集合。
+     *
+     * @param topic   主题
+     * @param mqttQoS QoS
+     * @return 订阅集合
+     */
     @Override
     public Set<SubscribeTopic> getSubscribeByTopic(String topic, MqttQoS mqttQoS) {
         Set<SubscribeTopic> channels = topicChannels.get(topic);
@@ -33,11 +41,23 @@ public class FixedTopicFilter implements TopicFilter {
         return channels.stream().map(tp -> tp.compareQos(mqttQoS)).collect(Collectors.toSet());
     }
 
+    /**
+     * 注册固定主题订阅。
+     *
+     * @param topicFilter 主题过滤器
+     * @param mqttChannel 会话
+     * @param mqttQoS     QoS
+     */
     @Override
     public void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS) {
         this.addSubscribeTopic(new SubscribeTopic(topicFilter, mqttQoS, mqttChannel));
     }
 
+    /**
+     * 注册订阅对象。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void addSubscribeTopic(SubscribeTopic subscribeTopic) {
         Set<SubscribeTopic> channels = topicChannels.computeIfAbsent(subscribeTopic.getTopicFilter(), t -> ConcurrentHashMap.newKeySet());
@@ -48,6 +68,11 @@ public class FixedTopicFilter implements TopicFilter {
         }
     }
 
+    /**
+     * 移除订阅对象。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void removeSubscribeTopic(SubscribeTopic subscribeTopic) {
         Set<SubscribeTopic> channels = topicChannels.computeIfAbsent(subscribeTopic.getTopicFilter(), t -> ConcurrentHashMap.newKeySet());
@@ -58,13 +83,24 @@ public class FixedTopicFilter implements TopicFilter {
         }
     }
 
+    /**
+     * 获取订阅数量。
+     *
+     * @return 订阅数量
+     */
     @Override
     public int count() {
         return (int) subscribeNumber.sum();
     }
 
+    /**
+     * 获取全部订阅集合。
+     *
+     * @return 订阅集合
+     */
     @Override
     public Set<SubscribeTopic> getAllSubscribesTopic() {
         return topicChannels.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
     }
+
 }

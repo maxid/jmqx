@@ -12,12 +12,13 @@ import java.util.Collection;
  * @since 2025/4/9 12:00
  */
 public interface SessionRegistry extends Startup {
+
     SessionRegistry INSTANCE = DynamicLoader.findFirst(SessionRegistry.class).orElse(null);
 
     /**
      * 关闭会话
      *
-     * @param session {@link MqttSession}
+     * @param session 会话
      */
     void close(MqttSession session);
 
@@ -25,7 +26,7 @@ public interface SessionRegistry extends Startup {
      * 注册会话
      *
      * @param clientId 客户端 ID
-     * @param session      {@link MqttSession}
+     * @param session  会话
      */
     void registry(String clientId, MqttSession session);
 
@@ -33,7 +34,7 @@ public interface SessionRegistry extends Startup {
      * 判读会话是否存在
      *
      * @param clientId 客户端 ID
-     * @return 布尔
+     * @return 是否存在
      */
     boolean exists(String clientId);
 
@@ -41,21 +42,22 @@ public interface SessionRegistry extends Startup {
      * 获取会话
      *
      * @param clientId 客户端 ID
-     * @return MqttChannel
+     * @return 会话
      */
     MqttSession get(String clientId);
 
     /**
      * 获取会话计数
      *
-     * @return 会话数
+     * @return 会话数量
      */
     Integer counts();
 
     /**
      * 获取说有channel信息
      *
-     * @return {@link Collection}
+     * @return 会话集合
      */
     Collection<MqttSession> getChannels();
+
 }

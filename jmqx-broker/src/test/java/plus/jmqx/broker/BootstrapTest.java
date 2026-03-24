@@ -47,6 +47,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")
 class BootstrapTest {
 
+    /**
+     * 验证多个 Broker 实例启动与关闭。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void testBroker() throws Exception {
         setLogContext();
@@ -63,6 +68,11 @@ class BootstrapTest {
         bootstrap2.shutdown();
     }
 
+    /**
+     * 运行 Broker 压测并输出结果。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void testBrokerStress() throws Exception {
         setLogContext();
@@ -79,6 +89,9 @@ class BootstrapTest {
         bootstrap1.shutdown();
     }
 
+    /**
+     * 设置测试日志级别。
+     */
     private void setLogContext() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
@@ -87,6 +100,16 @@ class BootstrapTest {
         loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.DEBUG);
     }
 
+    /**
+     * 创建基础配置。
+     *
+     * @param namespace 命名空间
+     * @param mqttPort  MQTT 端口
+     * @param mqttsPort MQTTS 端口
+     * @param wsPort    WS 端口
+     * @param wssPort   WSS 端口
+     * @return MQTT 配置
+     */
     private MqttConfiguration config(String namespace, int mqttPort, int mqttsPort, int wsPort, int wssPort) {
         MqttConfiguration config = new MqttConfiguration();
         config.setBusinessQueueSize(Integer.MAX_VALUE);
@@ -102,6 +125,12 @@ class BootstrapTest {
         return config;
     }
 
+    /**
+     * 创建压测配置。
+     *
+     * @param mqttPort MQTT 端口
+     * @return MQTT 配置
+     */
     private MqttConfiguration stressConfig(int mqttPort) {
         MqttConfiguration config = new MqttConfiguration();
         config.setBusinessQueueSize(Integer.MAX_VALUE);
@@ -114,6 +143,13 @@ class BootstrapTest {
         return config;
     }
 
+    /**
+     * 读取整型系统属性。
+     *
+     * @param key 属性名
+     * @param def 默认值
+     * @return 属性值
+     */
     private static int intProp(String key, int def) {
         String value = System.getProperty(key);
         if (value == null || value.isEmpty()) {
@@ -122,6 +158,11 @@ class BootstrapTest {
         return Integer.parseInt(value);
     }
 
+    /**
+     * 加载压测参数。
+     *
+     * @return 压测配置
+     */
     private StressConfig loadStressConfig() {
         StressConfig config = new StressConfig();
         config.port = intProp("jmqx.stress.port", 1883);
@@ -136,6 +177,14 @@ class BootstrapTest {
         return config;
     }
 
+    /**
+     * 执行压测任务。
+     *
+     * @param config           压测配置
+     * @param dispatchReceived 分发计数
+     * @return 压测结果
+     * @throws InterruptedException 中断异常
+     */
     private StressResult runStress(StressConfig config, AtomicLong dispatchReceived) throws InterruptedException {
         AtomicLong published = new AtomicLong();
         AtomicLong acked = new AtomicLong();
@@ -179,6 +228,13 @@ class BootstrapTest {
         return new StressResult(acked.get(), start, end, ok);
     }
 
+    /**
+     * 输出压测汇总结果。
+     *
+     * @param config           压测配置
+     * @param result           压测结果
+     * @param dispatchReceived 分发计数
+     */
     private void logStressResult(StressConfig config, StressResult result, long dispatchReceived) {
         double seconds = (result.endNanos - result.startNanos) / 1_000_000_000.0;
         double throughput = result.sent / Math.max(seconds, 0.001);
@@ -193,6 +249,14 @@ class BootstrapTest {
                 result.completed);
     }
 
+    /**
+     * 执行压测预检发布。
+     *
+     * @param config           压测配置
+     * @param acked            Ack 计数
+     * @param dispatchReceived 分发计数
+     * @return 是否预检成功
+     */
     private boolean preflightPublish(StressConfig config, AtomicLong acked, AtomicLong dispatchReceived) {
         MqttStressClient client = new MqttStressClient("stress-preflight", config.port, acked);
         try {
@@ -216,6 +280,14 @@ class BootstrapTest {
         }
     }
 
+    /**
+     * 等待分发计数增长。
+     *
+     * @param dispatchReceived 分发计数
+     * @param beforeDispatch   初始计数
+     * @param timeoutSeconds   超时秒数
+     * @return 是否成功
+     */
     private boolean waitForDispatch(AtomicLong dispatchReceived, long beforeDispatch, int timeoutSeconds) {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         while (System.nanoTime() < deadline) {
@@ -232,6 +304,17 @@ class BootstrapTest {
         return false;
     }
 
+    /**
+     * 输出压测实时进度。
+     *
+     * @param config           压测配置
+     * @param published        发布计数
+     * @param acked            Ack 计数
+     * @param dispatchReceived 分发计数
+     * @param lastAcked        上次 Ack 计数
+     * @param lastReportAt     上次报告时间
+     * @param startNanos       起始时间
+     */
     private void logProgress(StressConfig config,
                              AtomicLong published,
                              AtomicLong acked,
@@ -257,8 +340,19 @@ class BootstrapTest {
                 String.format("%.1f", elapsedSeconds));
     }
 
+    /**
+     * 构造测试用消息分发器。
+     *
+     * @return 分发器
+     */
     private PlatformDispatcher dispatcher() {
         return new PlatformDispatcher() {
+            /**
+             * 处理连接消息。
+             *
+             * @param message 连接消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.fromRunnable(() -> {
@@ -266,6 +360,12 @@ class BootstrapTest {
                 });
             }
 
+            /**
+             * 处理断开连接消息。
+             *
+             * @param message 断开消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.fromRunnable(() -> {
@@ -273,6 +373,12 @@ class BootstrapTest {
                 });
             }
 
+            /**
+             * 处理连接丢失消息。
+             *
+             * @param message 连接丢失消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.fromRunnable(() -> {
@@ -280,6 +386,12 @@ class BootstrapTest {
                 });
             }
 
+            /**
+             * 处理发布消息。
+             *
+             * @param message 发布消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(() -> {
@@ -293,23 +405,53 @@ class BootstrapTest {
         };
     }
 
+    /**
+     * 构造压测用分发器。
+     *
+     * @param dispatchReceived 分发计数
+     * @return 分发器
+     */
     private PlatformDispatcher stressDispatcher(AtomicLong dispatchReceived) {
         return new PlatformDispatcher() {
+            /**
+             * 处理连接消息。
+             *
+             * @param message 连接消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.fromRunnable(() -> {});
             }
 
+            /**
+             * 处理断开连接消息。
+             *
+             * @param message 断开消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.fromRunnable(() -> {});
             }
 
+            /**
+             * 处理连接丢失消息。
+             *
+             * @param message 连接丢失消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.fromRunnable(() -> {});
             }
 
+            /**
+             * 处理发布消息并计数。
+             *
+             * @param message 发布消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(dispatchReceived::incrementAndGet);
@@ -326,12 +468,22 @@ class BootstrapTest {
         private int packetId = 1;
         private final AtomicLong localAcked = new AtomicLong();
 
+        /**
+         * 构造压测客户端。
+         *
+         * @param clientId      客户端 ID
+         * @param port          端口
+         * @param ackedCounter  Ack 计数
+         */
         private MqttStressClient(String clientId, int port, AtomicLong ackedCounter) {
             this.clientId = clientId;
             this.port = port;
             this.ackedCounter = ackedCounter;
         }
 
+        /**
+         * 建立连接并完成握手。
+         */
         void connect() {
             this.connection = TcpClient.create()
                     .resolver(NoopAddressResolverGroup.INSTANCE)
@@ -365,6 +517,17 @@ class BootstrapTest {
             }
         }
 
+        /**
+         * 循环发布消息直到超时。
+         *
+         * @param topic          主题
+         * @param payloadBytes   负载大小
+         * @param durationSeconds 运行时长
+         * @param flushEvery     刷新间隔
+         * @param inFlightLimit  飞行窗口
+         * @param published      发布计数
+         * @return 本地发送数量
+         */
         long publishLoop(String topic,
                          int payloadBytes,
                          int durationSeconds,
@@ -419,6 +582,13 @@ class BootstrapTest {
             return localSent;
         }
 
+        /**
+         * 等待 Ack 达到预期。
+         *
+         * @param acked          Ack 计数
+         * @param expected       预期数量
+         * @param timeoutSeconds 超时秒数
+         */
         void awaitAcks(AtomicLong acked, long expected, int timeoutSeconds) {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
             while (System.nanoTime() < deadline) {
@@ -434,6 +604,14 @@ class BootstrapTest {
             }
         }
 
+        /**
+         * 发布一条消息并等待 Ack。
+         *
+         * @param topic          主题
+         * @param payloadBytes   负载大小
+         * @param timeoutSeconds 超时秒数
+         * @return 是否收到 Ack
+         */
         boolean publishOnceWaitAck(String topic, int payloadBytes, int timeoutSeconds) {
             byte[] payload = new byte[payloadBytes];
             MqttFixedHeader fixedHeader = new MqttFixedHeader(
@@ -463,12 +641,20 @@ class BootstrapTest {
             return false;
         }
 
+        /**
+         * 关闭连接。
+         */
         void close() {
             if (connection != null && !connection.isDisposed()) {
                 connection.disposeNow();
             }
         }
 
+        /**
+         * 写入并刷新消息。
+         *
+         * @param message 消息
+         */
         private void writeAndFlush(MqttMessage message) {
             if (connection.channel().eventLoop().inEventLoop()) {
                 connection.channel().writeAndFlush(message).syncUninterruptibly();
@@ -477,6 +663,11 @@ class BootstrapTest {
             connection.channel().eventLoop().submit(() -> connection.channel().writeAndFlush(message)).syncUninterruptibly();
         }
 
+        /**
+         * 提交写入操作。
+         *
+         * @param message 消息
+         */
         private void submitWrite(MqttMessage message) {
             if (connection.channel().eventLoop().inEventLoop()) {
                 connection.channel().write(message);
@@ -485,6 +676,9 @@ class BootstrapTest {
             connection.channel().eventLoop().execute(() -> connection.channel().write(message));
         }
 
+        /**
+         * 提交刷新操作。
+         */
         private void submitFlush() {
             if (connection.channel().eventLoop().inEventLoop()) {
                 connection.channel().flush();
@@ -493,6 +687,9 @@ class BootstrapTest {
             connection.channel().eventLoop().execute(() -> connection.channel().flush());
         }
 
+        /**
+         * 确保 MQTT 编解码器存在。
+         */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
             if (connection.channel().pipeline().get(bridgeName) != null) {
@@ -512,6 +709,11 @@ class BootstrapTest {
             }
         }
 
+        /**
+         * 生成下一个消息 ID。
+         *
+         * @return 消息 ID
+         */
         private int nextPacketId() {
             int id = packetId++;
             if (packetId > 0xFFFF) {
@@ -520,6 +722,11 @@ class BootstrapTest {
             return id;
         }
 
+        /**
+         * 处理入站消息。
+         *
+         * @param message 入站消息
+         */
         private void onInbound(MqttMessage message) {
             if (message.fixedHeader().messageType() == MqttMessageType.PUBACK) {
                 ackedCounter.incrementAndGet();
@@ -529,6 +736,13 @@ class BootstrapTest {
             inbox.add(message);
         }
 
+        /**
+         * 等待匹配的入站消息。
+         *
+         * @param predicate 过滤条件
+         * @param timeout   超时时间
+         * @return 匹配消息
+         */
         private MqttMessage awaitMessage(java.util.function.Predicate<MqttMessage> predicate, Duration timeout) {
             long deadline = System.nanoTime() + timeout.toNanos();
             while (System.nanoTime() < deadline) {
@@ -567,6 +781,14 @@ class BootstrapTest {
         private final long endNanos;
         private final boolean completed;
 
+        /**
+         * 构造压测结果。
+         *
+         * @param sent       发送数量
+         * @param startNanos 开始时间
+         * @param endNanos   结束时间
+         * @param completed  是否完成
+         */
         private StressResult(long sent, long startNanos, long endNanos, boolean completed) {
             this.sent = sent;
             this.startNanos = startNanos;

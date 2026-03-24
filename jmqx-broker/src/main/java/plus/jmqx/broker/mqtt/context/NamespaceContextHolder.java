@@ -14,7 +14,7 @@ public class NamespaceContextHolder {
     private static final Map<String, ContextHolder> WRAPPER = new ConcurrentHashMap<>();
 
     /**
-     * 获取上下文
+     * 获取上下文。
      *
      * @param namespace 命名空间
      * @return 上下文
@@ -27,7 +27,7 @@ public class NamespaceContextHolder {
     }
 
     /**
-     * 检查命名空间冲突
+     * 检查命名空间冲突。
      *
      * @param namespace 命名空间
      * @throws Exception 命名空间冲突异常

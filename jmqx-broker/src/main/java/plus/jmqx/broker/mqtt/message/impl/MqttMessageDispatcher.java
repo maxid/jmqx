@@ -42,6 +42,13 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     private final Map<MqttMessageType, MessageProcessor<MqttMessage>> processorMap;
     private final MessageProcessor<MqttMessage>                       defaultProcessor;
 
+    /**
+     * 构建分发器并初始化处理管线。
+     *
+     * @param config     配置
+     * @param threadSize 线程数
+     * @param queueSize  队列大小
+     */
     @SuppressWarnings("unchecked")
     public MqttMessageDispatcher(Configuration config, Integer threadSize, Integer queueSize) {
         this.config = config;
@@ -74,11 +81,11 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 根据消息类型分发消息至相应消息处理器进行消息处理
+     * 按消息类型投递到对应处理通道。
      *
-     * @param session {@link MqttSession} 连接会话
-     * @param wrapper {@link MessageWrapper} 消息
-     * @param context {@link ReceiveContext} 上下文
+     * @param session 会话
+     * @param wrapper 消息包装
+     * @param context 上下文
      * @param <C>     配置类型
      */
     @Override
@@ -95,9 +102,9 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 下发消息
+     * 投递集群消息到本地分发器。
      *
-     * @param message 消息
+     * @param message 发布消息
      */
     @Override
     public void publish(MqttPublishMessage message) {
@@ -130,6 +137,11 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         }
     }
 
+    /**
+     * 执行具体消息处理并释放资源。
+     *
+     * @param wrapper 消息包装
+     */
     private void processWrapper(MessageWrapper<MqttMessage> wrapper) {
         MqttMessage message = wrapper.getMessage();
         MqttMessageType messageType = message.fixedHeader().messageType();
@@ -156,6 +168,13 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         }
     }
 
+    /**
+     * 启动消费管线。
+     *
+     * @param sink        消息接收器
+     * @param scheduler   调度器
+     * @param concurrency 并发度
+     */
     private void startConsumer(Sinks.Many<MessageWrapper<MqttMessage>> sink, Scheduler scheduler, int concurrency) {
         int parallelism = Math.max(1, concurrency);
         sink.asFlux()
@@ -173,9 +192,19 @@ public class MqttMessageDispatcher implements MessageDispatcher {
 
         public static final RetryFailureHandler RETRY_NON_SERIALIZED = new RetryFailureHandler();
 
+        /**
+         * 创建失败重试处理器。
+         */
         public RetryFailureHandler() {
         }
 
+        /**
+         * 失败时短暂退避并重试。
+         *
+         * @param signalType 信号类型
+         * @param emitResult 发送结果
+         * @return 是否继续重试
+         */
         @Override
         public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
             LockSupport.parkNanos(10);
@@ -184,11 +213,12 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 上下文
+     * 获取上下文持有器。
      *
-     * @return 上下文
+     * @return 上下文持有器
      */
     private ContextHolder contextHolder() {
         return NamespaceContextHolder.get(config.getClusterConfig().getNamespace());
     }
+
 }

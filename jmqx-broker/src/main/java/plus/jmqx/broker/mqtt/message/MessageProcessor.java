@@ -20,48 +20,48 @@ import java.util.List;
 public interface MessageProcessor<T extends MqttMessage> {
 
     /**
-     * 获取命名空间
+     * 获取命名空间。
      *
      * @return 命名空间
      */
     String getNamespace();
 
     /**
-     * 设置命名空间
+     * 设置命名空间。
      *
      * @param namespace 命名空间
      */
     void setNamespace(String namespace);
 
     /**
-     * 获取上下文
+     * 获取上下文持有器。
      *
-     * @return 上下文
+     * @return 上下文持有器
      */
     default ContextHolder contextHolder() {
         return NamespaceContextHolder.get(getNamespace());
     }
 
     /**
-     * 获取消息处理器适配的消息类型
+     * 获取消息处理器适配的消息类型。
      *
      * @return 消息类型集合
      */
     List<MqttMessageType> getMqttMessageTypes();
 
     /**
-     * 获取消息类型
+     * 获取消息类型。
      *
      * @return 消息类型
      */
     Class<?> getMessageType();
 
     /**
-     * 处理 MQTT 消息, 并添加上下文
+     * 处理 MQTT 消息并注入上下文。
      *
-     * @param message {@link MessageWrapper} 消息
-     * @param session {@link MqttSession} 消息会话
-     * @return Mono
+     * @param message 消息包装
+     * @param session 会话
+     * @return 响应 Mono
      */
     default Mono<Void> process(MessageWrapper<T> message, MqttSession session) {
         return Mono.deferContextual(view -> {
@@ -71,11 +71,11 @@ public interface MessageProcessor<T extends MqttMessage> {
     }
 
     /**
-     * 处理 MQTT 消息, 并添加上下文
+     * 处理 MQTT 消息并注入上下文。
      *
-     * @param wrapper {@link MessageWrapper} 消息
-     * @param session {@link MqttSession} 消息会话
-     * @param view    {@link ContextView} 上下文视图
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
      */
     void process(MessageWrapper<T> wrapper, MqttSession session, ContextView view);
 
@@ -87,6 +87,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class CommonMessageType implements MessageTypeWrapper<MqttMessage> {
         private final MessageWrapper<MqttMessage> wrapper;
 
+        /**
+         * 创建通用消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static CommonMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new CommonMessageType(wrapper);
         }
@@ -100,6 +106,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class ConnectAckMessageType implements MessageTypeWrapper<MqttConnAckMessage> {
         private final MessageWrapper<MqttConnAckMessage> wrapper;
 
+        /**
+         * 创建连接确认消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static ConnectAckMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new ConnectAckMessageType((MessageWrapper) wrapper);
         }
@@ -113,6 +125,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class ConnectMessageType implements MessageTypeWrapper<MqttConnectMessage> {
         private final MessageWrapper<MqttConnectMessage> wrapper;
 
+        /**
+         * 创建连接消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static ConnectMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new ConnectMessageType((MessageWrapper) wrapper);
         }
@@ -126,6 +144,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class PublishAckMessageType implements MessageTypeWrapper<MqttPubAckMessage> {
         private final MessageWrapper<MqttPubAckMessage> wrapper;
 
+        /**
+         * 创建发布确认消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static PublishAckMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new PublishAckMessageType((MessageWrapper) wrapper);
         }
@@ -139,6 +163,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class PublishMessageType implements MessageTypeWrapper<MqttPublishMessage> {
         private final MessageWrapper<MqttPublishMessage> wrapper;
 
+        /**
+         * 创建发布消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static PublishMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new PublishMessageType((MessageWrapper) wrapper);
         }
@@ -152,6 +182,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class SubscribeAckMessageType implements MessageTypeWrapper<MqttSubAckMessage> {
         private final MessageWrapper<MqttSubAckMessage> wrapper;
 
+        /**
+         * 创建订阅确认消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static SubscribeAckMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new SubscribeAckMessageType((MessageWrapper) wrapper);
         }
@@ -165,6 +201,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class SubscribeMessageType implements MessageTypeWrapper<MqttSubscribeMessage> {
         private final MessageWrapper<MqttSubscribeMessage> wrapper;
 
+        /**
+         * 创建订阅消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static SubscribeMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new SubscribeMessageType((MessageWrapper) wrapper);
         }
@@ -178,6 +220,12 @@ public interface MessageProcessor<T extends MqttMessage> {
     class UnsubscribeAckMessageType implements MessageTypeWrapper<MqttUnsubAckMessage> {
         private final MessageWrapper<MqttUnsubAckMessage> wrapper;
 
+        /**
+         * 创建去订阅确认消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static UnsubscribeAckMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new UnsubscribeAckMessageType((MessageWrapper) wrapper);
         }
@@ -191,8 +239,15 @@ public interface MessageProcessor<T extends MqttMessage> {
     class UnsubscribeMessageType implements MessageTypeWrapper<MqttUnsubscribeMessage> {
         private final MessageWrapper<MqttUnsubscribeMessage> wrapper;
 
+        /**
+         * 创建去订阅消息类型包装。
+         *
+         * @param wrapper 消息包装
+         * @return 包装对象
+         */
         public static UnsubscribeMessageType of(MessageWrapper<MqttMessage> wrapper) {
             return new UnsubscribeMessageType((MessageWrapper) wrapper);
         }
     }
+
 }

@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  * @since 2025/4/11 09:11
  */
 public interface Ack extends TimerTask {
+
     /**
      * ACK ID
      *
@@ -19,17 +20,19 @@ public interface Ack extends TimerTask {
     long getId();
 
     /**
-     * 启动确认
+     * 启动确认。
      */
     void start();
 
     /**
-     * 停止确认
+     * 停止确认。
      */
     void stop();
 
     /**
-     * @return
+     * 获取下一次确认间隔。
+     *
+     * @return 间隔时长
      */
     int getTimed();
 
@@ -39,4 +42,5 @@ public interface Ack extends TimerTask {
      * @return 时间单位
      */
     TimeUnit getUnit();
+
 }
