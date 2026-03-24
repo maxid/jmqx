@@ -25,11 +25,22 @@ public class PlatformMqttBroker implements ApplicationRunner {
     private final AclManager         aclManager;
     private final PlatformDispatcher dispatcher;
 
+    /**
+     * 应用启动后运行。
+     *
+     * @param args 启动参数
+     * @throws Exception 启动异常
+     */
     @Override
     public void run(ApplicationArguments args) throws Exception {
         start();
     }
 
+    /**
+     * 启动 MQTT Broker。
+     *
+     * @throws Exception 启动异常
+     */
     private void start() throws Exception {
         Bootstrap bootstrap = new Bootstrap(config, aclManager, authManager, dispatcher);
         // bootstrap.start().block();

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  * @since 2025/4/16 10:17
  */
 public class TreeTopicFilter implements TopicFilter {
+
     private final TreeNode rootTreeNode = new TreeNode("root");
 
     private final LongAdder subscribeNumber = new LongAdder();
@@ -31,6 +32,13 @@ public class TreeTopicFilter implements TopicFilter {
     private static final int MAX_BUCKETS = 64;
     private final Map<String, Map<String, List<SubscribeTopic>>> bucketCaches = new ConcurrentHashMap<>();
 
+    /**
+     * 根据主题获取订阅集合（带缓存）。
+     *
+     * @param topic   主题
+     * @param mqttQoS QoS
+     * @return 订阅集合
+     */
     @Override
     public Set<SubscribeTopic> getSubscribeByTopic(String topic, MqttQoS mqttQoS) {
         Map<String, List<SubscribeTopic>> bucket = bucketCache(topic);
@@ -42,11 +50,23 @@ public class TreeTopicFilter implements TopicFilter {
         return matches.stream().map(tp -> tp.compareQos(mqttQoS)).collect(Collectors.toSet());
     }
 
+    /**
+     * 注册主题订阅。
+     *
+     * @param topicFilter 主题过滤器
+     * @param mqttChannel 会话
+     * @param mqttQoS     QoS
+     */
     @Override
     public void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS) {
         this.addSubscribeTopic(new SubscribeTopic(topicFilter, mqttQoS, mqttChannel));
     }
 
+    /**
+     * 注册订阅对象并刷新缓存。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void addSubscribeTopic(SubscribeTopic subscribeTopic) {
         if (rootTreeNode.addSubscribeTopic(subscribeTopic)) {
@@ -57,6 +77,11 @@ public class TreeTopicFilter implements TopicFilter {
         }
     }
 
+    /**
+     * 移除订阅对象并刷新缓存。
+     *
+     * @param subscribeTopic 订阅对象
+     */
     @Override
     public void removeSubscribeTopic(SubscribeTopic subscribeTopic) {
         if (rootTreeNode.removeSubscribeTopic(subscribeTopic)) {
@@ -67,6 +92,12 @@ public class TreeTopicFilter implements TopicFilter {
         }
     }
 
+    /**
+     * 获取主题分桶缓存。
+     *
+     * @param topic 主题
+     * @return 分桶缓存
+     */
     private Map<String, List<SubscribeTopic>> bucketCache(String topic) {
         if (bucketCaches.size() > MAX_BUCKETS) {
             bucketCaches.clear();
@@ -75,6 +106,12 @@ public class TreeTopicFilter implements TopicFilter {
         return bucketCaches.computeIfAbsent(bucketKey, key -> lruMap(BUCKET_LIMIT));
     }
 
+    /**
+     * 计算分桶 key。
+     *
+     * @param topic 主题
+     * @return 分桶 key
+     */
     private String bucketKey(String topic) {
         if (topic == null || topic.isEmpty()) {
             return "";
@@ -83,6 +120,12 @@ public class TreeTopicFilter implements TopicFilter {
         return index < 0 ? topic : topic.substring(0, index);
     }
 
+    /**
+     * 创建 LRU 缓存映射。
+     *
+     * @param limit 上限
+     * @return LRU Map
+     */
     private Map<String, List<SubscribeTopic>> lruMap(int limit) {
         return Collections.synchronizedMap(new LinkedHashMap<String, List<SubscribeTopic>>(64, 0.75f, true) {
             @Override
@@ -92,13 +135,24 @@ public class TreeTopicFilter implements TopicFilter {
         });
     }
 
+    /**
+     * 获取订阅数量。
+     *
+     * @return 订阅数量
+     */
     @Override
     public int count() {
         return (int) subscribeNumber.sum();
     }
 
+    /**
+     * 获取全部订阅集合。
+     *
+     * @return 订阅集合
+     */
     @Override
     public Set<SubscribeTopic> getAllSubscribesTopic() {
         return rootTreeNode.getAllSubscribesTopic();
     }
+
 }

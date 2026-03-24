@@ -24,17 +24,33 @@ import reactor.util.context.ContextView;
  */
 public class MqttReceiver extends OptionHandler implements Receiver {
 
+    /**
+     * 获取接收器名称。
+     *
+     * @return 名称
+     */
     @Override
     public String getName() {
         return "mqtt";
     }
 
+    /**
+     * 绑定 MQTT 端口并启动服务。
+     *
+     * @return 服务端实例
+     */
     @Override
     public Mono<DisposableServer> bind() {
         return Mono.deferContextual(view -> Mono.just(this.serv(view))
                 .flatMap(serv-> serv.bind().cast(DisposableServer.class)));
     }
 
+    /**
+     * 构建 TCP 服务配置。
+     *
+     * @param view 上下文视图
+     * @return TcpServer
+     */
     private TcpServer serv(ContextView view) {
         MqttReceiveContext context = view.get(MqttReceiveContext.class);
         MqttConfiguration config = context.getConfiguration();
@@ -59,4 +75,5 @@ public class MqttReceiver extends OptionHandler implements Receiver {
                     context.apply(MqttSession.init(connection, context.getTimeAckManager()));
                 });
     }
+
 }

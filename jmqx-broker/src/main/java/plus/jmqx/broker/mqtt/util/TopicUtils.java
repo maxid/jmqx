@@ -7,9 +7,19 @@ package plus.jmqx.broker.mqtt.util;
  * @since 2026/3/24 14:40
  */
 public final class TopicUtils {
+
+    /**
+     * 工具类禁止实例化。
+     */
     private TopicUtils() {
     }
 
+    /**
+     * 按 '/' 拆分主题字符串。
+     *
+     * @param topic 主题字符串
+     * @return 拆分后的主题层级数组
+     */
     public static String[] splitTopic(String topic) {
         if (topic == null || topic.isEmpty()) {
             return new String[0];
@@ -31,4 +41,5 @@ public final class TopicUtils {
         }
         return parts;
     }
+
 }

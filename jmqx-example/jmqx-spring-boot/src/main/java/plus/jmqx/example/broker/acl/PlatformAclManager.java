@@ -13,8 +13,18 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
  */
 @Component
 public class PlatformAclManager implements AclManager {
+
+    /**
+     * 校验会话对主题的访问权限。
+     *
+     * @param session 会话
+     * @param topic   主题
+     * @param action  权限动作
+     * @return 是否允许访问
+     */
     @Override
     public boolean check(MqttSession session, String topic, AclAction action) {
         return true;
     }
+
 }

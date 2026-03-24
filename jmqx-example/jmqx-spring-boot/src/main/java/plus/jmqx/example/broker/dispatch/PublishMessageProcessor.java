@@ -28,6 +28,11 @@ public class PublishMessageProcessor {
     private final MqttConfiguration configuration;
     private       MessageDispatcher dispatcher;
 
+    /**
+     * 处理设备上报消息。
+     *
+     * @param message 上报消息
+     */
     public void process(PublishMessage message) {
         log.info("【设备消息上报】{}", message);
         // 消息下发示例
@@ -37,6 +42,11 @@ public class PublishMessageProcessor {
         getDispatcher().publish(reply);
     }
 
+    /**
+     * 获取消息分发器。
+     *
+     * @return 消息分发器
+     */
     private MessageDispatcher getDispatcher() {
         if (dispatcher == null) {
             String namespace = configuration.getClusterConfig().getNamespace();

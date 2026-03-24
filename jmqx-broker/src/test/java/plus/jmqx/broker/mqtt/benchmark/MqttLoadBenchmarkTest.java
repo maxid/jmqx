@@ -53,6 +53,11 @@ class MqttLoadBenchmarkTest {
 
     private static final String TOPIC = "bench/topic";
 
+    /**
+     * 发布到订阅者的压测流程。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void benchmarkPublishToSubscribers() throws Exception {
         int subscribers = intProp("bench.subscribers", 10);
@@ -108,6 +113,13 @@ class MqttLoadBenchmarkTest {
                 subscribers, publishers, messages, payloadBytes, seconds, throughput);
     }
 
+    /**
+     * 读取整型系统属性。
+     *
+     * @param key 属性名
+     * @param def 默认值
+     * @return 属性值
+     */
     private static int intProp(String key, int def) {
         String value = System.getProperty(key);
         if (value == null || value.isEmpty()) {
@@ -116,23 +128,52 @@ class MqttLoadBenchmarkTest {
         return Integer.parseInt(value);
     }
 
+    /**
+     * 构造空分发器。
+     *
+     * @return 分发器
+     */
     private static PlatformDispatcher noopDispatcher() {
         return new PlatformDispatcher() {
+            /**
+             * 处理连接消息。
+             *
+             * @param message 连接消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理断开消息。
+             *
+             * @param message 断开消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理连接丢失消息。
+             *
+             * @param message 连接丢失消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.empty();
             }
 
+            /**
+             * 处理发布消息。
+             *
+             * @param message 发布消息
+             * @return 处理结果
+             */
             @Override
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.empty();
@@ -140,6 +181,12 @@ class MqttLoadBenchmarkTest {
         };
     }
 
+    /**
+     * 创建测试配置。
+     *
+     * @param port 端口
+     * @return MQTT 配置
+     */
     private static MqttConfiguration createConfig(int port) {
         MqttConfiguration config = new MqttConfiguration();
         config.setSslEnable(false);
@@ -161,11 +208,20 @@ class MqttLoadBenchmarkTest {
         private int packetId = 1;
         private volatile Runnable publishHook;
 
+        /**
+         * 构造测试客户端。
+         *
+         * @param clientId 客户端 ID
+         * @param port     端口
+         */
         private MqttTestClient(String clientId, int port) {
             this.clientId = clientId;
             this.port = port;
         }
 
+        /**
+         * 建立连接并完成握手。
+         */
         void connect() {
             this.connection = TcpClient.create()
                     .resolver(NoopAddressResolverGroup.INSTANCE)
@@ -202,6 +258,11 @@ class MqttLoadBenchmarkTest {
             }
         }
 
+        /**
+         * 订阅主题。
+         *
+         * @param topic 主题
+         */
         void subscribe(String topic) {
             MqttSubscribeMessage subscribe = MqttMessageBuilder.subMessage(
                     nextPacketId(),
@@ -216,6 +277,12 @@ class MqttLoadBenchmarkTest {
             }
         }
 
+        /**
+         * 发布消息。
+         *
+         * @param topic        主题
+         * @param payloadBytes 负载大小
+         */
         void publish(String topic, int payloadBytes) {
             byte[] payload = new byte[payloadBytes];
             MqttFixedHeader fixedHeader = new MqttFixedHeader(
@@ -230,24 +297,45 @@ class MqttLoadBenchmarkTest {
             writeAndFlush(message);
         }
 
+        /**
+         * 注册发布回调。
+         *
+         * @param action 回调
+         */
         void onPublish(Runnable action) {
             this.publishHook = action;
         }
 
+        /**
+         * 关闭连接。
+         */
         void close() {
             if (connection != null && !connection.isDisposed()) {
                 connection.disposeNow();
             }
         }
 
+        /**
+         * 生成下一个消息 ID。
+         *
+         * @return 消息 ID
+         */
         private int nextPacketId() {
             return packetId++;
         }
 
+        /**
+         * 写入并刷新消息。
+         *
+         * @param message 消息
+         */
         private void writeAndFlush(MqttMessage message) {
             connection.channel().writeAndFlush(message).syncUninterruptibly();
         }
 
+        /**
+         * 确保 MQTT 编解码器存在。
+         */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
             if (connection.channel().pipeline().get(bridgeName) != null) {
@@ -259,6 +347,13 @@ class MqttLoadBenchmarkTest {
                 }
                 if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                     connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
+                        /**
+                         * 处理入站消息并保留引用。
+                         *
+                         * @param ctx 上下文
+                         * @param msg 消息
+                         * @throws Exception 处理异常
+                         */
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                             if (msg instanceof ReferenceCounted) {
@@ -278,6 +373,13 @@ class MqttLoadBenchmarkTest {
             }
             if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                 connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
+                    /**
+                     * 处理入站消息并保留引用。
+                     *
+                     * @param ctx 上下文
+                     * @param msg 消息
+                     * @throws Exception 处理异常
+                     */
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                         if (msg instanceof ReferenceCounted) {
@@ -289,6 +391,11 @@ class MqttLoadBenchmarkTest {
             }
         }
 
+        /**
+         * 处理入站消息。
+         *
+         * @param message 消息
+         */
         private void onInbound(MqttMessage message) {
             try {
                 if (message instanceof MqttPublishMessage) {
@@ -306,6 +413,13 @@ class MqttLoadBenchmarkTest {
             }
         }
 
+        /**
+         * 等待匹配的消息。
+         *
+         * @param predicate 过滤条件
+         * @param timeout   超时时间
+         * @return 消息
+         */
         private MqttMessage awaitMessage(Predicate<MqttMessage> predicate, Duration timeout) {
             long deadline = System.nanoTime() + timeout.toNanos();
             while (System.nanoTime() < deadline) {

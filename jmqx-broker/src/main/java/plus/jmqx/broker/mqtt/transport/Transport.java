@@ -12,10 +12,11 @@ import reactor.core.publisher.Mono;
  * @since 2025/4/8 17:38
  */
 public interface Transport<C extends Configuration> extends Disposable {
+
     /**
      * 启动传输服务
      *
-     * @return {@link Transport} 传输服务
+     * @return 传输服务
      */
     Mono<Transport> start();
 
@@ -26,4 +27,5 @@ public interface Transport<C extends Configuration> extends Disposable {
      * @return 服务上下文
      */
     ReceiveContext<C> context(C configuration);
+
 }

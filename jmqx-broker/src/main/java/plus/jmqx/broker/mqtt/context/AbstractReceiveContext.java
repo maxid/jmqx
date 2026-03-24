@@ -44,6 +44,7 @@ import java.util.function.Consumer;
 @Getter
 @Setter
 public abstract class AbstractReceiveContext<T extends Configuration> implements ReceiveContext<T> {
+
     /**
      * 配置信息
      */
@@ -97,6 +98,12 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      */
     private final AuthManager          authManager;
 
+    /**
+     * 创建接收上下文并初始化各组件。
+     *
+     * @param config    配置
+     * @param transport 传输实现
+     */
     public AbstractReceiveContext(T config, Transport<T> transport) {
         this.configuration = config;
         this.transport = transport;
@@ -114,9 +121,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * MQTT 生命周期分发
+     * 分发生命周期事件到平台分发器。
      *
-     * @param consumer 订阅
+     * @param consumer 分发回调
      */
     @Override
     public void dispatch(Consumer<PlatformDispatcher> consumer) {
@@ -124,9 +131,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 流量处理程序加载器
+     * 创建流控处理器加载器。
      *
-     * @return 流量处理程序加载器
+     * @return 流控加载器
      */
     private TrafficHandlerLoader trafficHandlerLoader() {
         if (configuration.getGlobalReadWriteSize() == null && configuration.getChannelReadWriteSize() == null) {
@@ -164,9 +171,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 消息调度器
+     * 创建消息分发器。
      *
-     * @return 消息调度器
+     * @return 消息分发器
      */
     private MessageDispatcher messageDispatcher() {
         Integer tSize = configuration.getBusinessThreadSize();
@@ -176,7 +183,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 集群注册中心
+     * 创建集群注册中心。
      *
      * @return 集群注册中心
      */
@@ -186,7 +193,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 事件注册中心
+     * 创建事件注册中心。
      *
      * @return 事件注册中心
      */
@@ -195,7 +202,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 会话注册中心
+     * 创建会话注册中心。
      *
      * @return 会话注册中心
      */
@@ -204,7 +211,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 主题注册中心
+     * 创建主题注册中心。
      *
      * @return 主题注册中心
      */
@@ -213,7 +220,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 消息注册中心
+     * 创建消息注册中心。
      *
      * @return 消息注册中心
      */
@@ -222,9 +229,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 主题访问控制管理器
+     * 创建主题访问控制管理器。
      *
-     * @return 主题访问控制管理器
+     * @return ACL 管理器
      */
     private AclManager aclManager() {
         return Optional.ofNullable(contextHolder().getAclManager())
@@ -232,9 +239,9 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 连接认证管理器
+     * 创建认证管理器。
      *
-     * @return 连接认证管理器
+     * @return 认证管理器
      */
     private AuthManager authManager() {
         return Optional.ofNullable(contextHolder().getAuthManager())
@@ -242,11 +249,12 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 上下文
+     * 获取上下文持有器。
      *
-     * @return 上下文
+     * @return 上下文持有器
      */
     private ContextHolder contextHolder() {
         return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace());
     }
+
 }

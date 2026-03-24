@@ -12,6 +12,7 @@ import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
  */
 @Data
 public class ClusterMessage {
+
     private ClusterEvent clusterEvent;
 
     private Object message;
@@ -30,15 +31,29 @@ public class ClusterMessage {
         CLOSE
     }
 
+    /**
+     * 构造空集群消息。
+     */
     public ClusterMessage(){}
 
+    /**
+     * 构造发布消息事件。
+     *
+     * @param heapMqttMessage 发布消息
+     */
     public ClusterMessage(HeapMqttMessage heapMqttMessage) {
         this.clusterEvent = ClusterEvent.PUBLISH;
         this.message = heapMqttMessage;
     }
 
+    /**
+     * 构造关闭消息事件。
+     *
+     * @param closeMqttMessage 关闭消息
+     */
     public ClusterMessage(CloseMqttMessage closeMqttMessage) {
         this.clusterEvent = ClusterEvent.CLOSE;
         this.message = closeMqttMessage;
     }
+
 }

@@ -12,50 +12,52 @@ import java.util.Set;
  * @since 2025/4/16 09:27
  */
 public interface TopicFilter {
+
     /**
-     * 获取订阅 Topic
+     * 获取订阅主题集合。
      *
-     * @param topic   {@link String} 主题
-     * @param mqttQoS {@link MqttQoS} QoS
-     * @return {@link SubscribeTopic} 订阅主题集合
+     * @param topic   主题
+     * @param mqttQoS QoS
+     * @return 订阅集合
      */
     Set<SubscribeTopic> getSubscribeByTopic(String topic, MqttQoS mqttQoS);
 
 
     /**
-     * 保存订阅 Topic
+     * 保存订阅主题。
      *
-     * @param topicFilter topicFilter
-     * @param mqttQoS     {@link MqttQoS}
-     * @param mqttChannel {@link MqttSession}
+     * @param topicFilter 主题过滤器
+     * @param mqttQoS     QoS
+     * @param mqttChannel 会话
      */
     void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS);
 
     /**
-     * 保存订阅 Topic
+     * 保存订阅对象。
      *
-     * @param subscribeTopic {@link SubscribeTopic}
+     * @param subscribeTopic 订阅对象
      */
     void addSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
-     * 删除订阅 Topic
+     * 删除订阅对象。
      *
-     * @param subscribeTopic {@link SubscribeTopic}
+     * @param subscribeTopic 订阅对象
      */
     void removeSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
-     * 获取订阅总数
+     * 获取订阅总数。
      *
-     * @return 总数
+     * @return 订阅数量
      */
     int count();
 
     /**
-     * 获取订所有订阅 Topic
+     * 获取所有订阅对象。
      *
-     * @return {@link SubscribeTopic}
+     * @return 订阅集合
      */
     Set<SubscribeTopic> getAllSubscribesTopic();
+
 }

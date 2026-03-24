@@ -43,21 +43,21 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
     /**
      * 集群注册中心
      *
-     * @return {@link ClusterRegistry} 集群注册中心
+     * @return 集群注册中心
      */
     ClusterRegistry getClusterRegistry();
 
     /**
      * 事件注册中心
      *
-     * @return {@link EventRegistry} 事件注册中心
+     * @return 事件注册中心
      */
     EventRegistry getEventRegistry();
 
     /**
      * 会话管理中心
      *
-     * @return {@link SessionRegistry} 会话管理中心
+     * @return 会话管理中心
      */
     SessionRegistry getSessionRegistry();
 
@@ -99,7 +99,8 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
     /**
      * MQTT 生命周期分发
      *
-     * @param consumer 订阅
+     * @param consumer 订阅回调
      */
     void dispatch(Consumer<PlatformDispatcher> consumer);
+
 }

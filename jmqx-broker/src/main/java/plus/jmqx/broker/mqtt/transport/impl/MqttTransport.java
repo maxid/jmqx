@@ -30,6 +30,12 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     private final MqttConfiguration configuration;
     private       DisposableServer  disposableServer;
 
+    /**
+     * 构造 MQTT 传输实现。
+     *
+     * @param receiver      接收器
+     * @param configuration 配置
+     */
     public MqttTransport(Receiver receiver, MqttConfiguration configuration) {
         this.receiver = receiver;
         this.configuration = configuration;
@@ -115,6 +121,9 @@ public class MqttTransport implements Transport<MqttConfiguration> {
         }
     }
 
+    /**
+     * 释放传输资源。
+     */
     @Override
     public void dispose() {
         if (disposableServer != null) {
@@ -122,6 +131,11 @@ public class MqttTransport implements Transport<MqttConfiguration> {
         }
     }
 
+    /**
+     * 是否已释放。
+     *
+     * @return 是否已释放
+     */
     @Override
     public boolean isDisposed() {
         if (disposableServer == null) {
