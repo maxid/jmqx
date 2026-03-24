@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
@@ -14,7 +15,13 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
  * @since 2025/4/22 10:46
  */
 @Slf4j
+@EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")
 public class BootstrapTest {
+    /**
+     * 启动集群节点 1 测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void cluster01() throws Exception {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -30,10 +37,14 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 
+    /**
+     * 启动集群节点 2 测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void cluster02() throws Exception {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -53,10 +64,14 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 
+    /**
+     * 单节点模式测试。
+     *
+     * @throws Exception 测试异常
+     */
     @Test
     void clusterSingle() throws Exception {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -76,7 +91,6 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 }

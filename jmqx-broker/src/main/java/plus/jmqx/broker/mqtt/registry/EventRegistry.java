@@ -11,13 +11,15 @@ import plus.jmqx.broker.mqtt.registry.impl.Event;
  * @since 2025/4/18 09:18
  */
 public interface EventRegistry {
+
     /**
      * 发送事件
      *
-     * @param event       {@link Event}
-     * @param session {@link MqttSession}
-     * @param body        {@link Object}
-     * @param context {@link ReceiveContext}
+     * @param event   事件类型
+     * @param session 会话
+     * @param body    事件载荷
+     * @param context 上下文
      */
     void registry(Event event, MqttSession session, Object body, ReceiveContext<?> context);
+
 }

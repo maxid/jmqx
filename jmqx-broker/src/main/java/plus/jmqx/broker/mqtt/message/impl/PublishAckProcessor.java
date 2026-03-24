@@ -28,16 +28,33 @@ public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMess
         MESSAGE_TYPES.add(MqttMessageType.PUBACK);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回发布确认消息类型包装。
+     *
+     * @return 发布确认消息类型包装类
+     */
     @Override
     public Class<PublishAckMessageType> getMessageType() {
         return PublishAckMessageType.class;
     }
 
+    /**
+     * 处理发布确认消息并停止重试。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttPubAckMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
@@ -47,4 +64,5 @@ public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMess
         Ack ack = context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBLISH, messageId));
         Optional.ofNullable(ack).ifPresent(Ack::stop);
     }
+
 }

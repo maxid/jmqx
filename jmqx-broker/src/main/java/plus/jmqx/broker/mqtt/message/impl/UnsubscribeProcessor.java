@@ -29,16 +29,33 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
         MESSAGE_TYPES.add(MqttMessageType.UNSUBSCRIBE);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回去订阅消息类型包装。
+     *
+     * @return 去订阅消息类型包装类
+     */
     @Override
     public Class<UnsubscribeMessageType> getMessageType() {
         return UnsubscribeMessageType.class;
     }
 
+    /**
+     * 处理去订阅消息并移除订阅关系。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttUnsubscribeMessage msg = wrapper.getMessage();
@@ -53,4 +70,5 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
                 .forEach(topicRegistry::removeSubscribeTopic);
         session.write(MqttMessageBuilder.unsubAckMessage(msg.variableHeader().messageId()), false);
     }
+
 }

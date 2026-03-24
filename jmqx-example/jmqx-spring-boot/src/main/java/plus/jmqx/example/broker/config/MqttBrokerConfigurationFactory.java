@@ -3,9 +3,9 @@ package plus.jmqx.example.broker.config;
 import cn.hutool.core.util.StrUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
@@ -22,7 +22,7 @@ import java.util.Objects;
 @Component
 @EqualsAndHashCode(callSuper = true)
 public class MqttBrokerConfigurationFactory
-        extends AbstractFactoryBean<MqttConfiguration> implements FactoryBean<MqttConfiguration> {
+        extends AbstractFactoryBean<MqttConfiguration> {
 
     @Value(value = "${jmqx.tcp.port:1883}")
     private Integer port;
@@ -105,12 +105,24 @@ public class MqttBrokerConfigurationFactory
     @Value(value = "${jmqx.cluster.node:node-1}")
     private String clusterNode;
 
+    /**
+     * 获取生成对象类型。
+     *
+     * @return 目标类型
+     */
     @Override
     public Class<?> getObjectType() {
         return MqttConfiguration.class;
     }
 
+    /**
+     * 创建 MQTT 配置实例。
+     *
+     * @return MQTT 配置
+     * @throws Exception 创建异常
+     */
     @Override
+    @NonNull
     protected MqttConfiguration createInstance() throws Exception {
         MqttConfiguration config = new MqttConfiguration();
         config.setPort(port);

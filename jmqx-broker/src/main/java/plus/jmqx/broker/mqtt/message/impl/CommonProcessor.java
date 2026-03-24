@@ -46,16 +46,33 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
         MESSAGE_TYPES.add(MqttMessageType.PUBREL);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回通用消息类型包装。
+     *
+     * @return 通用消息类型包装类
+     */
     @Override
     public Class<CommonMessageType> getMessageType() {
         return CommonMessageType.class;
     }
 
+    /**
+     * 处理通用控制类消息。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
@@ -113,12 +130,12 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
     }
 
     /**
-     * 过滤离线会话消息
+     * 离线会话缓存消息并跳过发送。
      *
-     * @param session         {@link MqttSession} 会话
-     * @param messageRegistry {@link MessageRegistry} 消息注册中心
-     * @param mqttMessage     {@link MqttPublishMessage} MQTT 消息
-     * @return boolean
+     * @param session         会话
+     * @param messageRegistry 消息注册中心
+     * @param mqttMessage     MQTT 消息
+     * @return 是否可发送
      */
     private boolean filterOfflineSession(MqttSession session, MessageRegistry messageRegistry, MqttPublishMessage mqttMessage) {
         if (session.getStatus() == SessionStatus.ONLINE) {
@@ -128,4 +145,5 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
             return false;
         }
     }
+
 }
