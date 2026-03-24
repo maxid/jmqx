@@ -5,10 +5,13 @@ import plus.jmqx.broker.mqtt.message.RetainMessage;
 import plus.jmqx.broker.mqtt.message.SessionMessage;
 import plus.jmqx.broker.mqtt.util.TopicRegexUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -20,19 +23,29 @@ import java.util.stream.Collectors;
  */
 public class DefaultMessageRegistry implements MessageRegistry {
 
-    private final Map<String, List<SessionMessage>> sessionMessages = new ConcurrentHashMap<>();
+    private final Map<String, Queue<SessionMessage>> sessionMessages = new ConcurrentHashMap<>();
 
     private final Map<String, RetainMessage> retainMessages = new ConcurrentHashMap<>();
+    private final Map<String, Pattern> retainPatternCache = new ConcurrentHashMap<>();
 
     @Override
     public List<SessionMessage> getSessionMessage(String clientIdentifier) {
-        return sessionMessages.remove(clientIdentifier);
+        Queue<SessionMessage> queue = sessionMessages.remove(clientIdentifier);
+        if (queue == null || queue.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<SessionMessage> messages = new ArrayList<>(queue.size());
+        SessionMessage message;
+        while ((message = queue.poll()) != null) {
+            messages.add(message);
+        }
+        return messages;
     }
 
     @Override
     public void saveSessionMessage(SessionMessage sessionMessage) {
-        List<SessionMessage> sessionList = sessionMessages.computeIfAbsent(sessionMessage.getClientId(), key -> new CopyOnWriteArrayList<>());
-        sessionList.add(sessionMessage);
+        Queue<SessionMessage> queue = sessionMessages.computeIfAbsent(sessionMessage.getClientId(), key -> new ConcurrentLinkedQueue<>());
+        queue.add(sessionMessage);
     }
 
     @Override
@@ -42,11 +55,25 @@ public class DefaultMessageRegistry implements MessageRegistry {
 
     @Override
     public List<RetainMessage> getRetainMessage(String topic) {
-        Pattern pattern = Pattern.compile(TopicRegexUtils.regexTopic(topic));
+        if (retainMessages.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (!topic.contains("+") && !topic.contains("#")) {
+            RetainMessage retainMessage = retainMessages.get(topic);
+            return retainMessage == null ? Collections.emptyList() : Collections.singletonList(retainMessage);
+        }
+        Pattern pattern = retainPattern(topic);
         return retainMessages.entrySet()
                 .stream()
                 .filter(entry -> pattern.matcher(entry.getKey()).matches())
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
+    }
+
+    private Pattern retainPattern(String topicFilter) {
+        if (retainPatternCache.size() > 2048) {
+            retainPatternCache.clear();
+        }
+        return retainPatternCache.computeIfAbsent(topicFilter, filter -> Pattern.compile(TopicRegexUtils.regexTopic(filter)));
     }
 }

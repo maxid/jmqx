@@ -78,8 +78,12 @@ public class DefaultTopicRegistry implements TopicRegistry {
     @Override
     public Set<SubscribeTopic> getSubscribesByTopic(String topicName, MqttQoS qos) {
         Set<SubscribeTopic> subscribeTopics = fixedTopicFilter.getSubscribeByTopic(topicName, qos);
-        subscribeTopics.addAll(treeTopicFilter.getSubscribeByTopic(topicName, qos));
-        return subscribeTopics;
+        if (subscribeTopics.isEmpty()) {
+            return treeTopicFilter.getSubscribeByTopic(topicName, qos);
+        }
+        Set<SubscribeTopic> merged = new java.util.HashSet<>(subscribeTopics);
+        merged.addAll(treeTopicFilter.getSubscribeByTopic(topicName, qos));
+        return merged;
     }
 
     @Override
@@ -90,8 +94,9 @@ public class DefaultTopicRegistry implements TopicRegistry {
     @Override
     public Map<String, Set<MqttSession>> getAllTopics() {
         Set<SubscribeTopic> subscribeTopics = fixedTopicFilter.getAllSubscribesTopic();
-        subscribeTopics.addAll(treeTopicFilter.getAllSubscribesTopic());
-        return subscribeTopics
+        Set<SubscribeTopic> merged = new java.util.HashSet<>(subscribeTopics);
+        merged.addAll(treeTopicFilter.getAllSubscribesTopic());
+        return merged
                 .stream()
                 .collect(Collectors.groupingBy(
                         SubscribeTopic::getTopicFilter,

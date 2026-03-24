@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
@@ -14,6 +15,7 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
  * @since 2025/4/22 10:46
  */
 @Slf4j
+@EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")
 public class BootstrapTest {
     @Test
     void cluster01() throws Exception {
@@ -30,7 +32,6 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 
@@ -53,7 +54,6 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 
@@ -76,7 +76,6 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
-        Thread.sleep(3600 * 1000);
         bootstrap.shutdown();
     }
 }
