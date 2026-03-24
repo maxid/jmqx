@@ -271,3 +271,5 @@ dist
 
 .xcodemap
 .flattened-pom.xml
+.m2
+.vscode

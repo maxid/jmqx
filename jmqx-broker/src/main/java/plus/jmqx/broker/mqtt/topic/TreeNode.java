@@ -2,10 +2,14 @@ package plus.jmqx.broker.mqtt.topic;
 
 import lombok.Getter;
 import lombok.Setter;
+import plus.jmqx.broker.mqtt.util.TopicUtils;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -24,9 +28,13 @@ public class TreeNode {
 
     private int subscribeTopicNumber;
 
-    private Set<SubscribeTopic> subscribes = new CopyOnWriteArraySet<>();
+    private Set<SubscribeTopic> subscribes = ConcurrentHashMap.newKeySet();
 
     private Map<String, TreeNode> childNodes = new ConcurrentHashMap<>();
+
+    private volatile TreeNode singleNode;
+
+    private volatile TreeNode multiNode;
 
     public TreeNode(String topic) {
         this.topic = topic;
@@ -37,13 +45,18 @@ public class TreeNode {
     private final String MULTI_SYMBOL = "#";
 
     public boolean addSubscribeTopic(SubscribeTopic subscribeTopic) {
-        String[] topics = subscribeTopic.getTopicFilter().split("/");
+        String[] topics = TopicUtils.splitTopic(subscribeTopic.getTopicFilter());
         return addIndex(subscribeTopic, topics, 0);
     }
 
     private boolean addIndex(SubscribeTopic subscribeTopic, String[] topics, Integer index) {
         String lastTopic = topics[index];
         TreeNode treeNode = childNodes.computeIfAbsent(lastTopic, tp -> new TreeNode(lastTopic));
+        if (SINGLE_SYMBOL.equals(lastTopic)) {
+            this.singleNode = treeNode;
+        } else if (MULTI_SYMBOL.equals(lastTopic)) {
+            this.multiNode = treeNode;
+        }
         if (index == topics.length - 1) {
             return treeNode.addTreeSubscribe(subscribeTopic);
         } else {
@@ -56,7 +69,7 @@ public class TreeNode {
     }
 
     public List<SubscribeTopic> getSubscribeByTopic(String topicFilter) {
-        String[] topics = topicFilter.split("/");
+        String[] topics = TopicUtils.splitTopic(topicFilter);
         return searchTree(topics);
     }
 
@@ -68,7 +81,7 @@ public class TreeNode {
 
     private void loadTreeSubscribes(TreeNode treeNode, LinkedList<SubscribeTopic> subscribeTopics, String[] topics, Integer index) {
         String lastTopic = topics[index];
-        TreeNode moreTreeNode = treeNode.getChildNodes().get(MULTI_SYMBOL);
+        TreeNode moreTreeNode = treeNode.multiNode;
         if (moreTreeNode != null) {
             subscribeTopics.addAll(moreTreeNode.getSubscribes());
         }
@@ -80,15 +93,15 @@ public class TreeNode {
                     subscribeTopics.addAll(subscribes);
                 }
             }
-            localTreeNode = treeNode.getChildNodes().get(SINGLE_SYMBOL);
-            if (localTreeNode != null) {
-                Set<SubscribeTopic> subscribes = localTreeNode.getSubscribes();
+            TreeNode oneTreeNode = treeNode.singleNode;
+            if (oneTreeNode != null) {
+                Set<SubscribeTopic> subscribes = oneTreeNode.getSubscribes();
                 if (subscribes != null && !subscribes.isEmpty()) {
                     subscribeTopics.addAll(subscribes);
                 }
             }
         } else {
-            TreeNode oneTreeNode = treeNode.getChildNodes().get(SINGLE_SYMBOL);
+            TreeNode oneTreeNode = treeNode.singleNode;
             if (oneTreeNode != null) {
                 loadTreeSubscribes(oneTreeNode, subscribeTopics, topics, index + 1);
             }
@@ -101,7 +114,7 @@ public class TreeNode {
 
     public boolean removeSubscribeTopic(SubscribeTopic subscribeTopic) {
         TreeNode node = this;
-        String[] topics = subscribeTopic.getTopicFilter().split("/");
+        String[] topics = TopicUtils.splitTopic(subscribeTopic.getTopicFilter());
         for (String topic : topics) {
             if (node != null) {
                 node = node.getChildNodes().get(topic);
