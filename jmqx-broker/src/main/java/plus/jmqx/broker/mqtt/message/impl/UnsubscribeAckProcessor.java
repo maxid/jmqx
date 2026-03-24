@@ -24,18 +24,36 @@ public class UnsubscribeAckProcessor extends NamespceMessageProcessor<MqttUnsubA
         MESSAGE_TYPES.add(MqttMessageType.UNSUBACK);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回去订阅确认消息类型包装。
+     *
+     * @return 去订阅确认消息类型包装类
+     */
     @Override
     public Class<UnsubscribeAckMessageType> getMessageType() {
         return UnsubscribeAckMessageType.class;
     }
 
+    /**
+     * 处理去订阅确认消息并取消重试。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttUnsubAckMessage> wrapper, MqttSession session, ContextView view) {
         session.cancelRetry(MqttMessageType.UNSUBSCRIBE, wrapper.getMessage().variableHeader().messageId());
     }
+
 }

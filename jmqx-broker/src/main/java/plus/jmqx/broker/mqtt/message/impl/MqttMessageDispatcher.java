@@ -10,7 +10,6 @@ import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
-import plus.jmqx.broker.mqtt.message.MessageTypeWrapper;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.spi.DynamicLoader;
 import reactor.core.publisher.Mono;
@@ -19,8 +18,12 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.ReactorNetty;
+import reactor.util.context.Context;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.Stream;
 
 /**
  * MQTT 消息报文分发处理器
@@ -31,47 +34,58 @@ import java.util.concurrent.locks.LockSupport;
 @Slf4j
 public class MqttMessageDispatcher implements MessageDispatcher {
 
-    private final Scheduler                                   scheduler;
-    private final Sinks.Many<MessageTypeWrapper<MqttMessage>> acceptor;
-    private final Configuration                               config;
+    private final Scheduler                                           publishScheduler;
+    private final Scheduler                                           controlScheduler;
+    private final Sinks.Many<MessageWrapper<MqttMessage>>             publishAcceptor;
+    private final Sinks.Many<MessageWrapper<MqttMessage>>             controlAcceptor;
+    private final Configuration                                       config;
+    private final Map<MqttMessageType, MessageProcessor<MqttMessage>> processorMap;
+    private final MessageProcessor<MqttMessage>                       defaultProcessor;
 
+    /**
+     * 构建分发器并初始化处理管线。
+     *
+     * @param config     配置
+     * @param threadSize 线程数
+     * @param queueSize  队列大小
+     */
     @SuppressWarnings("unchecked")
     public MqttMessageDispatcher(Configuration config, Integer threadSize, Integer queueSize) {
         this.config = config;
-        this.scheduler = Schedulers.newParallel("jmqx-acceptor-io", threadSize);
-        this.acceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
-        DynamicLoader.findAll(MessageProcessor.class)
-                .forEach(p -> {
-                    p.setNamespace(config.getClusterConfig().getNamespace());
-                    acceptor.asFlux()
-                        .doOnError(e -> log.error("MqttMessageDispatcher consumer", e))
-                        .onErrorResume(e -> Mono.empty())
-                        .ofType(p.getMessageType())
-                        .publishOn(scheduler)
-                        .subscribe(type -> {
-                            MessageWrapper<MqttMessage> wrapper = ((MessageTypeWrapper<MqttMessage>) type).getWrapper();
-                            MessageProcessor<MqttMessage> processor = (MessageProcessor<MqttMessage>) p;
-                            MqttSession session = wrapper.getSession();
-                            MqttMessage message = wrapper.getMessage();
-                            processor.process(wrapper, session)
-                                    .contextWrite(view -> view.putNonNull(ReceiveContext.class, contextHolder().getContext()))
-                                    .onErrorContinue((e, o) -> log.error("MqttMessageDispatcher", e))
-                                    // TODO 待性能优化
-                                    .subscribe(v -> {
-                                    }, e -> {
-                                        log.error("session {}, message: {}, error: {}", session, message, e.getMessage());
-                                        ReactorNetty.safeRelease(message.payload());
-                                    }, () -> ReactorNetty.safeRelease(message.payload()));
-                        });
-                });
+        int publishThreads = Math.max(1, threadSize - 1);
+        int controlThreads = Math.max(1, threadSize - publishThreads);
+        this.publishScheduler = Schedulers.newParallel("jmqx-publish-io", publishThreads);
+        this.controlScheduler = Schedulers.newParallel("jmqx-control-io", controlThreads);
+        this.publishAcceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
+        this.controlAcceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
+        Stream<MessageProcessor<?>> processors = (Stream<MessageProcessor<?>>) (Stream<?>) DynamicLoader.findAll(MessageProcessor.class);
+        Map<MqttMessageType, MessageProcessor<MqttMessage>> map = new EnumMap<>(MqttMessageType.class);
+        MessageProcessor<MqttMessage>[] commonHolder = new MessageProcessor[1];
+        processors.forEach(p -> {
+            p.setNamespace(config.getClusterConfig().getNamespace());
+            if (p.getMessageType() == MessageProcessor.CommonMessageType.class) {
+                commonHolder[0] = (MessageProcessor<MqttMessage>) p;
+            }
+            for (MqttMessageType type : p.getMqttMessageTypes()) {
+                MessageProcessor<MqttMessage> previous = map.put(type, (MessageProcessor<MqttMessage>) p);
+                if (previous != null && previous != p) {
+                    log.warn("duplicate processor mapping for {}: {} -> {}", type, previous.getClass().getName(), p.getClass().getName());
+                }
+            }
+        });
+        this.processorMap = map;
+        this.defaultProcessor = commonHolder[0];
+
+        startConsumer(publishAcceptor, publishScheduler, publishThreads);
+        startConsumer(controlAcceptor, controlScheduler, controlThreads);
     }
 
     /**
-     * 根据消息类型分发消息至相应消息处理器进行消息处理
+     * 按消息类型投递到对应处理通道。
      *
-     * @param session {@link MqttSession} 连接会话
-     * @param wrapper {@link MessageWrapper} 消息
-     * @param context {@link ReceiveContext} 上下文
+     * @param session 会话
+     * @param wrapper 消息包装
+     * @param context 上下文
      * @param <C>     配置类型
      */
     @Override
@@ -80,13 +94,17 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         MqttMessageType messageType = message.fixedHeader().messageType();
         initSession(session, message, messageType);
         wrapper.setSession(session);
-        this.acceptor.emitNext(wrapper(wrapper), RetryFailureHandler.RETRY_NON_SERIALIZED);
+        if (messageType == MqttMessageType.PUBLISH) {
+            this.publishAcceptor.emitNext(wrapper, RetryFailureHandler.RETRY_NON_SERIALIZED);
+        } else {
+            this.controlAcceptor.emitNext(wrapper, RetryFailureHandler.RETRY_NON_SERIALIZED);
+        }
     }
 
     /**
-     * 下发消息
+     * 投递集群消息到本地分发器。
      *
-     * @param message 消息
+     * @param message 发布消息
      */
     @Override
     public void publish(MqttPublishMessage message) {
@@ -120,37 +138,51 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 消息类型包装器
+     * 执行具体消息处理并释放资源。
      *
-     * @param wrapper 包装器
-     * @return 消息类型包装器
+     * @param wrapper 消息包装
      */
-    private MessageTypeWrapper<MqttMessage> wrapper(MessageWrapper<MqttMessage> wrapper) {
-        MqttMessageType messageType = wrapper.getMessage().fixedHeader().messageType();
-        switch (messageType) {
-            case CONNECT:
-                return (MessageTypeWrapper) MessageProcessor.ConnectMessageType.of(wrapper);
-            case PUBACK:
-                return (MessageTypeWrapper) MessageProcessor.PublishAckMessageType.of(wrapper);
-            case PUBLISH:
-                return (MessageTypeWrapper) MessageProcessor.PublishMessageType.of(wrapper);
-            case SUBACK:
-                return (MessageTypeWrapper) MessageProcessor.SubscribeAckMessageType.of(wrapper);
-            case SUBSCRIBE:
-                return (MessageTypeWrapper) MessageProcessor.SubscribeMessageType.of(wrapper);
-            case UNSUBACK:
-                return (MessageTypeWrapper) MessageProcessor.UnsubscribeAckMessageType.of(wrapper);
-            case UNSUBSCRIBE:
-                return (MessageTypeWrapper) MessageProcessor.UnsubscribeMessageType.of(wrapper);
-            case PINGRESP:
-            case PINGREQ:
-            case DISCONNECT:
-            case PUBCOMP:
-            case PUBREC:
-            case PUBREL:
-            default:
-                return MessageProcessor.CommonMessageType.of(wrapper);
+    private void processWrapper(MessageWrapper<MqttMessage> wrapper) {
+        MqttMessage message = wrapper.getMessage();
+        MqttMessageType messageType = message.fixedHeader().messageType();
+        MessageProcessor<MqttMessage> processor = processorMap.get(messageType);
+        if (processor == null) {
+            processor = defaultProcessor;
+            if (processor == null) {
+                log.warn("no MessageProcessor for messageType {}", messageType);
+                ReactorNetty.safeRelease(message.payload());
+                return;
+            }
         }
+        ReceiveContext<?> context = contextHolder().getContext();
+        if (context == null) {
+            ReactorNetty.safeRelease(message.payload());
+            return;
+        }
+        try {
+            processor.process(wrapper, wrapper.getSession(), Context.of(ReceiveContext.class, context));
+        } catch (Exception e) {
+            log.error("session {}, message: {}, error: {}", wrapper.getSession(), message, e.getMessage());
+        } finally {
+            ReactorNetty.safeRelease(message.payload());
+        }
+    }
+
+    /**
+     * 启动消费管线。
+     *
+     * @param sink        消息接收器
+     * @param scheduler   调度器
+     * @param concurrency 并发度
+     */
+    private void startConsumer(Sinks.Many<MessageWrapper<MqttMessage>> sink, Scheduler scheduler, int concurrency) {
+        int parallelism = Math.max(1, concurrency);
+        sink.asFlux()
+                .doOnError(e -> log.error("MqttMessageDispatcher consumer", e))
+                .onErrorResume(e -> Mono.empty())
+                .publishOn(scheduler)
+                .flatMap(wrapper -> Mono.fromRunnable(() -> processWrapper(wrapper)), parallelism, parallelism)
+                .subscribe();
     }
 
     /**
@@ -160,9 +192,19 @@ public class MqttMessageDispatcher implements MessageDispatcher {
 
         public static final RetryFailureHandler RETRY_NON_SERIALIZED = new RetryFailureHandler();
 
+        /**
+         * 创建失败重试处理器。
+         */
         public RetryFailureHandler() {
         }
 
+        /**
+         * 失败时短暂退避并重试。
+         *
+         * @param signalType 信号类型
+         * @param emitResult 发送结果
+         * @return 是否继续重试
+         */
         @Override
         public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
             LockSupport.parkNanos(10);
@@ -171,11 +213,12 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 上下文
+     * 获取上下文持有器。
      *
-     * @return 上下文
+     * @return 上下文持有器
      */
     private ContextHolder contextHolder() {
         return NamespaceContextHolder.get(config.getClusterConfig().getNamespace());
     }
+
 }

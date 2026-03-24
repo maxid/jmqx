@@ -11,6 +11,7 @@ import java.util.Map;
  * @since 2025/4/8 17:57
  */
 public interface Configuration {
+
     /**
      * Netty Boss 线程数
      *
@@ -133,7 +134,7 @@ public interface Configuration {
     /**
      * 是否启用 SSL
      *
-     * @return {@link Boolean}
+     * @return 是否启用 SSL
      */
     Boolean getSslEnable();
 
@@ -164,4 +165,5 @@ public interface Configuration {
      * @return {@link MqttConfiguration.ClusterConfig} 集群配置
      */
     MqttConfiguration.ClusterConfig getClusterConfig();
+
 }

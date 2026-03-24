@@ -38,16 +38,33 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
         MESSAGE_TYPES.add(MqttMessageType.PUBLISH);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回发布消息类型包装。
+     *
+     * @return 发布消息类型包装类
+     */
     @Override
     public Class<PublishMessageType> getMessageType() {
         return PublishMessageType.class;
     }
 
+    /**
+     * 处理发布消息主流程。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttPublishMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
@@ -105,11 +122,12 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 通用发送消息
+     * 将消息发送给匹配的订阅者。
      *
-     * @param subscribeTopics {@link SubscribeTopic}
-     * @param message         {@link MqttPublishMessage}
-     * @param messageRegistry {@link MessageRegistry}
+     * @param subscribeTopics 订阅集合
+     * @param message         发布消息
+     * @param messageRegistry 消息注册中心
+     *
      */
     private void send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry) {
         subscribeTopics.stream()
@@ -121,12 +139,13 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 过滤离线会话消息
+     * 离线会话缓存消息并跳过发送。
      *
-     * @param session         {@link MqttSession}
-     * @param messageRegistry {@link MessageRegistry}
-     * @param message         {@link MqttPublishMessage}
-     * @return boolean
+     * @param session         会话
+     * @param messageRegistry 消息注册中心
+     * @param message         发布消息
+     * @return 是否可发送
+     *
      */
     private boolean filterOfflineSession(MqttSession session, MessageRegistry messageRegistry, MqttPublishMessage message) {
         if (session.getStatus() == SessionStatus.ONLINE) {
@@ -136,4 +155,5 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             return false;
         }
     }
+
 }

@@ -37,16 +37,33 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         MESSAGE_TYPES.add(MqttMessageType.SUBSCRIBE);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回订阅消息类型包装。
+     *
+     * @return 订阅消息类型包装类
+     */
     @Override
     public Class<SubscribeMessageType> getMessageType() {
         return SubscribeMessageType.class;
     }
 
+    /**
+     * 处理订阅消息并注册订阅关系。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttSubscribeMessage message = wrapper.getMessage();
@@ -74,10 +91,18 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         ), false);
     }
 
+    /**
+     * 下发匹配的保留消息。
+     *
+     * @param messageRegistry 消息注册中心
+     * @param session         会话
+     * @param subscription    订阅信息
+     */
     private void loadRetainMessage(MessageRegistry messageRegistry, MqttSession session, MqttTopicSubscription subscription) {
         int topicQos = subscription.qualityOfService().value();
         String topic = subscription.topicFilter();
         messageRegistry.getRetainMessage(topic).forEach(msg ->
                 session.write(msg.toPublishMessage(session, topicQos), Math.min(topicQos, msg.getQos()) > 0));
     }
+
 }

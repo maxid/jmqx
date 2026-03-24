@@ -20,6 +20,12 @@ import java.io.File;
 @Slf4j
 public class SslHandler extends OptionHandler {
 
+    /**
+     * 初始化 TcpServer 并按配置启用 SSL。
+     *
+     * @param config MQTT 配置
+     * @return TcpServer
+     */
     @Override
     public TcpServer initTcpServer(MqttConfiguration config) {
         this.server = super.initTcpServer(config);
@@ -29,6 +35,12 @@ public class SslHandler extends OptionHandler {
         return this.server;
     }
 
+    /**
+     * 配置 SSL 上下文。
+     *
+     * @param spec   SSL 配置器
+     * @param config 配置
+     */
     private void secure(SslProvider.SslContextSpec spec, Configuration config) {
         try {
             if (config.getSslEnable()) {
@@ -46,4 +58,5 @@ public class SslHandler extends OptionHandler {
             log.error("ssl read error", e);
         }
     }
+
 }

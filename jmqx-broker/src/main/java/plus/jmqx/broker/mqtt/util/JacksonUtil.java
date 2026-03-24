@@ -29,6 +29,12 @@ public class JacksonUtil {
         mapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
     }
 
+    /**
+     * 对象转 JSON 字符串。
+     *
+     * @param data 对象
+     * @return JSON 字符串
+     */
     public static String bean2Json(Object data) {
         try {
             return mapper.writeValueAsString(data);
@@ -38,6 +44,14 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * JSON 转对象。
+     *
+     * @param jsonData JSON 字符串
+     * @param beanType 目标类型
+     * @param <T>      泛型类型
+     * @return 对象实例
+     */
     public static <T> T json2Bean(String jsonData, Class<T> beanType) {
         try {
             return mapper.readValue(jsonData, beanType);
@@ -47,6 +61,14 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * JSON 转列表。
+     *
+     * @param jsonData JSON 字符串
+     * @param beanType 列表元素类型
+     * @param <T>      泛型类型
+     * @return 列表
+     */
     public static <T> List<T> json2List(String jsonData, Class<T> beanType) {
         try {
             JavaType javaType = mapper.getTypeFactory().constructParametricType(List.class, beanType);
@@ -57,6 +79,16 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * JSON 转 Map。
+     *
+     * @param jsonData  JSON 字符串
+     * @param keyType   Key 类型
+     * @param valueType Value 类型
+     * @param <K>       Key 泛型
+     * @param <V>       Value 泛型
+     * @return Map
+     */
     public static <K, V> Map<K, V> json2Map(String jsonData, Class<K> keyType, Class<V> valueType) {
         if (jsonData == null || "".equals(jsonData)) {
             return Collections.emptyMap();
@@ -71,6 +103,14 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * Map 转 JSON 字符串。
+     *
+     * @param map Map 数据
+     * @param <K> Key 泛型
+     * @param <V> Value 泛型
+     * @return JSON 字符串
+     */
     public static <K, V> String map2Json(Map<K, V> map) {
         try {
             return mapper.writeValueAsString(map);
@@ -80,6 +120,12 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * 动态解析字符串为对象。
+     *
+     * @param s 字符串
+     * @return 解析结果
+     */
     public static Object dynamic(String s) {
         if (s.startsWith("{") && s.endsWith("}")) {
             return JacksonUtil.json2Map(s, String.class, Object.class);
@@ -90,6 +136,12 @@ public class JacksonUtil {
         }
     }
 
+    /**
+     * 动态输出对象为 JSON 字符串。
+     *
+     * @param object 对象
+     * @return JSON 字符串
+     */
     public static String dynamicJson(Object object) {
         if (object instanceof String) {
             return String.valueOf(object);
@@ -97,4 +149,5 @@ public class JacksonUtil {
             return JacksonUtil.bean2Json(object);
         }
     }
+
 }

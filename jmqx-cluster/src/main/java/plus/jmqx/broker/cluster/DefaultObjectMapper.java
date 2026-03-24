@@ -16,12 +16,21 @@ import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
  * @since 2025/4/22 09:55
  */
 public class DefaultObjectMapper {
+
     public static final ObjectMapper OBJECT_MAPPER = initMapper();
 
+    /**
+     * 工具类禁止实例化。
+     */
     private DefaultObjectMapper() {
         // Do not instantiate
     }
 
+    /**
+     * 初始化默认 ObjectMapper。
+     *
+     * @return ObjectMapper
+     */
     private static ObjectMapper initMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -38,4 +47,5 @@ public class DefaultObjectMapper {
         mapper.findAndRegisterModules();
         return mapper;
     }
+
 }

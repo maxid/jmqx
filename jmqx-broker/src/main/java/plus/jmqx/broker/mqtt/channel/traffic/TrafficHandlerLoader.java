@@ -9,10 +9,12 @@ import io.netty.handler.traffic.AbstractTrafficShapingHandler;
  * @since 2025/4/10 17:25
  */
 public interface TrafficHandlerLoader {
+
     /**
-     * return TrafficHandlerLoader
+     * 获取流控处理器。
      *
-     * @return {@link AbstractTrafficShapingHandler}
+     * @return 流控处理器
      */
     AbstractTrafficShapingHandler get();
+
 }

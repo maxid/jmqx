@@ -11,12 +11,18 @@ import reactor.netty.DisposableServer;
  */
 public interface Receiver {
 
+    /**
+     * 获取接收器名称。
+     *
+     * @return 名称
+     */
     String getName();
 
     /**
      * 服务端口绑定
      *
-     * @return {@link DisposableServer} 服务器
+     * @return 服务端
      */
     Mono<DisposableServer> bind();
+
 }

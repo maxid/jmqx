@@ -38,6 +38,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     private Cluster cluster;
 
 
+    /**
+     * 注册集群并启动。
+     *
+     * @param clusterConfig 集群配置
+     */
     @Override
     public void registry(MqttConfiguration.ClusterConfig clusterConfig) {
         clusterConfig.setPort(PortUtil.getAvailablePort(clusterConfig.getPort()));
@@ -62,11 +67,21 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                 .startAwait();
     }
 
+    /**
+     * 获取集群消息流。
+     *
+     * @return 集群消息流
+     */
     @Override
     public Flux<ClusterMessage> handlerClusterMessage() {
         return messageMany.asFlux();
     }
 
+    /**
+     * 获取集群节点列表。
+     *
+     * @return 节点列表
+     */
     @Override
     public List<ClusterNode> getClusterNode() {
         return Optional.ofNullable(cluster)
@@ -74,6 +89,12 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                 .orElse(Collections.emptyList());
     }
 
+    /**
+     * 转换成员为集群节点。
+     *
+     * @param member 集群成员
+     * @return 节点信息
+     */
     private ClusterNode clusterNode(Member member) {
         return ClusterNode.builder()
                 .alias(member.alias())
@@ -83,6 +104,12 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                 .build();
     }
 
+    /**
+     * 扩散集群消息。
+     *
+     * @param clusterMessage 集群消息
+     * @return 处理结果
+     */
     @Override
     public Mono<Void> spreadMessage(ClusterMessage clusterMessage) {
         log.debug("cluster send message {} ", clusterMessage);
@@ -94,12 +121,22 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                 .collect(Collectors.toList()));
     }
 
+    /**
+     * 关闭集群。
+     *
+     * @return 处理结果
+     */
     @Override
     public Mono<Void> shutdown() {
         return Mono.fromRunnable(() -> Optional.ofNullable(cluster)
                 .ifPresent(Cluster::shutdown));
     }
 
+    /**
+     * 获取集群事件流。
+     *
+     * @return 集群事件流
+     */
     @Override
     public Flux<ClusterStatus> clusterEvent() {
         return eventMany.asFlux();
@@ -108,18 +145,33 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
     class ClusterHandler implements ClusterMessageHandler {
 
+        /**
+         * 处理集群消息。
+         *
+         * @param message 集群消息
+         */
         @Override
         public void onMessage(Message message) {
             log.debug("cluster accept message {} ", message);
             messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
         }
 
+        /**
+         * 处理 Gossip 消息。
+         *
+         * @param message Gossip 消息
+         */
         @Override
         public void onGossip(Message message) {
             log.debug("cluster accept gossip message {} ", message);
             messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
         }
 
+        /**
+         * 处理成员事件。
+         *
+         * @param event 成员事件
+         */
         @Override
         public void onMembershipEvent(MembershipEvent event) {
             Member member = event.member();

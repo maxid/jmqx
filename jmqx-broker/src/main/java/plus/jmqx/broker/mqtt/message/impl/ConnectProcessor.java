@@ -47,16 +47,33 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         MESSAGE_TYPES.add(MqttMessageType.CONNECT);
     }
 
+    /**
+     * 返回处理的消息类型列表。
+     *
+     * @return 消息类型列表
+     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
+    /**
+     * 返回连接消息类型包装。
+     *
+     * @return 连接消息类型包装类
+     */
     @Override
     public Class<ConnectMessageType> getMessageType() {
         return ConnectMessageType.class;
     }
 
+    /**
+     * 处理连接消息主流程。
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param view    上下文视图
+     */
     @Override
     public void process(MessageWrapper<MqttConnectMessage> wrapper, MqttSession session, ContextView view) {
         MqttConnectMessage message = wrapper.getMessage();
@@ -243,6 +260,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      *
      * @param session 会话
      * @param context 上下文
+     * @param eventRegistry 事件注册中心
      */
     private void close(MqttSession session, MqttReceiveContext context, EventRegistry eventRegistry) {
         log.debug("【{}】【{}】【{}】", Thread.currentThread().getName(), "CLOSE", session);
@@ -283,4 +301,5 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                 .subscribeOn(contextHolder().getDispatchScheduler())
                 .subscribe());
     }
+
 }

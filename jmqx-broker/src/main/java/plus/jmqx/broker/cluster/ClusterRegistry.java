@@ -14,6 +14,7 @@ import java.util.List;
  * @since 2025/4/9 14:16
  */
 public interface ClusterRegistry {
+
     ClusterRegistry INSTANCE = DynamicLoader.findFirst(ClusterRegistry.class).orElse(null);
 
     /**
@@ -26,21 +27,21 @@ public interface ClusterRegistry {
     /**
      * 开始订阅消息
      *
-     * @return {@link ClusterMessage} 集群消息
+     * @return 集群消息流
      */
     Flux<ClusterMessage> handlerClusterMessage();
 
     /**
      * 开始订阅节点事件
      *
-     * @return {@link ClusterStatus} 集群状态
+     * @return 集群状态流
      */
     Flux<ClusterStatus> clusterEvent();
 
     /**
      * 获取集群节点信息
      *
-     * @return {@link ClusterNode} 集群节点
+     * @return 集群节点列表
      */
     List<ClusterNode> getClusterNode();
 
@@ -48,7 +49,7 @@ public interface ClusterRegistry {
      * 扩散消息
      *
      * @param clusterMessage 集群消息
-     * @return {@link Mono}
+     * @return 处理结果
      */
     Mono<Void> spreadMessage(ClusterMessage clusterMessage);
 
@@ -56,7 +57,7 @@ public interface ClusterRegistry {
      * 扩散消息
      *
      * @param message Mqtt Publish 消息
-     * @return {@link Mono}
+     * @return 处理结果
      */
     default Mono<Void> spreadPublishMessage(ClusterMessage message) {
         return spreadMessage(message);
@@ -65,7 +66,8 @@ public interface ClusterRegistry {
     /**
      * 停止
      *
-     * @return {@link Mono}
+     * @return 处理结果
      */
     Mono<Void> shutdown();
+
 }

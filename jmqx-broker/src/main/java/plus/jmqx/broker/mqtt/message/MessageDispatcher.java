@@ -5,7 +5,6 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
-import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
 import plus.jmqx.broker.mqtt.message.interceptor.Intercept;
 import plus.jmqx.broker.mqtt.message.interceptor.MessageProxy;
 import plus.jmqx.broker.spi.DynamicLoader;
@@ -17,6 +16,7 @@ import plus.jmqx.broker.spi.DynamicLoader;
  * @since 2025/4/9 14:18
  */
 public interface MessageDispatcher {
+
     /**
      * 用户自定义实例
      */
@@ -30,9 +30,9 @@ public interface MessageDispatcher {
     /**
      * 根据消息类型分发消息至相应消息处理器进行消息处理
      *
-     * @param session {@link MqttSession} 连接会话
-     * @param wrapper {@link MessageWrapper} 消息
-     * @param context {@link ReceiveContext} 上下文
+     * @param session 连接会话
+     * @param wrapper 消息包装
+     * @param context 上下文
      * @param <C>     配置类型
      */
     @Intercept
@@ -41,16 +41,17 @@ public interface MessageDispatcher {
     /**
      * 下发消息
      *
-     * @param message 消息
+     * @param message 发布消息
      */
     void publish(MqttPublishMessage message);
 
     /**
      * 消息处理适配器代理
      *
-     * @return 消息处理适配器代理
+     * @return 代理后的分发器
      */
     default MessageDispatcher proxy() {
         return MESSAGE_PROXY.proxy(this);
     }
+
 }

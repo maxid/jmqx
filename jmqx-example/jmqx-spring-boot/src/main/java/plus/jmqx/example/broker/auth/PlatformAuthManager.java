@@ -22,6 +22,14 @@ public class PlatformAuthManager implements AuthManager {
     @Value(value = "${jmqx.auth.fixed.password:jmqx}")
     private String password;
 
+    /**
+     * 校验设备鉴权信息。
+     *
+     * @param clientId 设备 ID
+     * @param username 用户名
+     * @param password 密码
+     * @return 是否鉴权通过
+     */
     @Override
     public boolean auth(String clientId, String username, byte[] password) {
         String pwd = new String(password, StandardCharsets.UTF_8);
@@ -30,4 +38,5 @@ public class PlatformAuthManager implements AuthManager {
         }
         return false;
     }
+
 }

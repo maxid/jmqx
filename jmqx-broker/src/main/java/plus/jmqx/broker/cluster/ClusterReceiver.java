@@ -25,12 +25,21 @@ import java.util.Optional;
  */
 @Slf4j
 public class ClusterReceiver {
+
     private final MqttReceiveContext context;
 
+    /**
+     * 构造集群接收器。
+     *
+     * @param context 接收上下文
+     */
     public ClusterReceiver(MqttReceiveContext context) {
         this.context = context;
     }
 
+    /**
+     * 注册集群并监听集群消息。
+     */
     public void registry() {
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
         ClusterRegistry cluster = context.getClusterRegistry();
@@ -62,6 +71,12 @@ public class ClusterReceiver {
         }
     }
 
+    /**
+     * 将集群消息转换为 MQTT 消息。
+     *
+     * @param heapMqttMessage 集群消息
+     * @return MQTT 消息包装
+     */
     private MessageWrapper<MqttMessage> getMqttMessage(HeapMqttMessage heapMqttMessage) {
         return new MessageWrapper<>(MqttMessageBuilder.publishMessage(false,
                 MqttQoS.valueOf(heapMqttMessage.getQos()),
@@ -76,4 +91,5 @@ public class ClusterReceiver {
                 Boolean.TRUE
         );
     }
+
 }

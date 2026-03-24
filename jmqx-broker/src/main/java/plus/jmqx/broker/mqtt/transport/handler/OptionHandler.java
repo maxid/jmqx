@@ -13,8 +13,15 @@ import java.util.Map;
  * @since 2025/4/10 16:07
  */
 public class OptionHandler {
+
     protected TcpServer server;
 
+    /**
+     * 初始化 TcpServer 并应用配置。
+     *
+     * @param config MQTT 配置
+     * @return TcpServer
+     */
     public TcpServer initTcpServer(MqttConfiguration config) {
         this.server = TcpServer.create();
         if (config.getOptions() != null) {
@@ -29,4 +36,5 @@ public class OptionHandler {
         }
         return this.server;
     }
+
 }

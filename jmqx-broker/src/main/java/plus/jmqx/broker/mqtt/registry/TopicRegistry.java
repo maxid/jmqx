@@ -22,22 +22,22 @@ public interface TopicRegistry {
      * 绑定主题跟会话关系
      *
      * @param topicFilter 订阅主题
-     * @param session {@link MqttSession} 会话
-     * @param qos         {@link MqttQoS} MQTT 质量服务等级
+     * @param session     会话
+     * @param qos         MQTT 质量服务等级
      */
     void registrySubscribeTopic(String topicFilter, MqttSession session, MqttQoS qos);
 
     /**
      * 绑定主题跟会话关系
      *
-     * @param subscribeTopic {@link SubscribeTopic}
+     * @param subscribeTopic 订阅对象
      */
     void registrySubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
      * 清除订阅消息
      *
-     * @param mqttChannel {@link MqttSession}
+     * @param mqttChannel 会话
      */
     void clear(MqttSession mqttChannel);
 
@@ -45,37 +45,38 @@ public interface TopicRegistry {
      * registryTopicConnection
      * 取消订阅关系
      *
-     * @param subscribeTopic {@link SubscribeTopic}
+     * @param subscribeTopic 订阅对象
      */
     void removeSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
      * 获取topic的会话
      *
-     * @param topicName topic name
-     * @param qos       {@link MqttQoS}
-     * @return {@link SubscribeTopic}
+     * @param topicName 主题名称
+     * @param qos       MQTT 质量服务等级
+     * @return 订阅集合
      */
     Set<SubscribeTopic> getSubscribesByTopic(String topicName, MqttQoS qos);
 
     /**
      * 绑定订阅关系
      *
-     * @param subscribeTopics {@link SubscribeTopic}
+     * @param subscribeTopics 订阅集合
      */
     void registrySubscribesTopic(Set<SubscribeTopic> subscribeTopics);
 
     /**
      * 获取所有topic信息
      *
-     * @return {@link MqttSession}
+     * @return 主题与会话映射
      */
     Map<String, Set<MqttSession>> getAllTopics();
 
     /**
      * 获取总数
      *
-     * @return counts
+     * @return 订阅总数
      */
     Integer counts();
+
 }
