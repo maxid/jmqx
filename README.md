@@ -23,6 +23,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 4. 修复了订阅消息QoS、Retained状态错误、Retain消息重发、消息顺序异常等问题
 5. 同一进程内可以通过设置不同命名空间启动多个实例（2026-1-11）
 6. 增加 PortUtil 在端口占用时自动获取新端口（2026-1-14）
+7. 从 1.4.7 开始升级至 JDK 17, 性能有所提升, m1 下约 12w msg/s（2026-3-25）
 
 ## 使用示例
 
@@ -34,7 +35,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.6</version>
+            <version>1.4.7</version>
         </dependency>
 ```
 
@@ -122,7 +123,7 @@ mvn jmqx-broker -Dtest=BootstrapTest#testBrokerStress test -Djmqx.integration.te
 ```shell
 [INFO] Scanning for projects...
 [WARNING] 
-[WARNING] Some problems were encountered while building the effective model for plus.jmqx.iot:jmqx-spring-boot:jar:1.4.6
+[WARNING] Some problems were encountered while building the effective model for plus.jmqx.iot:jmqx-spring-boot:jar:1.4.7
 [INFO] 
 [INFO] --- surefire:3.2.5:test (default-test) @ jmqx-broker ---
 [INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
@@ -162,7 +163,7 @@ mvn jmqx-broker -Dtest=BootstrapTest#testBrokerStress test -Djmqx.integration.te
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.6</version>
+            <version>1.4.7</version>
         </dependency>
 ```
 
