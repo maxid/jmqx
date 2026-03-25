@@ -64,6 +64,8 @@ class BootstrapTest {
         Bootstrap bootstrap2 = new Bootstrap(config2, dispatcher());
         bootstrap2.start().block();
 
+        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
+
         bootstrap1.shutdown();
         bootstrap2.shutdown();
     }
