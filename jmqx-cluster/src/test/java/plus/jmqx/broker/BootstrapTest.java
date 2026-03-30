@@ -8,6 +8,8 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 集群测试用例
  *
@@ -17,6 +19,7 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
 @Slf4j
 @EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")
 public class BootstrapTest {
+
     /**
      * 启动集群节点 1 测试。
      *
@@ -37,6 +40,7 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
+        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
         bootstrap.shutdown();
     }
 
@@ -64,6 +68,7 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
+        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
         bootstrap.shutdown();
     }
 
@@ -91,6 +96,23 @@ public class BootstrapTest {
         config.getClusterConfig().setNamespace("jmqx-cluster");
         Bootstrap bootstrap = new Bootstrap(config);
         bootstrap.start().block();
+        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
         bootstrap.shutdown();
     }
+
+    /**
+     * 读取整型系统属性。
+     *
+     * @param key 属性名
+     * @param def 默认值
+     * @return 属性值
+     */
+    private static int intProp(String key, int def) {
+        String value = System.getProperty(key);
+        if (value == null || value.isEmpty()) {
+            return def;
+        }
+        return Integer.parseInt(value);
+    }
+
 }

@@ -454,4 +454,5 @@ class DispatcherBenchmarkTest {
             return String.format("%s: time=%.3fs, throughput=%.0f msg/s", name, seconds, qps);
         }
     }
+
 }
