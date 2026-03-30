@@ -65,4 +65,5 @@ public class PlatformMessageDispatcher implements PlatformDispatcher {
     public Mono<Void> onPublish(PublishMessage message) {
         return Mono.fromRunnable(() -> publishMessageProcessor.process(message));
     }
+
 }
