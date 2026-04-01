@@ -141,6 +141,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         session.setSessionPersistent(!header.isCleanSession());
         session.setStatus(SessionStatus.ONLINE);
         session.setUsername(username);
+        session.setProtocolVersion(mqttVersion);
         // 设置读闲置处理
         long idleTimeout = (long) header.keepAliveTimeSeconds() * MILLI_SECOND_PERIOD << 1;
         session.getConnection().onReadIdle(idleTimeout, () -> this.close(session, context, eventRegistry));
