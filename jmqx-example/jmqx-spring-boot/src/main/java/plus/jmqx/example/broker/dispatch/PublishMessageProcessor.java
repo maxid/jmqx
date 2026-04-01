@@ -35,9 +35,9 @@ public class PublishMessageProcessor {
      */
     public void process(PublishMessage message) {
         log.info("【设备消息上报】{}", message);
-        // 消息下发示例
+        // 消息下发示例, QoS 必须为 0
         MqttPublishMessage reply = MqttMessageBuilder.publishMessage(
-                false, MqttQoS.EXACTLY_ONCE, 0, message.getTopic(),
+                false, MqttQoS.AT_MOST_ONCE, 0, message.getTopic() + "_reply",
                 Unpooled.wrappedBuffer("message reply".getBytes(StandardCharsets.UTF_8)));
         getDispatcher().publish(reply);
     }

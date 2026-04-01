@@ -56,6 +56,8 @@ public class MqttSession {
 
     private String address;
 
+    private byte protocolVersion;
+
     @JsonIgnore
     private Set<SubscribeTopic> topics;
 

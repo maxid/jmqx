@@ -4,6 +4,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
@@ -22,6 +23,8 @@ import reactor.util.context.ContextView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 
 /**
  * PUBLISH 消息流程处理
@@ -74,6 +77,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             MqttPublishVariableHeader header = message.variableHeader();
             AclManager aclManager = context.getAclManager();
             if (!session.getIsCluster() && !aclManager.check(session, header.topicName(), AclAction.PUBLISH)) {
+                sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
                 log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ", session.getConnection(), header.topicName());
                 return;
             }
@@ -118,6 +122,29 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             send(topics, message, messageRegistry);
         } catch (Exception e) {
             log.error("error ", e);
+        }
+    }
+
+    /**
+     * MQTT V5 时发送拒绝确认消息
+     * @param session 会话
+     * @param qos QoS
+     * @param packetId 消息ID
+     */
+    private void sendRejectAck(MqttSession session, MqttQoS qos, int packetId) {
+        if (session.getProtocolVersion() != MqttVersion.MQTT_5.protocolLevel()) {
+            return;
+        }
+        byte reasonCode = CONNECTION_REFUSED_NOT_AUTHORIZED_5.byteValue();
+        switch (qos) {
+            case AT_LEAST_ONCE:
+                session.write(MqttMessageBuilder.publishAckMessage(packetId, reasonCode), false);
+                break;
+            case EXACTLY_ONCE:
+                session.write(MqttMessageBuilder.publishRecMessage(packetId, reasonCode), false);
+                break;
+            default:
+                break;
         }
     }
 
