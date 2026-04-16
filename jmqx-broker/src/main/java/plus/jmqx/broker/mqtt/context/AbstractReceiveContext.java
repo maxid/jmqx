@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.acl.impl.DefaultAclManager;
+import plus.jmqx.broker.auth.AuthExecutor;
 import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
@@ -97,6 +98,10 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * MQTT 认证管理
      */
     private final AuthManager          authManager;
+    /**
+     * MQTT 认证执行器
+     */
+    private final AuthExecutor         authExecutor;
 
     /**
      * 创建接收上下文并初始化各组件。
@@ -107,7 +112,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     public AbstractReceiveContext(T config, Transport<T> transport) {
         this.configuration = config;
         this.transport = transport;
-        this.loopResources = LoopResources.create("jmqx-event-loop", config.getBossThreadSize(), config.getWorkThreadSize(), true);
+        this.loopResources = LoopResources.create("jmqx-event-loop", config.getBossThreadSize(),
+                config.getWorkThreadSize(), true);
         this.trafficHandlerLoader = trafficHandlerLoader();
         this.timeAckManager = new TimeAckManager(20, TimeUnit.MILLISECONDS, 50);
         this.messageDispatcher = messageDispatcher();
@@ -118,6 +124,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
         this.authManager = authManager();
+        this.authExecutor = new AuthExecutor(this.authManager, contextHolder().getDispatchScheduler(),
+                config.getAuthTimeoutMillis());
     }
 
     /**

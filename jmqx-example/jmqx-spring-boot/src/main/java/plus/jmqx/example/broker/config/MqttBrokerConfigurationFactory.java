@@ -54,6 +54,9 @@ public class MqttBrokerConfigurationFactory
     @Value(value = "${jmqx.tcp.business-queue-size:100000}")
     private Integer businessQueueSize;
 
+    @Value(value = "${jmqx.tcp.auth-timeout-millis:10000}")
+    private Long authTimeoutMillis;
+
     @Value(value = "${jmqx.tcp.message-max-size:4194304}")
     private Integer messageMaxSize;
 
@@ -142,6 +145,9 @@ public class MqttBrokerConfigurationFactory
         }
         if (businessQueueSize != null && businessQueueSize > 0) {
             config.setBusinessQueueSize(businessQueueSize);
+        }
+        if (authTimeoutMillis != null && authTimeoutMillis > 0) {
+            config.setAuthTimeoutMillis(authTimeoutMillis);
         }
         config.setMessageMaxSize(messageMaxSize);
         config.setLowWaterMark(lowWaterMark);

@@ -44,6 +44,10 @@ public class MqttConfiguration implements Configuration {
      */
     private Integer             businessQueueSize    = 100000;
     /**
+     * 连接鉴权超时时间（毫秒）。
+     */
+    private Long                authTimeoutMillis    = 10000L;
+    /**
      * 消息最大限制值
      */
     private Integer             messageMaxSize       = 4194304;

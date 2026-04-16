@@ -393,6 +393,13 @@ class DispatcherBenchmarkTest {
         @Override
         public plus.jmqx.broker.auth.AuthManager getAuthManager() { return null; }
         /**
+         * 获取鉴权执行器。
+         *
+         * @return 鉴权执行器
+         */
+        @Override
+        public plus.jmqx.broker.auth.AuthExecutor getAuthExecutor() { return null; }
+        /**
          * 调用分发器。
          *
          * @param consumer 分发器消费者
