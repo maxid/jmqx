@@ -1,6 +1,7 @@
 package plus.jmqx.broker.auth;
 
 import lombok.NonNull;
+import plus.jmqx.broker.config.Configuration;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -27,11 +28,18 @@ public class AuthExecutor {
     private final AuthManager authManager;
     private final Executor executor;
     private final long timeoutMillis;
+    private final String namespace;
 
+    public AuthExecutor(AuthManager authManager, Configuration config) {
+        this(authManager, config.getClusterConfig().getNamespace(), config.getAuthTimeoutMillis(),
+                config.getAuthThreadSize(), config.getAuthQueueSize());
+    }
 
-    public AuthExecutor(AuthManager authManager, long timeoutMillis, Integer authThreadSize, Integer authQueueSize) {
+    public AuthExecutor(AuthManager authManager, String namespace, long timeoutMillis,
+                        Integer authThreadSize, Integer authQueueSize) {
         this.authManager = authManager;
-        this.executor = newAuthExecutor(authThreadSize, authQueueSize);
+        this.namespace = namespace;
+        this.executor = executor(authThreadSize, authQueueSize);
         this.timeoutMillis = Math.max(timeoutMillis, 1L);
     }
 
@@ -54,7 +62,7 @@ public class AuthExecutor {
                 .exceptionally(ex -> Boolean.FALSE);
     }
 
-    private static Executor newAuthExecutor(Integer authThreadSize, Integer authQueueSize) {
+    private static Executor executor(Integer authThreadSize, Integer authQueueSize) {
         int threadSize = normalize(authThreadSize, DEFAULT_AUTH_THREADS);
         int queueSize = normalize(authQueueSize, DEFAULT_AUTH_QUEUE_SIZE);
         int index = AUTH_EXECUTOR_INDEX.getAndIncrement();

@@ -125,12 +125,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
         this.authManager = authManager();
-        this.authExecutor = new AuthExecutor(
-                this.authManager,
-                config.getAuthTimeoutMillis(),
-                config.getAuthThreadSize(),
-                config.getAuthQueueSize()
-        );
+        this.authExecutor = authExecutor();
     }
 
     /**
@@ -268,6 +263,15 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      */
     private ContextHolder contextHolder() {
         return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace());
+    }
+
+    /**
+     * 创建认证执行器
+     *
+     * @return 认证执行器
+     */
+    private AuthExecutor authExecutor() {
+        return new AuthExecutor(authManager, configuration);
     }
 
 }

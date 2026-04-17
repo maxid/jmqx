@@ -2,9 +2,8 @@ package plus.jmqx.broker.auth;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ForkJoinPool;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * 鉴权执行器单元测试
@@ -17,7 +16,7 @@ class AuthExecutorTest {
     @Test
     void executeSupportsSyncAuthManager() {
         AuthManager authManager = (clientId, username, password) -> true;
-        AuthExecutor executor = new AuthExecutor(authManager, 1000, 8, 1000);
+        AuthExecutor executor = new AuthExecutor(authManager, "mqtt", 1000, 8, 1000);
         Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertEquals(Boolean.TRUE, passed);
     }
@@ -27,7 +26,7 @@ class AuthExecutorTest {
         AuthManager authManager = (clientId, username, password) -> {
             throw new IllegalStateException("auth error");
         };
-        AuthExecutor executor = new AuthExecutor(authManager, 1000, 8, 1000);
+        AuthExecutor executor = new AuthExecutor(authManager,"mqtt", 1000, 8, 1000);
         Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertEquals(Boolean.FALSE, passed);
     }
@@ -42,7 +41,7 @@ class AuthExecutorTest {
             }
             return true;
         };
-        AuthExecutor executor = new AuthExecutor(authManager, 50, 8, 1000);
+        AuthExecutor executor = new AuthExecutor(authManager, "mqtt", 50, 8, 1000);
         Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertNotEquals(Boolean.TRUE, passed);
     }
