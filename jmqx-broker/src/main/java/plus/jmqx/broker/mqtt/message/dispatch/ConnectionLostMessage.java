@@ -15,7 +15,9 @@ import plus.jmqx.broker.mqtt.channel.SessionStatus;
 @Builder
 @ToString
 public class ConnectionLostMessage {
+
     private final String        clientId;
     private final String        username;
     private final SessionStatus status;
+
 }

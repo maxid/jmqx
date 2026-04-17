@@ -189,4 +189,5 @@ public class MqttMessageBuilder {
     public static MqttMessage pongMessage() {
         return new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0));
     }
+
 }

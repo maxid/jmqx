@@ -10,5 +10,7 @@ import lombok.Data;
  */
 @Data
 public class CloseMqttMessage {
+
     private String clientId;
+
 }

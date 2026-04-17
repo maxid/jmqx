@@ -20,6 +20,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HeapMqttMessage {
+
     private long timestamp;
 
     private String clientId;
@@ -43,4 +44,5 @@ public class HeapMqttMessage {
         keys.put("msg", message);
         return keys;
     }
+
 }

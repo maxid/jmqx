@@ -12,6 +12,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ClusterNode {
+
     /**
      * 别名
      */
@@ -28,4 +29,5 @@ public class ClusterNode {
      * 命名空间
      */
     private String  namespace;
+
 }

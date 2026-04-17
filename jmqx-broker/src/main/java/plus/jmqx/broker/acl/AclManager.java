@@ -10,6 +10,7 @@ import plus.jmqx.broker.spi.DynamicLoader;
  * @since 2025/4/8 17:39
  */
 public interface AclManager {
+
     AclManager INSTANCE = DynamicLoader.findFirst(AclManager.class).orElse(null);
 
     /**
@@ -21,4 +22,5 @@ public interface AclManager {
      * @return 是否具备指定权限
      */
     boolean check(MqttSession session, String topic, AclAction action);
+
 }

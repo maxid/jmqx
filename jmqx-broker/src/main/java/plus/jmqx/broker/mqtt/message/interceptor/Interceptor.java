@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
  * @since 2025/4/16 17:14
  */
 public interface Interceptor {
+
     /**
      * 拦截目标参数
      *
@@ -35,4 +36,5 @@ public interface Interceptor {
      * @return 排序
      */
     int sort();
+
 }
