@@ -96,7 +96,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             }
         } else {
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
-                if (System.currentTimeMillis() - clientSession.getConnectTime() > (context.getConfiguration().getNotKickSeconds() * 1000)) {
+                if (System.currentTimeMillis() - clientSession.getConnectTime()
+                        > (context.getConfiguration().getNotKickSeconds() * 1000L)) {
                     clientSession.close();
                 } else {
                     dispatchConnectionLost(session, context);
@@ -121,7 +122,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                         badCredentials(session, mqttVersion);
                         return;
                     }
-                    afterAuthenticated(message, session, context, header, payload, channelRegistry, topicRegistry, eventRegistry, clientId, username, mqttVersion);
+                    afterAuthenticated(message, session, context, header, payload, channelRegistry,
+                            topicRegistry, eventRegistry, clientId, username, mqttVersion);
                 });
     }
 
@@ -222,7 +224,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void rejected(MqttSession session, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, mqttVersion);
         session.write(ack, false);
         session.close();
     }
@@ -246,7 +249,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void badCredentials(MqttSession session, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, mqttVersion);
         session.write(ack, false);
         session.close();
     }
@@ -259,7 +263,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void ok(MqttSession session, MqttReceiveContext context, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_ACCEPTED, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_ACCEPTED, mqttVersion);
         session.write(ack, false);
         sendOfflineMessage(context.getMessageRegistry(), session);
     }
@@ -315,7 +320,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      */
     private void sendOfflineMessage(MessageRegistry messageRegistry, MqttSession session) {
         Optional.ofNullable(messageRegistry.getSessionMessage(session.getClientId()))
-                .ifPresent(msgs -> msgs.forEach(msg -> session.write(msg.toPublishMessage(session), msg.getQos() > 0)));
+                .ifPresent(msgs -> msgs.forEach(msg
+                        -> session.write(msg.toPublishMessage(session), msg.getQos() > 0)));
     }
 
     /**
