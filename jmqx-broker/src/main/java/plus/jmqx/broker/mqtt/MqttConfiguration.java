@@ -35,11 +35,11 @@ public class MqttConfiguration implements Configuration {
     /**
      * Netty Work 线程数
      */
-    private Integer             workThreadSize       = Runtime.getRuntime().availableProcessors() * 2;
+    private Integer             workThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
     /**
      * Netty 业务线程数
      */
-    private Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors() * 4;
+    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     /**
      * Netty 工作队列数、
      */
@@ -51,7 +51,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 鉴权线程池大小（IO 密集型建议大于 CPU 核数）。
      */
-    private Integer             authThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 8, 16);
+    private Integer             authThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     /**
      * 鉴权线程池队列大小。
      */

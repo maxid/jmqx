@@ -1,5 +1,7 @@
 package plus.jmqx.broker.auth;
 
+import lombok.NonNull;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -18,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AuthExecutor {
 
-    private static final int DEFAULT_AUTH_THREADS = Math.max(Runtime.getRuntime().availableProcessors() * 8, 16);
+    private static final int DEFAULT_AUTH_THREADS = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     private static final int DEFAULT_AUTH_QUEUE_SIZE = 200000;
     private static final AtomicInteger AUTH_EXECUTOR_INDEX = new AtomicInteger(1);
 
@@ -82,7 +84,7 @@ public class AuthExecutor {
         }
 
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread thread = new Thread(r, prefix + sequence.getAndIncrement());
             thread.setDaemon(true);
             return thread;
