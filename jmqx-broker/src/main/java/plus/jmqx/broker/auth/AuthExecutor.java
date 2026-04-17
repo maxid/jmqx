@@ -1,10 +1,12 @@
 package plus.jmqx.broker.auth;
 
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
-
-import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 鉴权执行器<br/>
@@ -16,13 +18,18 @@ import java.time.Duration;
  */
 public class AuthExecutor {
 
+    private static final int DEFAULT_AUTH_THREADS = Math.max(Runtime.getRuntime().availableProcessors() * 8, 16);
+    private static final int DEFAULT_AUTH_QUEUE_SIZE = 200000;
+    private static final AtomicInteger AUTH_EXECUTOR_INDEX = new AtomicInteger(1);
+
     private final AuthManager authManager;
-    private final Scheduler scheduler;
+    private final Executor executor;
     private final long timeoutMillis;
 
-    public AuthExecutor(AuthManager authManager, Scheduler scheduler, long timeoutMillis) {
+
+    public AuthExecutor(AuthManager authManager, long timeoutMillis, Integer authThreadSize, Integer authQueueSize) {
         this.authManager = authManager;
-        this.scheduler = scheduler == null ? Schedulers.boundedElastic() : scheduler;
+        this.executor = newAuthExecutor(authThreadSize, authQueueSize);
         this.timeoutMillis = Math.max(timeoutMillis, 1L);
     }
 
@@ -34,15 +41,52 @@ public class AuthExecutor {
      * @param password 密码
      * @return 鉴权结果
      */
-    public Mono<Boolean> execute(String clientId, String username, byte[] password) {
-        Mono<Boolean> source = authManager instanceof AsyncAuthManager asyncAuthManager
-                ? asyncAuthManager.authAsync(clientId, username, password)
-                : Mono.fromCallable(() -> authManager.auth(clientId, username, password))
-                .subscribeOn(scheduler);
+    public CompletableFuture<Boolean> execute(String clientId, String username, byte[] password) {
+        CompletableFuture<Boolean> source = CompletableFuture.supplyAsync(
+                () -> authManager.auth(clientId, username, password),
+                executor
+        );
         return source
-                .timeout(Duration.ofMillis(timeoutMillis))
-                .onErrorReturn(Boolean.FALSE)
-                .defaultIfEmpty(Boolean.FALSE);
+                .thenApply(Boolean.TRUE::equals)
+                .completeOnTimeout(Boolean.FALSE, timeoutMillis, TimeUnit.MILLISECONDS)
+                .exceptionally(ex -> Boolean.FALSE);
+    }
+
+    private static Executor newAuthExecutor(Integer authThreadSize, Integer authQueueSize) {
+        int threadSize = normalize(authThreadSize, DEFAULT_AUTH_THREADS);
+        int queueSize = normalize(authQueueSize, DEFAULT_AUTH_QUEUE_SIZE);
+        int index = AUTH_EXECUTOR_INDEX.getAndIncrement();
+        ThreadFactory factory = new AuthThreadFactory(index);
+        return new ThreadPoolExecutor(
+                threadSize,
+                threadSize,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(queueSize),
+                factory,
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
+    private static int normalize(Integer value, int fallback) {
+        return value == null || value <= 0 ? fallback : value;
+    }
+
+    private static class AuthThreadFactory implements ThreadFactory {
+
+        private final AtomicInteger sequence = new AtomicInteger(1);
+        private final String prefix;
+
+        private AuthThreadFactory(int index) {
+            this.prefix = "jmqx-auth-io-" + index + "-";
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, prefix + sequence.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        }
     }
 
 }
