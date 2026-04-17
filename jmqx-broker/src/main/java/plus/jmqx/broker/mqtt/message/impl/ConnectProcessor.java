@@ -114,7 +114,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             return;
         }
         context.getAuthExecutor().execute(clientId, username, password)
-                .subscribe(passed -> {
+                .thenAccept(passed -> {
                     if (!passed) {
                         session.setStatus(SessionStatus.AUTH_FAILED);
                         dispatchConnectionLost(session, context);

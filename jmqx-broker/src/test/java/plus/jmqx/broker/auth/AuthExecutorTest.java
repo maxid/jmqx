@@ -1,8 +1,8 @@
 package plus.jmqx.broker.auth;
 
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+
+import java.util.concurrent.ForkJoinPool;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,44 +17,33 @@ class AuthExecutorTest {
     @Test
     void executeSupportsSyncAuthManager() {
         AuthManager authManager = (clientId, username, password) -> true;
-        AuthExecutor executor = new AuthExecutor(authManager, Schedulers.boundedElastic(), 1000);
-        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).block();
+        AuthExecutor executor = new AuthExecutor(authManager, 1000, 8, 1000);
+        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertEquals(Boolean.TRUE, passed);
     }
 
     @Test
-    void executeSupportsAsyncAuthManager() {
-        class AsyncManager implements AuthManager, AsyncAuthManager {
-            @Override
-            public boolean auth(String clientId, String username, byte[] password) {
-                return false;
-            }
-
-            @Override
-            public Mono<Boolean> authAsync(String clientId, String username, byte[] password) {
-                return Mono.just(true);
-            }
-        }
-        AuthExecutor executor = new AuthExecutor(new AsyncManager(), Schedulers.boundedElastic(), 1000);
-        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).block();
-        assertEquals(Boolean.TRUE, passed);
+    void executeReturnsFalseWhenAuthException() {
+        AuthManager authManager = (clientId, username, password) -> {
+            throw new IllegalStateException("auth error");
+        };
+        AuthExecutor executor = new AuthExecutor(authManager, 1000, 8, 1000);
+        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
+        assertEquals(Boolean.FALSE, passed);
     }
 
     @Test
     void executeReturnsFalseWhenAuthTimeout() {
-        class TimeoutManager implements AuthManager, AsyncAuthManager {
-            @Override
-            public boolean auth(String clientId, String username, byte[] password) {
-                return true;
+        AuthManager authManager = (clientId, username, password) -> {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-
-            @Override
-            public Mono<Boolean> authAsync(String clientId, String username, byte[] password) {
-                return Mono.never();
-            }
-        }
-        AuthExecutor executor = new AuthExecutor(new TimeoutManager(), Schedulers.boundedElastic(), 30);
-        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).block();
+            return true;
+        };
+        AuthExecutor executor = new AuthExecutor(authManager, 50, 8, 1000);
+        Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertNotEquals(Boolean.TRUE, passed);
     }
 

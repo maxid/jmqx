@@ -32,6 +32,7 @@ import plus.jmqx.broker.mqtt.transport.Transport;
 import reactor.netty.resources.LoopResources;
 
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -124,8 +125,12 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
         this.authManager = authManager();
-        this.authExecutor = new AuthExecutor(this.authManager, contextHolder().getDispatchScheduler(),
-                config.getAuthTimeoutMillis());
+        this.authExecutor = new AuthExecutor(
+                this.authManager,
+                config.getAuthTimeoutMillis(),
+                config.getAuthThreadSize(),
+                config.getAuthQueueSize()
+        );
     }
 
     /**

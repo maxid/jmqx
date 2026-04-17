@@ -48,6 +48,20 @@ public interface Configuration {
     Long getAuthTimeoutMillis();
 
     /**
+     * 鉴权线程池大小
+     *
+     * @return 线程池大小
+     */
+    Integer getAuthThreadSize();
+
+    /**
+     * 鉴权线程池队列大小
+     *
+     * @return 队列大小
+     */
+    Integer getAuthQueueSize();
+
+    /**
      * 消息最大限制值
      *
      * @return {@link Integer} 消息最大限制值

@@ -47,7 +47,15 @@ public class MqttConfiguration implements Configuration {
     /**
      * 连接鉴权超时时间（毫秒）。
      */
-    private Long                authTimeoutMillis    = 10000L;
+    private Long                authTimeoutMillis    = 1000L;
+    /**
+     * 鉴权线程池大小（IO 密集型建议大于 CPU 核数）。
+     */
+    private Integer             authThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 8, 16);
+    /**
+     * 鉴权线程池队列大小。
+     */
+    private Integer             authQueueSize        = 200000;
     /**
      * 消息最大限制值
      */
