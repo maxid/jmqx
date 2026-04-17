@@ -9,6 +9,7 @@ import plus.jmqx.broker.spi.DynamicLoader;
  * @since 2025/4/8 17:39
  */
 public interface AuthManager {
+
     AuthManager INSTANCE = DynamicLoader.findFirst(AuthManager.class).orElse(null);
 
     /**
@@ -20,4 +21,5 @@ public interface AuthManager {
      * @return 是否鉴权通过
      */
     boolean auth(String clientId, String username, byte[] password);
+
 }

@@ -7,6 +7,7 @@ package plus.jmqx.broker.config;
  * @since 2025/4/17 16:30
  */
 public enum ConnectMode {
+
     /**
      * 唯一
      */
@@ -15,4 +16,5 @@ public enum ConnectMode {
      * 踢出
      */
     KICK
+
 }

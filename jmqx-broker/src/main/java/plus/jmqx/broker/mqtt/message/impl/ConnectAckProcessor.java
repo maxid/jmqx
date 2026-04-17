@@ -38,4 +38,5 @@ public class ConnectAckProcessor extends NamespceMessageProcessor<MqttConnAckMes
     public void process(MessageWrapper<MqttConnAckMessage> wrapper, MqttSession session, ContextView view) {
         session.cancelRetry(MqttMessageType.CONNECT, -1);
     }
+
 }

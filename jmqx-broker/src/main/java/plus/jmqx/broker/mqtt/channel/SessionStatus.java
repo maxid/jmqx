@@ -7,6 +7,7 @@ package plus.jmqx.broker.mqtt.channel;
  * @since 2025/4/11 09:44
  */
 public enum SessionStatus {
+
     /**
      * 初始化
      */
@@ -23,4 +24,5 @@ public enum SessionStatus {
      * 离线
      */
     OFFLINE
+
 }

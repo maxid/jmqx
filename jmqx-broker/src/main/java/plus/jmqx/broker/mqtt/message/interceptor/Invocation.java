@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 @Getter
 @AllArgsConstructor
 public class Invocation {
+
     /**
      * 方法
      */
@@ -42,4 +43,5 @@ public class Invocation {
             return null;
         }
     }
+
 }

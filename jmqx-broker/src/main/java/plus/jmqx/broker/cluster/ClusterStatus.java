@@ -7,6 +7,7 @@ package plus.jmqx.broker.cluster;
  * @since 2025/4/17 09:50
  */
 public enum ClusterStatus {
+
     /**
      * 添加
      */
@@ -23,4 +24,5 @@ public enum ClusterStatus {
      * 更新
      */
     UPDATED
+
 }

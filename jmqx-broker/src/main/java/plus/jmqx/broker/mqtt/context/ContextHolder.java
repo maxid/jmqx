@@ -17,6 +17,7 @@ import reactor.core.scheduler.Schedulers;
 @Data
 @Builder
 public final class ContextHolder {
+
     /**
      * 上下文
      */
@@ -37,4 +38,5 @@ public final class ContextHolder {
      * 调度器
      */
     private Scheduler          dispatchScheduler;
+
 }

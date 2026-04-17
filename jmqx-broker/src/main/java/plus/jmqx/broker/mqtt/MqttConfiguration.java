@@ -18,6 +18,7 @@ import java.util.Map;
  */
 @Data
 public class MqttConfiguration implements Configuration {
+
     /**
      * 默认命名空间
      */
@@ -178,4 +179,5 @@ public class MqttConfiguration implements Configuration {
          */
         private Integer port;
     }
+
 }

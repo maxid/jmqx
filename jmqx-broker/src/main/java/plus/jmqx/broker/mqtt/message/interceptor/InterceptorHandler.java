@@ -27,4 +27,5 @@ public class InterceptorHandler implements InvocationHandler {
             return interceptor.intercept(new Invocation(method, target, args));
         }
     }
+
 }

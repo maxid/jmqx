@@ -21,4 +21,5 @@ public abstract class NamespceMessageProcessor<T extends MqttMessage> implements
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
+
 }
