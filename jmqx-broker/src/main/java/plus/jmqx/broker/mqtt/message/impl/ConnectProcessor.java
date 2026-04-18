@@ -3,7 +3,6 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
-import plus.jmqx.broker.auth.AuthManager;
 import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.config.ConnectMode;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
@@ -87,7 +86,6 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         TopicRegistry topicRegistry = context.getTopicRegistry();
         EventRegistry eventRegistry = context.getEventRegistry();
         byte mqttVersion = (byte) header.version();
-        AuthManager authManager = context.getAuthManager();
         // 处理同一个设备多个连接的情况
         MqttSession clientSession = channelRegistry.get(clientId);
         if (context.getConfiguration().getConnectMode() == ConnectMode.UNIQUE) {
@@ -98,7 +96,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             }
         } else {
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
-                if (System.currentTimeMillis() - clientSession.getConnectTime() > (context.getConfiguration().getNotKickSeconds() * 1000)) {
+                if (System.currentTimeMillis() - clientSession.getConnectTime()
+                        > (context.getConfiguration().getNotKickSeconds() * 1000L)) {
                     clientSession.close();
                 } else {
                     dispatchConnectionLost(session, context);
@@ -115,13 +114,47 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             badVersion(session, mqttVersion);
             return;
         }
-        // 鉴权认证
-        if (!authManager.auth(clientId, username, password)) {
-            session.setStatus(SessionStatus.AUTH_FAILED);
-            dispatchConnectionLost(session, context);
-            badCredentials(session, mqttVersion);
-            return;
-        }
+        context.getAuthExecutor().execute(clientId, username, password)
+                .thenAccept(passed -> {
+                    if (!passed) {
+                        session.setStatus(SessionStatus.AUTH_FAILED);
+                        dispatchConnectionLost(session, context);
+                        badCredentials(session, mqttVersion);
+                        return;
+                    }
+                    afterAuthenticated(message, session, context, header, payload, channelRegistry,
+                            topicRegistry, eventRegistry, clientId, username, mqttVersion);
+                });
+    }
+
+    /**
+     * 认证通过后处理
+     *
+     * @param message         连接消息
+     * @param session         会话
+     * @param context         接收上下文
+     * @param header          连接头部
+     * @param payload         连接负载
+     * @param channelRegistry 会话注册中心
+     * @param topicRegistry   主题注册中心
+     * @param eventRegistry   事件注册中心
+     * @param clientId        客户端ID
+     * @param username        用户名
+     * @param mqttVersion     MQTT 协议版本
+     */
+    private void afterAuthenticated(
+            MqttConnectMessage message,
+            MqttSession session,
+            MqttReceiveContext context,
+            MqttConnectVariableHeader header,
+            MqttConnectPayload payload,
+            SessionRegistry channelRegistry,
+            TopicRegistry topicRegistry,
+            EventRegistry eventRegistry,
+            String clientId,
+            String username,
+            byte mqttVersion
+    ) {
         // START 处理连接业务：建立连接会话等
         session.disposableClose(); // cancel defer close not authenticate channel
         // 会话遗愿消息初始化
@@ -141,6 +174,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         session.setSessionPersistent(!header.isCleanSession());
         session.setStatus(SessionStatus.ONLINE);
         session.setUsername(username);
+        session.setProtocolVersion(mqttVersion);
         // 设置读闲置处理
         long idleTimeout = (long) header.keepAliveTimeSeconds() * MILLI_SECOND_PERIOD << 1;
         session.getConnection().onReadIdle(idleTimeout, () -> this.close(session, context, eventRegistry));
@@ -190,7 +224,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void rejected(MqttSession session, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED, mqttVersion);
         session.write(ack, false);
         session.close();
     }
@@ -214,7 +249,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void badCredentials(MqttSession session, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD, mqttVersion);
         session.write(ack, false);
         session.close();
     }
@@ -227,7 +263,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      * @param mqttVersion 协议版本
      */
     private void ok(MqttSession session, MqttReceiveContext context, byte mqttVersion) {
-        MqttConnAckMessage ack = MqttMessageBuilder.connectAckMessage(MqttConnectReturnCode.CONNECTION_ACCEPTED, mqttVersion);
+        MqttConnAckMessage ack = MqttMessageBuilder
+                .connectAckMessage(MqttConnectReturnCode.CONNECTION_ACCEPTED, mqttVersion);
         session.write(ack, false);
         sendOfflineMessage(context.getMessageRegistry(), session);
     }
@@ -258,8 +295,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     /**
      * 关闭会话
      *
-     * @param session 会话
-     * @param context 上下文
+     * @param session       会话
+     * @param context       上下文
      * @param eventRegistry 事件注册中心
      */
     private void close(MqttSession session, MqttReceiveContext context, EventRegistry eventRegistry) {
@@ -283,7 +320,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      */
     private void sendOfflineMessage(MessageRegistry messageRegistry, MqttSession session) {
         Optional.ofNullable(messageRegistry.getSessionMessage(session.getClientId()))
-                .ifPresent(msgs -> msgs.forEach(msg -> session.write(msg.toPublishMessage(session), msg.getQos() > 0)));
+                .ifPresent(msgs -> msgs.forEach(msg
+                        -> session.write(msg.toPublishMessage(session), msg.getQos() > 0)));
     }
 
     /**

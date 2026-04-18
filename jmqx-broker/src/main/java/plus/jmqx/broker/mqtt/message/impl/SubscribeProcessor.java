@@ -1,9 +1,11 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
@@ -19,8 +21,11 @@ import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
 
 /**
  * SUBSCRIBE 消息流程处理
@@ -68,26 +73,30 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     public void process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttSubscribeMessage message = wrapper.getMessage();
         // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE_EVENT).increment();
-        ReceiveContext<?> context = (ReceiveContext<?>) view.get(ReceiveContext.class);
+        ReceiveContext<?> context = view.get(ReceiveContext.class);
         TopicRegistry topicRegistry = context.getTopicRegistry();
         MessageRegistry messageRegistry = context.getMessageRegistry();
         AclManager aclManager = context.getAclManager();
-        Set<SubscribeTopic> topics = message.payload().topicSubscriptions()
-                .stream()
-                .peek(s1 -> this.loadRetainMessage(messageRegistry, session, s1))
-                .map(s2 -> new SubscribeTopic(s2.topicFilter(), s2.qualityOfService(), session))
-                .filter(s3 -> aclManager.check(session, s3.getTopicFilter(), AclAction.SUBSCRIBE))
-                .collect(Collectors.toSet());
-        if (CollectionUtil.isNotEmpty(topics)) {
+        int reasonCode = session.getProtocolVersion() == MqttVersion.MQTT_5.protocolLevel()
+                ? CONNECTION_REFUSED_NOT_AUTHORIZED_5.byteValue() : CONNECTION_REFUSED_UNSPECIFIED_ERROR.byteValue();
+        Set<SubscribeTopic> topics = new LinkedHashSet<>();
+        List<Integer> reasonCodes = new ArrayList<>();
+        message.payload().topicSubscriptions().forEach(s -> {
+            SubscribeTopic topic = new SubscribeTopic(s.topicFilter(), s.qualityOfService(), session);
+            if (aclManager.check(session, topic.getTopicFilter(), AclAction.SUBSCRIBE)) {
+                this.loadRetainMessage(messageRegistry, session, s);
+                topics.add(topic);
+                reasonCodes.add(s.qualityOfService().value());
+            } else {
+                reasonCodes.add(reasonCode);
+            }
+        });
+        if (CollUtil.isNotEmpty(topics)) {
             topicRegistry.registrySubscribesTopic(topics);
         }
         session.write(MqttMessageBuilder.subAckMessage(
                 message.variableHeader().messageId(),
-                message.payload()
-                        .topicSubscriptions()
-                        .stream()
-                        .map(s1 -> s1.qualityOfService().value())
-                        .collect(Collectors.toList())
+                reasonCodes
         ), false);
     }
 

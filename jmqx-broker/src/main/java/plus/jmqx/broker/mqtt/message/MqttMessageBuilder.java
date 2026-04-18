@@ -68,8 +68,16 @@ public class MqttMessageBuilder {
         return ackMessage(MqttMessageType.PUBACK, messageId, false);
     }
 
+    public static MqttPubAckMessage publishAckMessage(int messageId, byte reasonCode) {
+        return ackMessage(MqttMessageType.PUBACK, messageId, false, reasonCode);
+    }
+
     public static MqttPubAckMessage publishRecMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBREC, messageId, false);
+    }
+
+    public static MqttPubAckMessage publishRecMessage(int messageId, byte reasonCode) {
+        return ackMessage(MqttMessageType.PUBREC, messageId, false, reasonCode);
     }
 
     /**
@@ -92,6 +100,12 @@ public class MqttMessageBuilder {
     private static MqttPubAckMessage ackMessage(MqttMessageType mqttMessageType, int messageId, boolean isRetain) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(mqttMessageType, false, MqttQoS.AT_MOST_ONCE, isRetain, 0x02);
         MqttMessageIdVariableHeader from = MqttMessageIdVariableHeader.from(messageId);
+        return new MqttPubAckMessage(mqttFixedHeader, from);
+    }
+
+    private static MqttPubAckMessage ackMessage(MqttMessageType mqttMessageType, int messageId, boolean isRetain, byte reasonCode) {
+        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(mqttMessageType, false, MqttQoS.AT_MOST_ONCE, isRetain, 0x02);
+        MqttPubReplyMessageVariableHeader from = new MqttPubReplyMessageVariableHeader(messageId, reasonCode, MqttProperties.NO_PROPERTIES);
         return new MqttPubAckMessage(mqttFixedHeader, from);
     }
 
@@ -175,4 +189,5 @@ public class MqttMessageBuilder {
     public static MqttMessage pongMessage() {
         return new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0));
     }
+
 }

@@ -10,5 +10,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
  * @since 2025/9/24 15:36
  */
 public interface MessageTypeWrapper<T extends MqttMessage> {
+
     MessageWrapper<T> getWrapper();
+
 }

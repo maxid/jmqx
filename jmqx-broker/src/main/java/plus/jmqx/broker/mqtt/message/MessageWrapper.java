@@ -15,6 +15,7 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
 @ToString
 @RequiredArgsConstructor()
 public class MessageWrapper<T extends MqttMessage> {
+
     /**
      * MQTT 消息
      */
@@ -31,4 +32,5 @@ public class MessageWrapper<T extends MqttMessage> {
      * MQTT 会话
      */
     private       MqttSession session;
+
 }

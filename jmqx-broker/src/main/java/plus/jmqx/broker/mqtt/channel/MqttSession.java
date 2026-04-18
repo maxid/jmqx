@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 @Getter
 @Setter
 public class MqttSession {
+
     private Connection connection;
 
     private String clientId;
@@ -55,6 +56,8 @@ public class MqttSession {
     private String username;
 
     private String address;
+
+    private byte protocolVersion;
 
     @JsonIgnore
     private Set<SubscribeTopic> topics;
@@ -412,4 +415,5 @@ public class MqttSession {
         return "MqttSession{" + "address='" + this.connection.address() + '\'' + ", clientId='" + clientId + '\''
                 + ", status=" + status + ", keepalive=" + keepalive + ", username='" + username + "'}";
     }
+
 }

@@ -929,4 +929,5 @@ class MqttNetworkProtocolTest {
             return new MqttConnectMessage(fixedHeader, header, payload);
         }
     }
+
 }

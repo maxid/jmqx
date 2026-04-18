@@ -14,8 +14,10 @@ import lombok.ToString;
 @Builder
 @ToString
 public class PublishMessage {
+
     private final String clientId;
     private final String username;
     private final String topic;
     private final byte[] payload;
+
 }

@@ -14,8 +14,10 @@ import lombok.ToString;
 @Builder
 @ToString
 public class ConnectMessage {
+
     private final String clientId;
     private final String username;
     private final String protocolName;
     private final int    version;
+
 }
