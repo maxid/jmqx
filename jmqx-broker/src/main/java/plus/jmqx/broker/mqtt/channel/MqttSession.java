@@ -157,6 +157,7 @@ public class MqttSession {
      */
     public void close() {
         this.clearReplyMessage();
+        this.qos2MsgCache.values().forEach(MessageUtils::safeRelease);
         this.qos2MsgCache.clear();
         if (!this.sessionPersistent) {
             this.topics.clear();

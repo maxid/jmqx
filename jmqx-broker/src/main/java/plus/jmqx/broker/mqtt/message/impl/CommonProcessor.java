@@ -108,13 +108,17 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
                 MqttPublishMessage pmsg = session.removeQos2Msg(header2.messageId());
                 session.write(MqttMessageBuilder.publishCompMessage(header2.messageId()), false);
                 if (pmsg != null) {
-                    TopicRegistry topicRegistry = context.getTopicRegistry();
-                    MessageRegistry messageRegistry = context.getMessageRegistry();
-                    Set<SubscribeTopic> subscribeTopics = topicRegistry.getSubscribesByTopic(pmsg.variableHeader().topicName(), pmsg.fixedHeader().qosLevel());
-                    subscribeTopics.stream()
-                            .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, MessageUtils.wrapPublishMessage(pmsg, t1.getQoS(), t1.getSession().generateMessageId())))
-                            .forEach(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(pmsg, t2.getQoS(), t2.getSession().generateMessageId()), t2.getQoS().value() > 0));
-                    Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header2.messageId()))).ifPresent(Ack::stop);
+                    try {
+                        TopicRegistry topicRegistry = context.getTopicRegistry();
+                        MessageRegistry messageRegistry = context.getMessageRegistry();
+                        Set<SubscribeTopic> subscribeTopics = topicRegistry.getSubscribesByTopic(pmsg.variableHeader().topicName(), pmsg.fixedHeader().qosLevel());
+                        subscribeTopics.stream()
+                                .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, pmsg))
+                                .forEach(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(pmsg, t2.getQoS(), t2.getSession().generateMessageId()), t2.getQoS().value() > 0));
+                        Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header2.messageId()))).ifPresent(Ack::stop);
+                    } finally {
+                        MessageUtils.safeRelease(pmsg);
+                    }
                 }
                 break;
             case PUBCOMP:
