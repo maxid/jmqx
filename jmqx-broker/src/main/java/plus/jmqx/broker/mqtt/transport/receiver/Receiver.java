@@ -12,7 +12,7 @@ import reactor.netty.DisposableServer;
 public interface Receiver {
 
     /**
-     * 获取接收器名称。
+     * 获取接收器名称
      *
      * @return 名称
      */

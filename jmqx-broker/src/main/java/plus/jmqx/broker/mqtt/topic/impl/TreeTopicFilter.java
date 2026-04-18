@@ -33,7 +33,7 @@ public class TreeTopicFilter implements TopicFilter {
     private final Map<String, Map<String, List<SubscribeTopic>>> bucketCaches = new ConcurrentHashMap<>();
 
     /**
-     * 根据主题获取订阅集合（带缓存）。
+     * 根据主题获取订阅集合（带缓存）
      *
      * @param topic   主题
      * @param mqttQoS QoS
@@ -51,7 +51,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 注册主题订阅。
+     * 注册主题订阅
      *
      * @param topicFilter 主题过滤器
      * @param mqttChannel 会话
@@ -63,7 +63,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 注册订阅对象并刷新缓存。
+     * 注册订阅对象并刷新缓存
      *
      * @param subscribeTopic 订阅对象
      */
@@ -78,7 +78,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 移除订阅对象并刷新缓存。
+     * 移除订阅对象并刷新缓存
      *
      * @param subscribeTopic 订阅对象
      */
@@ -93,7 +93,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 获取主题分桶缓存。
+     * 获取主题分桶缓存
      *
      * @param topic 主题
      * @return 分桶缓存
@@ -107,7 +107,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 计算分桶 key。
+     * 计算分桶 key
      *
      * @param topic 主题
      * @return 分桶 key
@@ -121,7 +121,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 创建 LRU 缓存映射。
+     * 创建 LRU 缓存映射
      *
      * @param limit 上限
      * @return LRU Map
@@ -136,7 +136,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 获取订阅数量。
+     * 获取订阅数量
      *
      * @return 订阅数量
      */
@@ -146,7 +146,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 获取全部订阅集合。
+     * 获取全部订阅集合
      *
      * @return 订阅集合
      */

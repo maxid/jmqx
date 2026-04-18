@@ -16,7 +16,7 @@ import java.util.List;
 public class ByteBufToWebSocketFrameEncoder extends MessageToMessageEncoder<ByteBuf> {
 
     /**
-     * 编码 ByteBuf 为 WebSocket 二进制帧。
+     * 编码 ByteBuf 为 WebSocket 二进制帧
      *
      * @param ctx 处理上下文
      * @param msg 数据缓冲

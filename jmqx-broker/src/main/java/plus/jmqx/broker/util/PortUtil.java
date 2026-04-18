@@ -17,7 +17,7 @@ public class PortUtil {
     private final static String ANY_ADDRESS             = "0.0.0.0";
 
     /**
-     * 工具类禁止实例化。
+     * 工具类禁止实例化
      */
     private PortUtil() {
     }

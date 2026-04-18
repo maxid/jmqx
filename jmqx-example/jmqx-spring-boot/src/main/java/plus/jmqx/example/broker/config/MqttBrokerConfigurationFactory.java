@@ -115,7 +115,7 @@ public class MqttBrokerConfigurationFactory
     private String clusterNode;
 
     /**
-     * 获取生成对象类型。
+     * 获取生成对象类型
      *
      * @return 目标类型
      */
@@ -125,7 +125,7 @@ public class MqttBrokerConfigurationFactory
     }
 
     /**
-     * 创建 MQTT 配置实例。
+     * 创建 MQTT 配置实例
      *
      * @return MQTT 配置
      * @throws Exception 创建异常

@@ -22,7 +22,7 @@ public class PlatformMessageDispatcher implements PlatformDispatcher {
     private final PublishMessageProcessor publishMessageProcessor;
 
     /**
-     * 处理设备连接消息。
+     * 处理设备连接消息
      *
      * @param message 连接消息
      * @return 处理结果
@@ -33,7 +33,7 @@ public class PlatformMessageDispatcher implements PlatformDispatcher {
     }
 
     /**
-     * 处理设备断开消息。
+     * 处理设备断开消息
      *
      * @param message 断开消息
      * @return 处理结果
@@ -45,7 +45,7 @@ public class PlatformMessageDispatcher implements PlatformDispatcher {
     }
 
     /**
-     * 处理连接丢失消息。
+     * 处理连接丢失消息
      *
      * @param message 连接丢失消息
      * @return 处理结果
@@ -56,7 +56,7 @@ public class PlatformMessageDispatcher implements PlatformDispatcher {
     }
 
     /**
-     * 处理发布消息。
+     * 处理发布消息
      *
      * @param message 发布消息
      * @return 处理结果

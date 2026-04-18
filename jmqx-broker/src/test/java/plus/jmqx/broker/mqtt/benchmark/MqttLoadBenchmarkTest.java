@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- * 真实连接压测：基于 TCP+MQTT 协议进行发布/订阅性能对比。
+ * 真实连接压测：基于 TCP+MQTT 协议进行发布/订阅性能对比
  */
 @EnabledIfSystemProperty(named = "jmqx.benchmark.tests", matches = "true")
 class MqttLoadBenchmarkTest {
@@ -54,7 +54,7 @@ class MqttLoadBenchmarkTest {
     private static final String TOPIC = "bench/topic";
 
     /**
-     * 发布到订阅者的压测流程。
+     * 发布到订阅者的压测流程
      *
      * @throws Exception 测试异常
      */
@@ -114,7 +114,7 @@ class MqttLoadBenchmarkTest {
     }
 
     /**
-     * 读取整型系统属性。
+     * 读取整型系统属性
      *
      * @param key 属性名
      * @param def 默认值
@@ -129,14 +129,14 @@ class MqttLoadBenchmarkTest {
     }
 
     /**
-     * 构造空分发器。
+     * 构造空分发器
      *
      * @return 分发器
      */
     private static PlatformDispatcher noopDispatcher() {
         return new PlatformDispatcher() {
             /**
-             * 处理连接消息。
+             * 处理连接消息
              *
              * @param message 连接消息
              * @return 处理结果
@@ -147,7 +147,7 @@ class MqttLoadBenchmarkTest {
             }
 
             /**
-             * 处理断开消息。
+             * 处理断开消息
              *
              * @param message 断开消息
              * @return 处理结果
@@ -158,7 +158,7 @@ class MqttLoadBenchmarkTest {
             }
 
             /**
-             * 处理连接丢失消息。
+             * 处理连接丢失消息
              *
              * @param message 连接丢失消息
              * @return 处理结果
@@ -169,7 +169,7 @@ class MqttLoadBenchmarkTest {
             }
 
             /**
-             * 处理发布消息。
+             * 处理发布消息
              *
              * @param message 发布消息
              * @return 处理结果
@@ -182,7 +182,7 @@ class MqttLoadBenchmarkTest {
     }
 
     /**
-     * 创建测试配置。
+     * 创建测试配置
      *
      * @param port 端口
      * @return MQTT 配置
@@ -209,7 +209,7 @@ class MqttLoadBenchmarkTest {
         private volatile Runnable publishHook;
 
         /**
-         * 构造测试客户端。
+         * 构造测试客户端
          *
          * @param clientId 客户端 ID
          * @param port     端口
@@ -220,7 +220,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 建立连接并完成握手。
+         * 建立连接并完成握手
          */
         void connect() {
             this.connection = TcpClient.create()
@@ -259,7 +259,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 订阅主题。
+         * 订阅主题
          *
          * @param topic 主题
          */
@@ -278,7 +278,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 发布消息。
+         * 发布消息
          *
          * @param topic        主题
          * @param payloadBytes 负载大小
@@ -298,7 +298,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 注册发布回调。
+         * 注册发布回调
          *
          * @param action 回调
          */
@@ -307,7 +307,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 关闭连接。
+         * 关闭连接
          */
         void close() {
             if (connection != null && !connection.isDisposed()) {
@@ -316,7 +316,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 生成下一个消息 ID。
+         * 生成下一个消息 ID
          *
          * @return 消息 ID
          */
@@ -325,7 +325,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 写入并刷新消息。
+         * 写入并刷新消息
          *
          * @param message 消息
          */
@@ -334,7 +334,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 确保 MQTT 编解码器存在。
+         * 确保 MQTT 编解码器存在
          */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
@@ -348,7 +348,7 @@ class MqttLoadBenchmarkTest {
                 if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                     connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
                         /**
-                         * 处理入站消息并保留引用。
+                         * 处理入站消息并保留引用
                          *
                          * @param ctx 上下文
                          * @param msg 消息
@@ -374,7 +374,7 @@ class MqttLoadBenchmarkTest {
             if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                 connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
                     /**
-                     * 处理入站消息并保留引用。
+                     * 处理入站消息并保留引用
                      *
                      * @param ctx 上下文
                      * @param msg 消息
@@ -392,7 +392,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 处理入站消息。
+         * 处理入站消息
          *
          * @param message 消息
          */
@@ -414,7 +414,7 @@ class MqttLoadBenchmarkTest {
         }
 
         /**
-         * 等待匹配的消息。
+         * 等待匹配的消息
          *
          * @param predicate 过滤条件
          * @param timeout   超时时间

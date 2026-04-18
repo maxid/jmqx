@@ -20,13 +20,13 @@ public class DefaultSessionRegistry implements SessionRegistry {
     private final Map<String, MqttSession> sessions = new ConcurrentHashMap<>();
 
     /**
-     * 创建默认会话注册中心。
+     * 创建默认会话注册中心
      */
     public DefaultSessionRegistry() {
     }
 
     /**
-     * 关闭并移除会话。
+     * 关闭并移除会话
      *
      * @param session 会话
      */
@@ -36,7 +36,7 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     /**
-     * 注册会话。
+     * 注册会话
      *
      * @param clientId 客户端标识
      * @param session  会话
@@ -47,7 +47,7 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     /**
-     * 判断会话是否在线。
+     * 判断会话是否在线
      *
      * @param clientId 客户端标识
      * @return 是否在线
@@ -59,7 +59,7 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     /**
-     * 获取会话。
+     * 获取会话
      *
      * @param clientId 客户端标识
      * @return 会话
@@ -70,7 +70,7 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     /**
-     * 统计会话数量。
+     * 统计会话数量
      *
      * @return 会话数量
      */
@@ -80,7 +80,7 @@ public class DefaultSessionRegistry implements SessionRegistry {
     }
 
     /**
-     * 获取全部会话集合。
+     * 获取全部会话集合
      *
      * @return 会话集合
      */

@@ -43,7 +43,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     private final MessageProcessor<MqttMessage>                       defaultProcessor;
 
     /**
-     * 构建分发器并初始化处理管线。
+     * 构建分发器并初始化处理管线
      *
      * @param config     配置
      * @param threadSize 线程数
@@ -81,7 +81,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 按消息类型投递到对应处理通道。
+     * 按消息类型投递到对应处理通道
      *
      * @param session 会话
      * @param wrapper 消息包装
@@ -102,7 +102,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 投递集群消息到本地分发器。
+     * 投递集群消息到本地分发器
      *
      * @param message 发布消息
      */
@@ -138,7 +138,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 执行具体消息处理并释放资源。
+     * 执行具体消息处理并释放资源
      *
      * @param wrapper 消息包装
      */
@@ -169,7 +169,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 启动消费管线。
+     * 启动消费管线
      *
      * @param sink        消息接收器
      * @param scheduler   调度器
@@ -193,13 +193,13 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         public static final RetryFailureHandler RETRY_NON_SERIALIZED = new RetryFailureHandler();
 
         /**
-         * 创建失败重试处理器。
+         * 创建失败重试处理器
          */
         public RetryFailureHandler() {
         }
 
         /**
-         * 失败时短暂退避并重试。
+         * 失败时短暂退避并重试
          *
          * @param signalType 信号类型
          * @param emitResult 发送结果
@@ -213,7 +213,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     }
 
     /**
-     * 获取上下文持有器。
+     * 获取上下文持有器
      *
      * @return 上下文持有器
      */

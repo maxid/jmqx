@@ -84,7 +84,7 @@ public class MqttSession {
     private TimeAckManager timeAckManager;
 
     /**
-     * 取消或处置底层任务或资源。
+     * 取消或处置底层任务或资源
      */
     public void disposableClose() {
         if (closeDisposable != null && !closeDisposable.isDisposed()) {
@@ -295,7 +295,7 @@ public class MqttSession {
     }
 
     /**
-     * 清理所有回复相关资源。
+     * 清理所有回复相关资源
      */
     private void clearReplyMessage() {
         replyMqttMessageMap.values().forEach(maps -> maps.values().forEach(Disposable::dispose));
@@ -308,7 +308,7 @@ public class MqttSession {
     private static class MqttMessageSink {
 
         /**
-         * 构造消息发送器。
+         * 构造消息发送器
          */
         private MqttMessageSink() {
         }
@@ -317,7 +317,7 @@ public class MqttSession {
 
 
         /**
-         * 发送消息并按需注册重试。
+         * 发送消息并按需注册重试
          *
          * @param mqttMessage 消息体
          * @param session     会话
@@ -347,7 +347,7 @@ public class MqttSession {
         }
 
         /**
-         * 获取消息 ID。
+         * 获取消息 ID
          *
          * @param mqttMessage 消息体
          * @return 消息 ID
@@ -365,7 +365,7 @@ public class MqttSession {
 
 
         /**
-         * 获取重试时的回复消息。
+         * 获取重试时的回复消息
          *
          * @param mqttMessage 原消息
          * @return 回复消息
@@ -380,7 +380,7 @@ public class MqttSession {
 
 
         /**
-         * 设置重发标记并构建副本。
+         * 设置重发标记并构建副本
          *
          * @param mqttMessage 原消息
          * @return 带重发标记的消息
@@ -407,7 +407,7 @@ public class MqttSession {
     }
 
     /**
-     * 输出会话信息。
+     * 输出会话信息
      *
      * @return 会话字符串
      */

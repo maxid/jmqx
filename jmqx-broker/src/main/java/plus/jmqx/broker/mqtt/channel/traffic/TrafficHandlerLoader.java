@@ -11,7 +11,7 @@ import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 public interface TrafficHandlerLoader {
 
     /**
-     * 获取流控处理器。
+     * 获取流控处理器
      *
      * @return 流控处理器
      */

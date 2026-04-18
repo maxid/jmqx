@@ -47,7 +47,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -57,7 +57,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     }
 
     /**
-     * 返回连接消息类型包装。
+     * 返回连接消息类型包装
      *
      * @return 连接消息类型包装类
      */
@@ -67,7 +67,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     }
 
     /**
-     * 处理连接消息主流程。
+     * 处理连接消息主流程
      *
      * @param wrapper 消息包装
      * @param session 会话

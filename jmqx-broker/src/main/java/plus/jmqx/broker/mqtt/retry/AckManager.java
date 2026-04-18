@@ -9,14 +9,14 @@ package plus.jmqx.broker.mqtt.retry;
 public interface AckManager {
 
     /**
-     * 添加 ACK。
+     * 添加 ACK
      *
      * @param ack ACK 实例
      */
     void addAck(Ack ack);
 
     /**
-     * 获取 ACK。
+     * 获取 ACK
      *
      * @param id ACK ID
      * @return ACK 实例
@@ -24,7 +24,7 @@ public interface AckManager {
     Ack getAck(Long id);
 
     /**
-     * 删除 ACK。
+     * 删除 ACK
      *
      * @param id ACK ID
      */

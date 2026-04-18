@@ -24,7 +24,7 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
     private final ClusterReceiver clusterReceiver;
 
     /**
-     * 创建 MQTT 上下文并注册集群接收器。
+     * 创建 MQTT 上下文并注册集群接收器
      *
      * @param configuration MQTT 配置
      * @param transport     传输实现
@@ -36,7 +36,7 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
     }
 
     /**
-     * 绑定会话并订阅其入站消息流。
+     * 绑定会话并订阅其入站消息流
      *
      * @param session 会话
      */
@@ -52,7 +52,7 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
     }
 
     /**
-     * 接收并分发消息到消息处理器。
+     * 接收并分发消息到消息处理器
      *
      * @param session 会话
      * @param message 消息包装

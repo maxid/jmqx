@@ -25,7 +25,7 @@ public class SubscribeAckProcessor extends NamespceMessageProcessor<MqttSubAckMe
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -35,7 +35,7 @@ public class SubscribeAckProcessor extends NamespceMessageProcessor<MqttSubAckMe
     }
 
     /**
-     * 返回订阅确认消息类型包装。
+     * 返回订阅确认消息类型包装
      *
      * @return 订阅确认消息类型包装类
      */
@@ -45,7 +45,7 @@ public class SubscribeAckProcessor extends NamespceMessageProcessor<MqttSubAckMe
     }
 
     /**
-     * 处理订阅确认消息并取消重试。
+     * 处理订阅确认消息并取消重试
      *
      * @param wrapper 消息包装
      * @param session 会话

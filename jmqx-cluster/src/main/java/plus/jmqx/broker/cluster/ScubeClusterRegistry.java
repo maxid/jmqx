@@ -39,7 +39,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
 
     /**
-     * 注册集群并启动。
+     * 注册集群并启动
      *
      * @param clusterConfig 集群配置
      */
@@ -68,7 +68,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 获取集群消息流。
+     * 获取集群消息流
      *
      * @return 集群消息流
      */
@@ -78,7 +78,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 获取集群节点列表。
+     * 获取集群节点列表
      *
      * @return 节点列表
      */
@@ -90,7 +90,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 转换成员为集群节点。
+     * 转换成员为集群节点
      *
      * @param member 集群成员
      * @return 节点信息
@@ -105,7 +105,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 扩散集群消息。
+     * 扩散集群消息
      *
      * @param clusterMessage 集群消息
      * @return 处理结果
@@ -122,7 +122,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 关闭集群。
+     * 关闭集群
      *
      * @return 处理结果
      */
@@ -133,7 +133,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 获取集群事件流。
+     * 获取集群事件流
      *
      * @return 集群事件流
      */
@@ -146,7 +146,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     class ClusterHandler implements ClusterMessageHandler {
 
         /**
-         * 处理集群消息。
+         * 处理集群消息
          *
          * @param message 集群消息
          */
@@ -157,7 +157,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         }
 
         /**
-         * 处理 Gossip 消息。
+         * 处理 Gossip 消息
          *
          * @param message Gossip 消息
          */
@@ -168,7 +168,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         }
 
         /**
-         * 处理成员事件。
+         * 处理成员事件
          *
          * @param event 成员事件
          */

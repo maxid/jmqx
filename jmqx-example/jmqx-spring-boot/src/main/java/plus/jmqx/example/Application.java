@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Application {
 
     /**
-     * 应用入口。
+     * 应用入口
      *
      * @param args 启动参数
      */

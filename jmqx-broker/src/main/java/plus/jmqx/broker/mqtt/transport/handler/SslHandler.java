@@ -21,7 +21,7 @@ import java.io.File;
 public class SslHandler extends OptionHandler {
 
     /**
-     * 初始化 TcpServer 并按配置启用 SSL。
+     * 初始化 TcpServer 并按配置启用 SSL
      *
      * @param config MQTT 配置
      * @return TcpServer
@@ -36,7 +36,7 @@ public class SslHandler extends OptionHandler {
     }
 
     /**
-     * 配置 SSL 上下文。
+     * 配置 SSL 上下文
      *
      * @param spec   SSL 配置器
      * @param config 配置

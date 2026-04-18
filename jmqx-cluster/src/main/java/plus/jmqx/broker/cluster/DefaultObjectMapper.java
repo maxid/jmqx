@@ -20,14 +20,14 @@ public class DefaultObjectMapper {
     public static final ObjectMapper OBJECT_MAPPER = initMapper();
 
     /**
-     * 工具类禁止实例化。
+     * 工具类禁止实例化
      */
     private DefaultObjectMapper() {
         // Do not instantiate
     }
 
     /**
-     * 初始化默认 ObjectMapper。
+     * 初始化默认 ObjectMapper
      *
      * @return ObjectMapper
      */

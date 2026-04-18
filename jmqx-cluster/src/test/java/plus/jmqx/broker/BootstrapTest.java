@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class BootstrapTest {
 
     /**
-     * 启动集群节点 1 测试。
+     * 启动集群节点 1 测试
      *
      * @throws Exception 测试异常
      */
@@ -45,7 +45,7 @@ public class BootstrapTest {
     }
 
     /**
-     * 启动集群节点 2 测试。
+     * 启动集群节点 2 测试
      *
      * @throws Exception 测试异常
      */
@@ -73,7 +73,7 @@ public class BootstrapTest {
     }
 
     /**
-     * 单节点模式测试。
+     * 单节点模式测试
      *
      * @throws Exception 测试异常
      */
@@ -101,7 +101,7 @@ public class BootstrapTest {
     }
 
     /**
-     * 读取整型系统属性。
+     * 读取整型系统属性
      *
      * @param key 属性名
      * @param def 默认值

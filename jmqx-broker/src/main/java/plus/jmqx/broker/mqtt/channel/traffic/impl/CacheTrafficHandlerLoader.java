@@ -16,7 +16,7 @@ public class CacheTrafficHandlerLoader  implements TrafficHandlerLoader {
     private final AbstractTrafficShapingHandler trafficShapingHandler;
 
     /**
-     * 获取缓存的流控处理器。
+     * 获取缓存的流控处理器
      *
      * @return 流控处理器
      */

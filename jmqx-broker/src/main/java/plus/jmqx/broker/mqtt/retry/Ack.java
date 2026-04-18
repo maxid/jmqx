@@ -20,17 +20,17 @@ public interface Ack extends TimerTask {
     long getId();
 
     /**
-     * 启动确认。
+     * 启动确认
      */
     void start();
 
     /**
-     * 停止确认。
+     * 停止确认
      */
     void stop();
 
     /**
-     * 获取下一次确认间隔。
+     * 获取下一次确认间隔
      *
      * @return 间隔时长
      */

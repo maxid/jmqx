@@ -45,15 +45,15 @@ public class MqttConfiguration implements Configuration {
      */
     private Integer             businessQueueSize    = 100000;
     /**
-     * 连接鉴权超时时间（毫秒）。
+     * 连接鉴权超时时间（毫秒）
      */
     private Long                authTimeoutMillis    = 1000L;
     /**
-     * 鉴权线程池大小（IO 密集型建议大于 CPU 核数）。
+     * 鉴权线程池大小（IO 密集型建议大于 CPU 核数）
      */
     private Integer             authThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     /**
-     * 鉴权线程池队列大小。
+     * 鉴权线程池队列大小
      */
     private Integer             authQueueSize        = 200000;
     /**

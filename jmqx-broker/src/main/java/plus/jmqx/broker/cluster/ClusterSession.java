@@ -12,7 +12,7 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
 public class ClusterSession extends MqttSession {
 
     /**
-     * 构造集群会话。
+     * 构造集群会话
      */
     private ClusterSession() {
     }
@@ -20,7 +20,7 @@ public class ClusterSession extends MqttSession {
     public final static ClusterSession DEFAULT_CLUSTER_SESSION = new ClusterSession();
 
     /**
-     * 根据客户端 ID 创建集群会话。
+     * 根据客户端 ID 创建集群会话
      *
      * @param clientId 客户端 ID
      * @return 集群会话
@@ -32,7 +32,7 @@ public class ClusterSession extends MqttSession {
     }
 
     /**
-     * 集群会话不进行本地发送。
+     * 集群会话不进行本地发送
      *
      * @param mqttMessage 消息体
      * @param retry       是否重试
@@ -43,7 +43,7 @@ public class ClusterSession extends MqttSession {
 
 
     /**
-     * 标识为集群会话。
+     * 标识为集群会话
      *
      * @return 是否为集群会话
      */
@@ -54,7 +54,7 @@ public class ClusterSession extends MqttSession {
 
 
     /**
-     * 输出集群会话信息。
+     * 输出集群会话信息
      *
      * @return 会话字符串
      */

@@ -38,7 +38,7 @@ public class TreeNode {
     private volatile TreeNode multiNode;
 
     /**
-     * 创建树节点。
+     * 创建树节点
      *
      * @param topic 主题片段
      */
@@ -51,7 +51,7 @@ public class TreeNode {
     private final String MULTI_SYMBOL = "#";
 
     /**
-     * 添加订阅到树结构。
+     * 添加订阅到树结构
      *
      * @param subscribeTopic 订阅对象
      * @return 是否新增成功
@@ -62,7 +62,7 @@ public class TreeNode {
     }
 
     /**
-     * 递归添加订阅节点。
+     * 递归添加订阅节点
      *
      * @param subscribeTopic 订阅对象
      * @param topics         主题片段
@@ -89,7 +89,7 @@ public class TreeNode {
     }
 
     /**
-     * 根据主题获取匹配订阅。
+     * 根据主题获取匹配订阅
      *
      * @param topicFilter 主题
      * @return 订阅列表
@@ -100,7 +100,7 @@ public class TreeNode {
     }
 
     /**
-     * 搜索匹配订阅。
+     * 搜索匹配订阅
      *
      * @param topics 主题片段
      * @return 订阅列表
@@ -112,7 +112,7 @@ public class TreeNode {
     }
 
     /**
-     * 加载匹配订阅到结果集中。
+     * 加载匹配订阅到结果集中
      *
      * @param treeNode        当前节点
      * @param subscribeTopics 结果集合
@@ -170,7 +170,7 @@ public class TreeNode {
     }
 
     /**
-     * 获取全部订阅集合。
+     * 获取全部订阅集合
      *
      * @return 订阅集合
      */
@@ -179,7 +179,7 @@ public class TreeNode {
     }
 
     /**
-     * 递归获取所有订阅。
+     * 递归获取所有订阅
      *
      * @param node 节点
      * @return 订阅集合

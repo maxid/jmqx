@@ -31,7 +31,7 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     private       DisposableServer  disposableServer;
 
     /**
-     * 构造 MQTT 传输实现。
+     * 构造 MQTT 传输实现
      *
      * @param receiver      接收器
      * @param configuration 配置
@@ -122,7 +122,7 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     }
 
     /**
-     * 释放传输资源。
+     * 释放传输资源
      */
     @Override
     public void dispose() {
@@ -132,7 +132,7 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     }
 
     /**
-     * 是否已释放。
+     * 是否已释放
      *
      * @return 是否已释放
      */

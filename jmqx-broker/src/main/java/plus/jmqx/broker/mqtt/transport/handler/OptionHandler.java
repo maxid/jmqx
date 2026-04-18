@@ -17,7 +17,7 @@ public class OptionHandler {
     protected TcpServer server;
 
     /**
-     * 初始化 TcpServer 并应用配置。
+     * 初始化 TcpServer 并应用配置
      *
      * @param config MQTT 配置
      * @return TcpServer

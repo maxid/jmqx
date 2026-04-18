@@ -29,7 +29,7 @@ public class DefaultMessageRegistry implements MessageRegistry {
     private final Map<String, Pattern> retainPatternCache = new ConcurrentHashMap<>();
 
     /**
-     * 获取并清空会话消息列表。
+     * 获取并清空会话消息列表
      *
      * @param clientIdentifier 客户端标识
      * @return 会话消息列表
@@ -49,7 +49,7 @@ public class DefaultMessageRegistry implements MessageRegistry {
     }
 
     /**
-     * 保存会话消息。
+     * 保存会话消息
      *
      * @param sessionMessage 会话消息
      */
@@ -60,7 +60,7 @@ public class DefaultMessageRegistry implements MessageRegistry {
     }
 
     /**
-     * 保存保留消息。
+     * 保存保留消息
      *
      * @param retainMessage 保留消息
      */
@@ -74,7 +74,7 @@ public class DefaultMessageRegistry implements MessageRegistry {
     }
 
     /**
-     * 根据主题过滤器获取保留消息。
+     * 根据主题过滤器获取保留消息
      *
      * @param topic 主题或过滤器
      * @return 保留消息列表
@@ -97,7 +97,7 @@ public class DefaultMessageRegistry implements MessageRegistry {
     }
 
     /**
-     * 获取并缓存保留消息匹配正则。
+     * 获取并缓存保留消息匹配正则
      *
      * @param topicFilter 主题过滤器
      * @return 正则模式

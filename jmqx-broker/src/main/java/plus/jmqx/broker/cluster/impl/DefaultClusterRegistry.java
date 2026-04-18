@@ -20,7 +20,7 @@ import java.util.List;
 public class DefaultClusterRegistry implements ClusterRegistry {
 
     /**
-     * 注册集群配置。
+     * 注册集群配置
      *
      * @param config 集群配置
      */
@@ -30,7 +30,7 @@ public class DefaultClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 返回空的集群消息流。
+     * 返回空的集群消息流
      *
      * @return 空消息流
      */
@@ -40,7 +40,7 @@ public class DefaultClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 返回空的集群事件流。
+     * 返回空的集群事件流
      *
      * @return 空事件流
      */
@@ -50,7 +50,7 @@ public class DefaultClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 获取集群节点列表。
+     * 获取集群节点列表
      *
      * @return 空列表
      */
@@ -60,7 +60,7 @@ public class DefaultClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 扩散消息的空实现。
+     * 扩散消息的空实现
      *
      * @param clusterMessage 集群消息
      * @return 空结果
@@ -71,7 +71,7 @@ public class DefaultClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 关闭集群的空实现。
+     * 关闭集群的空实现
      *
      * @return 空结果
      */

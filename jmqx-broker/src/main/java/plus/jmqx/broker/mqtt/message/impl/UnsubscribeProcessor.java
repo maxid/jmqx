@@ -30,7 +30,7 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -40,7 +40,7 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
     }
 
     /**
-     * 返回去订阅消息类型包装。
+     * 返回去订阅消息类型包装
      *
      * @return 去订阅消息类型包装类
      */
@@ -50,7 +50,7 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
     }
 
     /**
-     * 处理去订阅消息并移除订阅关系。
+     * 处理去订阅消息并移除订阅关系
      *
      * @param wrapper 消息包装
      * @param session 会话

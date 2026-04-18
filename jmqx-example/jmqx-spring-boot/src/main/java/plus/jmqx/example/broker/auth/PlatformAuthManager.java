@@ -23,7 +23,7 @@ public class PlatformAuthManager implements AuthManager {
     private String password;
 
     /**
-     * 校验设备鉴权信息。
+     * 校验设备鉴权信息
      *
      * @param clientId 设备 ID
      * @param username 用户名
