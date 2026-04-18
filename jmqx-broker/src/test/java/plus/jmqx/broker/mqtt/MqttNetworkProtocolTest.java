@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * MQTT 3.x/5 网络连通性单元测试。
+ * MQTT 3.x/5 网络连通性单元测试
  * 运行需显式启用：-Djmqx.network.tests=true
  */
 @EnabledIfSystemProperty(named = "jmqx.network.tests", matches = "true")
@@ -61,7 +61,7 @@ class MqttNetworkProtocolTest {
     private static final String TOPIC = "network/test";
 
     /**
-     * MQTT 3.1 连接/订阅/发布链路测试。
+     * MQTT 3.1 连接/订阅/发布链路测试
      *
      * @throws Exception 测试异常
      */
@@ -71,7 +71,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * MQTT 3.1.1 连接/订阅/发布链路测试。
+     * MQTT 3.1.1 连接/订阅/发布链路测试
      *
      * @throws Exception 测试异常
      */
@@ -81,7 +81,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * MQTT 5 连接/订阅/发布链路测试。
+     * MQTT 5 连接/订阅/发布链路测试
      *
      * @throws Exception 测试异常
      */
@@ -91,7 +91,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * QoS1 发布/ACK 流程测试。
+     * QoS1 发布/ACK 流程测试
      *
      * @throws Exception 测试异常
      */
@@ -101,7 +101,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * QoS2 发布/REC/REL/COMP 流程测试。
+     * QoS2 发布/REC/REL/COMP 流程测试
      *
      * @throws Exception 测试异常
      */
@@ -111,7 +111,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 断线重连后会话保持测试。
+     * 断线重连后会话保持测试
      *
      * @throws Exception 测试异常
      */
@@ -151,7 +151,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 保留消息对后订阅者投递测试。
+     * 保留消息对后订阅者投递测试
      *
      * @throws Exception 测试异常
      */
@@ -187,7 +187,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * KeepAlive 触发断开测试。
+     * KeepAlive 触发断开测试
      *
      * @throws Exception 测试异常
      */
@@ -208,7 +208,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * QoS2 重复 PUBREL 不应重复投递测试。
+     * QoS2 重复 PUBREL 不应重复投递测试
      *
      * @throws Exception 测试异常
      */
@@ -247,7 +247,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 连接异常断开时遗嘱消息投递测试。
+     * 连接异常断开时遗嘱消息投递测试
      *
      * @throws Exception 测试异常
      */
@@ -280,7 +280,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 执行连接/订阅/发布链路。
+     * 执行连接/订阅/发布链路
      *
      * @param version MQTT 协议版本
      * @throws Exception 测试异常
@@ -315,7 +315,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 执行指定 QoS 发布流程。
+     * 执行指定 QoS 发布流程
      *
      * @param qos QoS 等级
      * @throws Exception 测试异常
@@ -351,7 +351,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 获取可用随机端口。
+     * 获取可用随机端口
      *
      * @return 端口
      * @throws IOException IO 异常
@@ -363,7 +363,7 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 创建测试配置。
+     * 创建测试配置
      *
      * @param port 端口
      * @return MQTT 配置
@@ -381,14 +381,14 @@ class MqttNetworkProtocolTest {
     }
 
     /**
-     * 构造空实现分发器。
+     * 构造空实现分发器
      *
      * @return 分发器
      */
     private static PlatformDispatcher noopDispatcher() {
         return new PlatformDispatcher() {
             /**
-             * 处理连接消息。
+             * 处理连接消息
              *
              * @param message 连接消息
              * @return 处理结果
@@ -399,7 +399,7 @@ class MqttNetworkProtocolTest {
             }
 
             /**
-             * 处理断开消息。
+             * 处理断开消息
              *
              * @param message 断开消息
              * @return 处理结果
@@ -410,7 +410,7 @@ class MqttNetworkProtocolTest {
             }
 
             /**
-             * 处理连接丢失消息。
+             * 处理连接丢失消息
              *
              * @param message 连接丢失消息
              * @return 处理结果
@@ -421,7 +421,7 @@ class MqttNetworkProtocolTest {
             }
 
             /**
-             * 处理发布消息。
+             * 处理发布消息
              *
              * @param message 发布消息
              * @return 处理结果
@@ -442,7 +442,7 @@ class MqttNetworkProtocolTest {
         private int packetId = 1;
 
         /**
-         * 构造测试客户端。
+         * 构造测试客户端
          *
          * @param clientId 客户端 ID
          * @param port     端口
@@ -453,7 +453,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 连接并完成握手。
+         * 连接并完成握手
          *
          * @param version          MQTT 版本
          * @param cleanSession     清理会话
@@ -484,7 +484,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 订阅主题。
+         * 订阅主题
          *
          * @param topic 主题
          * @param qos   QoS 等级
@@ -502,7 +502,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 发布消息。
+         * 发布消息
          *
          * @param topic   主题
          * @param payload 负载
@@ -526,7 +526,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 发布保留消息。
+         * 发布保留消息
          *
          * @param topic   主题
          * @param payload 负载
@@ -548,7 +548,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 等待发布消息。
+         * 等待发布消息
          *
          * @param timeout 超时时间
          * @return 发布消息
@@ -559,7 +559,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 发送发布确认流程。
+         * 发送发布确认流程
          *
          * @param message 发布消息
          */
@@ -583,7 +583,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 等待发布 ACK 流程完成。
+         * 等待发布 ACK 流程完成
          *
          * @param qos QoS 等级
          */
@@ -611,7 +611,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 等待 PUBACK。
+         * 等待 PUBACK
          */
         void waitPubAck() {
             MqttMessage pubAck = awaitMessage(
@@ -622,7 +622,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 主动断开连接。
+         * 主动断开连接
          */
         void disconnect() {
             MqttMessage disconnect = new MqttMessage(new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0));
@@ -631,7 +631,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 非正常断开连接。
+         * 非正常断开连接
          */
         void closeAbrupt() {
             if (connection != null && !connection.isDisposed()) {
@@ -640,7 +640,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 关闭连接。
+         * 关闭连接
          */
         void close() {
             if (connection != null && !connection.isDisposed()) {
@@ -649,7 +649,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 生成消息 ID。
+         * 生成消息 ID
          *
          * @return 消息 ID
          */
@@ -658,7 +658,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 等待连接断开。
+         * 等待连接断开
          *
          * @param timeout 超时时间
          * @return 是否断开
@@ -669,7 +669,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 发送 PUBREL 并等待 PUBCOMP。
+         * 发送 PUBREL 并等待 PUBCOMP
          *
          * @param messageId 消息 ID
          */
@@ -683,7 +683,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 建立带遗嘱的连接。
+         * 建立带遗嘱的连接
          *
          * @param version          MQTT 版本
          * @param cleanSession     清理会话
@@ -718,7 +718,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 写入并刷新消息。
+         * 写入并刷新消息
          *
          * @param message 消息
          */
@@ -727,7 +727,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 确保 MQTT 编解码器存在。
+         * 确保 MQTT 编解码器存在
          */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
@@ -741,7 +741,7 @@ class MqttNetworkProtocolTest {
                 if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                     connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
                         /**
-                         * 处理入站消息并保留引用。
+                         * 处理入站消息并保留引用
                          *
                          * @param ctx 上下文
                          * @param msg 消息
@@ -767,7 +767,7 @@ class MqttNetworkProtocolTest {
             if (connection.channel().pipeline().get("mqttRetainInbound") == null) {
                 connection.channel().pipeline().addAfter("mqttDecoder", "mqttRetainInbound", new ChannelInboundHandlerAdapter() {
                     /**
-                     * 处理入站消息并保留引用。
+                     * 处理入站消息并保留引用
                      *
                      * @param ctx 上下文
                      * @param msg 消息
@@ -785,7 +785,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 复制发布消息并释放原消息。
+         * 复制发布消息并释放原消息
          *
          * @param message 原消息
          * @return 复制消息
@@ -803,7 +803,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 处理入站消息并入队。
+         * 处理入站消息并入队
          *
          * @param message 入站消息
          */
@@ -816,7 +816,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 等待匹配消息。
+         * 等待匹配消息
          *
          * @param predicate 过滤条件
          * @param timeout   超时时间
@@ -843,7 +843,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 构造 CONNECT 消息。
+         * 构造 CONNECT 消息
          *
          * @param version          MQTT 版本
          * @param clientId         客户端 ID
@@ -881,7 +881,7 @@ class MqttNetworkProtocolTest {
         }
 
         /**
-         * 构造带遗嘱的 CONNECT 消息。
+         * 构造带遗嘱的 CONNECT 消息
          *
          * @param version          MQTT 版本
          * @param clientId         客户端 ID

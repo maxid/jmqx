@@ -26,7 +26,7 @@ public abstract class AbstractAck implements Ack {
     private final    Runnable   cleaner;
 
     /**
-     * 构造 ACK 重试基础实现。
+     * 构造 ACK 重试基础实现
      *
      * @param maxRetrySize 最大重试次数
      * @param period       重试周期
@@ -43,7 +43,7 @@ public abstract class AbstractAck implements Ack {
     }
 
     /**
-     * 执行重试任务。
+     * 执行重试任务
      *
      * @param timeout 超时对象
      * @throws Exception 执行异常
@@ -64,7 +64,7 @@ public abstract class AbstractAck implements Ack {
     }
 
     /**
-     * 停止重试。
+     * 停止重试
      */
     @Override
     public void stop() {
@@ -74,7 +74,7 @@ public abstract class AbstractAck implements Ack {
     }
 
     /**
-     * 启动重试。
+     * 启动重试
      */
     @Override
     public void start() {
@@ -82,7 +82,7 @@ public abstract class AbstractAck implements Ack {
     }
 
     /**
-     * 获取当前重试间隔。
+     * 获取当前重试间隔
      *
      * @return 间隔时长
      */
@@ -92,7 +92,7 @@ public abstract class AbstractAck implements Ack {
     }
 
     /**
-     * 获取间隔时间单位。
+     * 获取间隔时间单位
      *
      * @return 时间单位
      */

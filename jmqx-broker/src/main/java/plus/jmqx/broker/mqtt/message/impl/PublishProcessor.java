@@ -42,7 +42,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -52,7 +52,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 返回发布消息类型包装。
+     * 返回发布消息类型包装
      *
      * @return 发布消息类型包装类
      */
@@ -62,7 +62,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 处理发布消息主流程。
+     * 处理发布消息主流程
      *
      * @param wrapper 消息包装
      * @param session 会话
@@ -149,7 +149,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 将消息发送给匹配的订阅者。
+     * 将消息发送给匹配的订阅者
      *
      * @param subscribeTopics 订阅集合
      * @param message         发布消息
@@ -166,7 +166,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 离线会话缓存消息并跳过发送。
+     * 离线会话缓存消息并跳过发送
      *
      * @param session         会话
      * @param messageRegistry 消息注册中心

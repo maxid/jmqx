@@ -18,7 +18,7 @@ public class LazyTrafficHandlerLoader implements TrafficHandlerLoader {
     private final Supplier<AbstractTrafficShapingHandler> shapingHandlerSupplier;
 
     /**
-     * 获取流控处理器实例。
+     * 获取流控处理器实例
      *
      * @return 流控处理器
      */

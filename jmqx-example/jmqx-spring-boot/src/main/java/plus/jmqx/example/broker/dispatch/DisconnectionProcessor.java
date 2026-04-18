@@ -15,7 +15,7 @@ import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
 public class DisconnectionProcessor {
 
     /**
-     * 处理设备离线消息。
+     * 处理设备离线消息
      *
      * @param message 离线消息
      */

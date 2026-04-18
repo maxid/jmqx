@@ -17,7 +17,7 @@ public class TimeAckManager extends HashedWheelTimer implements AckManager {
     private final Map<Long, Ack> acks = new ConcurrentHashMap<>();
 
     /**
-     * 构造 ACK 时间调度管理器。
+     * 构造 ACK 时间调度管理器
      *
      * @param tick  刻度间隔
      * @param unit  时间单位
@@ -28,7 +28,7 @@ public class TimeAckManager extends HashedWheelTimer implements AckManager {
     }
 
     /**
-     * 添加 ACK 并调度超时任务。
+     * 添加 ACK 并调度超时任务
      *
      * @param ack ACK 实例
      */
@@ -39,7 +39,7 @@ public class TimeAckManager extends HashedWheelTimer implements AckManager {
     }
 
     /**
-     * 获取 ACK。
+     * 获取 ACK
      *
      * @param id ACK ID
      * @return ACK 实例
@@ -50,7 +50,7 @@ public class TimeAckManager extends HashedWheelTimer implements AckManager {
     }
 
     /**
-     * 删除 ACK。
+     * 删除 ACK
      *
      * @param id ACK ID
      */

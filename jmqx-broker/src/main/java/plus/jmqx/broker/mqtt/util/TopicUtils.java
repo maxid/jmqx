@@ -9,13 +9,13 @@ package plus.jmqx.broker.mqtt.util;
 public final class TopicUtils {
 
     /**
-     * 工具类禁止实例化。
+     * 工具类禁止实例化
      */
     private TopicUtils() {
     }
 
     /**
-     * 按 '/' 拆分主题字符串。
+     * 按 '/' 拆分主题字符串
      *
      * @param topic 主题字符串
      * @return 拆分后的主题层级数组

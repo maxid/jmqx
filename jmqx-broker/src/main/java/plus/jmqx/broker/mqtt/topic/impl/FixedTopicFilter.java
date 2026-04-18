@@ -26,7 +26,7 @@ public class FixedTopicFilter implements TopicFilter {
     private final Map<String, Set<SubscribeTopic>> topicChannels = new ConcurrentHashMap<>();
 
     /**
-     * 根据固定主题获取订阅集合。
+     * 根据固定主题获取订阅集合
      *
      * @param topic   主题
      * @param mqttQoS QoS
@@ -42,7 +42,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     /**
-     * 注册固定主题订阅。
+     * 注册固定主题订阅
      *
      * @param topicFilter 主题过滤器
      * @param mqttChannel 会话
@@ -54,7 +54,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     /**
-     * 注册订阅对象。
+     * 注册订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
@@ -69,7 +69,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     /**
-     * 移除订阅对象。
+     * 移除订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
@@ -84,7 +84,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     /**
-     * 获取订阅数量。
+     * 获取订阅数量
      *
      * @return 订阅数量
      */
@@ -94,7 +94,7 @@ public class FixedTopicFilter implements TopicFilter {
     }
 
     /**
-     * 获取全部订阅集合。
+     * 获取全部订阅集合
      *
      * @return 订阅集合
      */

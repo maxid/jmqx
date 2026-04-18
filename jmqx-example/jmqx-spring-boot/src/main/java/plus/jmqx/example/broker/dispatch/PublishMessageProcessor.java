@@ -29,7 +29,7 @@ public class PublishMessageProcessor {
     private       MessageDispatcher dispatcher;
 
     /**
-     * 处理设备上报消息。
+     * 处理设备上报消息
      *
      * @param message 上报消息
      */
@@ -43,7 +43,7 @@ public class PublishMessageProcessor {
     }
 
     /**
-     * 获取消息分发器。
+     * 获取消息分发器
      *
      * @return 消息分发器
      */

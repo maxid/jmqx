@@ -15,13 +15,13 @@ import java.util.stream.StreamSupport;
 public class DynamicLoader {
 
     /**
-     * 工具类禁止实例化。
+     * 工具类禁止实例化
      */
     private DynamicLoader() {
     }
 
     /**
-     * 查找第一个实现。
+     * 查找第一个实现
      *
      * @param clazz SPI 接口类型
      * @param <T>   泛型类型
@@ -33,7 +33,7 @@ public class DynamicLoader {
     }
 
     /**
-     * 查找符合条件的第一个实现。
+     * 查找符合条件的第一个实现
      *
      * @param clazz     SPI 接口类型
      * @param predicate 过滤条件
@@ -47,7 +47,7 @@ public class DynamicLoader {
     }
 
     /**
-     * 查找全部实现。
+     * 查找全部实现
      *
      * @param clazz SPI 接口类型
      * @param <T>   泛型类型
@@ -59,7 +59,7 @@ public class DynamicLoader {
     }
 
     /**
-     * 查找符合条件的全部实现。
+     * 查找符合条件的全部实现
      *
      * @param clazz     SPI 接口类型
      * @param predicate 过滤条件

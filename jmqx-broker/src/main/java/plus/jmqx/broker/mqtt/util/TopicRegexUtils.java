@@ -9,12 +9,12 @@ package plus.jmqx.broker.mqtt.util;
 public class TopicRegexUtils {
 
     /**
-     * 默认实例。
+     * 默认实例
      */
     public static final TopicRegexUtils instance = new TopicRegexUtils();
 
     /**
-     * 将主题过滤器转换为正则表达式。
+     * 将主题过滤器转换为正则表达式
      */
     public static String regexTopic(String topic) {
         if (topic.startsWith("$")) {
@@ -27,7 +27,7 @@ public class TopicRegexUtils {
     }
 
     /**
-     * 判断主题是否匹配过滤器。
+     * 判断主题是否匹配过滤器
      */
     public boolean match(String sourcesTopic, String targetTopic) {
         if (sourcesTopic == null || "".equals(sourcesTopic) || targetTopic == null || "".equals(targetTopic)) {

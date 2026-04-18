@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 class MqttProtocolCompatibilityTest {
 
     /**
-     * 校验 MQTT 3.1 ConnAck 返回码与属性。
+     * 校验 MQTT 3.1 ConnAck 返回码与属性
      */
     @Test
     void connectAckMqtt31KeepsReturnCodeAndNoProperties() {
@@ -30,7 +30,7 @@ class MqttProtocolCompatibilityTest {
     }
 
     /**
-     * 校验 MQTT 3.1.1 ConnAck 返回码与属性。
+     * 校验 MQTT 3.1.1 ConnAck 返回码与属性
      */
     @Test
     void connectAckMqtt311KeepsReturnCodeAndNoProperties() {
@@ -43,7 +43,7 @@ class MqttProtocolCompatibilityTest {
     }
 
     /**
-     * 校验 MQTT 5 ConnAck 返回码映射与属性填充。
+     * 校验 MQTT 5 ConnAck 返回码映射与属性填充
      */
     @Test
     @SuppressWarnings("rawtypes")

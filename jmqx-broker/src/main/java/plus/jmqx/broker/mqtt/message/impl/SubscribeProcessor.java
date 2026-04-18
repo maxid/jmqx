@@ -43,7 +43,7 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -53,7 +53,7 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     }
 
     /**
-     * 返回订阅消息类型包装。
+     * 返回订阅消息类型包装
      *
      * @return 订阅消息类型包装类
      */
@@ -63,7 +63,7 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     }
 
     /**
-     * 处理订阅消息并注册订阅关系。
+     * 处理订阅消息并注册订阅关系
      *
      * @param wrapper 消息包装
      * @param session 会话
@@ -101,7 +101,7 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     }
 
     /**
-     * 下发匹配的保留消息。
+     * 下发匹配的保留消息
      *
      * @param messageRegistry 消息注册中心
      * @param session         会话

@@ -30,12 +30,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * 简易对比基准：Legacy vs Optimized dispatch pipeline。
+ * 简易对比基准：Legacy vs Optimized dispatch pipeline
  */
 class DispatcherBenchmarkTest {
 
     /**
-     * 对比 Legacy 与 Optimized 调度性能。
+     * 对比 Legacy 与 Optimized 调度性能
      *
      * @throws Exception 测试异常
      */
@@ -55,7 +55,7 @@ class DispatcherBenchmarkTest {
     }
 
     /**
-     * 执行基准测试。
+     * 执行基准测试
      *
      * @param name         基准名称
      * @param pipeline     调度管道
@@ -89,7 +89,7 @@ class DispatcherBenchmarkTest {
     }
 
     /**
-     * 构造发布消息。
+     * 构造发布消息
      *
      * @param payloadSize 负载大小
      * @return 发布消息
@@ -108,21 +108,21 @@ class DispatcherBenchmarkTest {
 
     private interface Pipeline extends AutoCloseable {
         /**
-         * 启动管道。
+         * 启动管道
          *
          * @param processor 处理器
          * @param context   上下文
          */
         void start(MessageProcessor<MqttPublishMessage> processor, ReceiveContext<Configuration> context);
         /**
-         * 发送消息包装。
+         * 发送消息包装
          *
          * @param wrapper 消息包装
          */
         void emit(MessageWrapper<MqttPublishMessage> wrapper);
         @Override
         /**
-         * 关闭管道。
+         * 关闭管道
          */
         void close();
     }
@@ -133,7 +133,7 @@ class DispatcherBenchmarkTest {
         private final EmitFailureHandler emitFailureHandler = new EmitFailureHandler();
 
         /**
-         * 构造 Legacy 管道。
+         * 构造 Legacy 管道
          *
          * @param threadSize 线程数
          * @param queueSize  队列大小
@@ -144,7 +144,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 启动管道并订阅处理。
+         * 启动管道并订阅处理
          *
          * @param processor 处理器
          * @param context   上下文
@@ -165,7 +165,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 发送消息包装。
+         * 发送消息包装
          *
          * @param wrapper 消息包装
          */
@@ -175,7 +175,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 关闭管道。
+         * 关闭管道
          */
         @Override
         public void close() {
@@ -190,7 +190,7 @@ class DispatcherBenchmarkTest {
         private final int concurrency;
 
         /**
-         * 构造 Optimized 管道。
+         * 构造 Optimized 管道
          *
          * @param threadSize 线程数
          * @param queueSize  队列大小
@@ -202,7 +202,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 启动管道并订阅处理。
+         * 启动管道并订阅处理
          *
          * @param processor 处理器
          * @param context   上下文
@@ -223,7 +223,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 发送消息包装。
+         * 发送消息包装
          *
          * @param wrapper 消息包装
          */
@@ -233,7 +233,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 关闭管道。
+         * 关闭管道
          */
         @Override
         public void close() {
@@ -243,7 +243,7 @@ class DispatcherBenchmarkTest {
 
     private static final class EmitFailureHandler implements Sinks.EmitFailureHandler {
         /**
-         * 处理发送失败。
+         * 处理发送失败
          *
          * @param signalType  信号类型
          * @param emitResult  发送结果
@@ -261,7 +261,7 @@ class DispatcherBenchmarkTest {
         private final AtomicLong counter = new AtomicLong();
 
         /**
-         * 构造空处理器。
+         * 构造空处理器
          *
          * @param latch 计数器
          */
@@ -270,7 +270,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 获取命名空间。
+         * 获取命名空间
          *
          * @return 命名空间
          */
@@ -280,7 +280,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 设置命名空间。
+         * 设置命名空间
          *
          * @param namespace 命名空间
          */
@@ -288,7 +288,7 @@ class DispatcherBenchmarkTest {
         public void setNamespace(String namespace) {}
 
         /**
-         * 获取处理的消息类型集合。
+         * 获取处理的消息类型集合
          *
          * @return 消息类型列表
          */
@@ -298,7 +298,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 获取处理器类型。
+         * 获取处理器类型
          *
          * @return 处理器类型
          */
@@ -308,7 +308,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 处理消息包装。
+         * 处理消息包装
          *
          * @param wrapper 消息包装
          * @param session 会话
@@ -323,91 +323,91 @@ class DispatcherBenchmarkTest {
 
     private static final class NoopReceiveContext implements ReceiveContext<Configuration> {
         /**
-         * 获取配置。
+         * 获取配置
          *
          * @return 配置
          */
         @Override
         public Configuration getConfiguration() { return null; }
         /**
-         * 获取 ACK 管理器。
+         * 获取 ACK 管理器
          *
          * @return ACK 管理器
          */
         @Override
         public plus.jmqx.broker.mqtt.retry.TimeAckManager getTimeAckManager() { return null; }
         /**
-         * 获取集群注册中心。
+         * 获取集群注册中心
          *
          * @return 集群注册中心
          */
         @Override
         public plus.jmqx.broker.cluster.ClusterRegistry getClusterRegistry() { return null; }
         /**
-         * 获取事件注册中心。
+         * 获取事件注册中心
          *
          * @return 事件注册中心
          */
         @Override
         public plus.jmqx.broker.mqtt.registry.EventRegistry getEventRegistry() { return null; }
         /**
-         * 获取会话注册中心。
+         * 获取会话注册中心
          *
          * @return 会话注册中心
          */
         @Override
         public plus.jmqx.broker.mqtt.registry.SessionRegistry getSessionRegistry() { return null; }
         /**
-         * 获取主题注册中心。
+         * 获取主题注册中心
          *
          * @return 主题注册中心
          */
         @Override
         public plus.jmqx.broker.mqtt.registry.TopicRegistry getTopicRegistry() { return null; }
         /**
-         * 获取消息注册中心。
+         * 获取消息注册中心
          *
          * @return 消息注册中心
          */
         @Override
         public plus.jmqx.broker.mqtt.registry.MessageRegistry getMessageRegistry() { return null; }
         /**
-         * 获取消息分发器。
+         * 获取消息分发器
          *
          * @return 消息分发器
          */
         @Override
         public plus.jmqx.broker.mqtt.message.MessageDispatcher getMessageDispatcher() { return null; }
         /**
-         * 获取 ACL 管理器。
+         * 获取 ACL 管理器
          *
          * @return ACL 管理器
          */
         @Override
         public plus.jmqx.broker.acl.AclManager getAclManager() { return null; }
         /**
-         * 获取鉴权管理器。
+         * 获取鉴权管理器
          *
          * @return 鉴权管理器
          */
         @Override
         public plus.jmqx.broker.auth.AuthManager getAuthManager() { return null; }
         /**
-         * 获取鉴权执行器。
+         * 获取鉴权执行器
          *
          * @return 鉴权执行器
          */
         @Override
         public plus.jmqx.broker.auth.AuthExecutor getAuthExecutor() { return null; }
         /**
-         * 调用分发器。
+         * 调用分发器
          *
          * @param consumer 分发器消费者
          */
         @Override
         public void dispatch(java.util.function.Consumer<plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher> consumer) {}
         /**
-         * 接收消息。
+         * 接收消息
          *
          * @param session 会话
          * @param wrapper 消息包装
@@ -423,7 +423,7 @@ class DispatcherBenchmarkTest {
         private final long endNs;
 
         /**
-         * 构造基准结果。
+         * 构造基准结果
          *
          * @param name    名称
          * @param count   数量
@@ -438,7 +438,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 构造结果对象。
+         * 构造结果对象
          *
          * @param name    名称
          * @param count   数量
@@ -451,7 +451,7 @@ class DispatcherBenchmarkTest {
         }
 
         /**
-         * 输出格式化结果。
+         * 输出格式化结果
          *
          * @return 格式化字符串
          */

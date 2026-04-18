@@ -32,12 +32,12 @@ public class ClusterMessage {
     }
 
     /**
-     * 构造空集群消息。
+     * 构造空集群消息
      */
     public ClusterMessage(){}
 
     /**
-     * 构造发布消息事件。
+     * 构造发布消息事件
      *
      * @param heapMqttMessage 发布消息
      */
@@ -47,7 +47,7 @@ public class ClusterMessage {
     }
 
     /**
-     * 构造关闭消息事件。
+     * 构造关闭消息事件
      *
      * @param closeMqttMessage 关闭消息
      */

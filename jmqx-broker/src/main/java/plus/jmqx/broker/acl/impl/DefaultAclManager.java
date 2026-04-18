@@ -13,7 +13,7 @@ import plus.jmqx.broker.mqtt.channel.MqttSession;
 public class DefaultAclManager implements AclManager {
 
     /**
-     * 校验会话对主题的访问权限。
+     * 校验会话对主题的访问权限
      *
      * @param session 会话
      * @param topic   主题

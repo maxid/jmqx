@@ -14,7 +14,7 @@ import java.util.Set;
 public interface TopicFilter {
 
     /**
-     * 获取订阅主题集合。
+     * 获取订阅主题集合
      *
      * @param topic   主题
      * @param mqttQoS QoS
@@ -24,7 +24,7 @@ public interface TopicFilter {
 
 
     /**
-     * 保存订阅主题。
+     * 保存订阅主题
      *
      * @param topicFilter 主题过滤器
      * @param mqttQoS     QoS
@@ -33,28 +33,28 @@ public interface TopicFilter {
     void addSubscribeTopic(String topicFilter, MqttSession mqttChannel, MqttQoS mqttQoS);
 
     /**
-     * 保存订阅对象。
+     * 保存订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
     void addSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
-     * 删除订阅对象。
+     * 删除订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
     void removeSubscribeTopic(SubscribeTopic subscribeTopic);
 
     /**
-     * 获取订阅总数。
+     * 获取订阅总数
      *
      * @return 订阅数量
      */
     int count();
 
     /**
-     * 获取所有订阅对象。
+     * 获取所有订阅对象
      *
      * @return 订阅集合
      */

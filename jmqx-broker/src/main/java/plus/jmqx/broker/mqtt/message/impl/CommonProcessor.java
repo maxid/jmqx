@@ -47,7 +47,7 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -57,7 +57,7 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
     }
 
     /**
-     * 返回通用消息类型包装。
+     * 返回通用消息类型包装
      *
      * @return 通用消息类型包装类
      */
@@ -67,7 +67,7 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
     }
 
     /**
-     * 处理通用控制类消息。
+     * 处理通用控制类消息
      *
      * @param wrapper 消息包装
      * @param session 会话
@@ -134,7 +134,7 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
     }
 
     /**
-     * 离线会话缓存消息并跳过发送。
+     * 离线会话缓存消息并跳过发送
      *
      * @param session         会话
      * @param messageRegistry 消息注册中心

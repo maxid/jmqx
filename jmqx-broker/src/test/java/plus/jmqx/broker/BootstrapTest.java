@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
 class BootstrapTest {
 
     /**
-     * 验证多个 Broker 实例启动与关闭。
+     * 验证多个 Broker 实例启动与关闭
      *
      * @throws Exception 测试异常
      */
@@ -71,7 +71,7 @@ class BootstrapTest {
     }
 
     /**
-     * 运行 Broker 压测并输出结果。
+     * 运行 Broker 压测并输出结果
      *
      * @throws Exception 测试异常
      */
@@ -92,7 +92,7 @@ class BootstrapTest {
     }
 
     /**
-     * 设置测试日志级别。
+     * 设置测试日志级别
      */
     private void setLogContext() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -103,7 +103,7 @@ class BootstrapTest {
     }
 
     /**
-     * 创建基础配置。
+     * 创建基础配置
      *
      * @param namespace 命名空间
      * @param mqttPort  MQTT 端口
@@ -128,7 +128,7 @@ class BootstrapTest {
     }
 
     /**
-     * 创建压测配置。
+     * 创建压测配置
      *
      * @param mqttPort MQTT 端口
      * @return MQTT 配置
@@ -146,7 +146,7 @@ class BootstrapTest {
     }
 
     /**
-     * 读取整型系统属性。
+     * 读取整型系统属性
      *
      * @param key 属性名
      * @param def 默认值
@@ -161,7 +161,7 @@ class BootstrapTest {
     }
 
     /**
-     * 加载压测参数。
+     * 加载压测参数
      *
      * @return 压测配置
      */
@@ -180,7 +180,7 @@ class BootstrapTest {
     }
 
     /**
-     * 执行压测任务。
+     * 执行压测任务
      *
      * @param config           压测配置
      * @param dispatchReceived 分发计数
@@ -231,7 +231,7 @@ class BootstrapTest {
     }
 
     /**
-     * 输出压测汇总结果。
+     * 输出压测汇总结果
      *
      * @param config           压测配置
      * @param result           压测结果
@@ -252,7 +252,7 @@ class BootstrapTest {
     }
 
     /**
-     * 执行压测预检发布。
+     * 执行压测预检发布
      *
      * @param config           压测配置
      * @param acked            Ack 计数
@@ -283,7 +283,7 @@ class BootstrapTest {
     }
 
     /**
-     * 等待分发计数增长。
+     * 等待分发计数增长
      *
      * @param dispatchReceived 分发计数
      * @param beforeDispatch   初始计数
@@ -307,7 +307,7 @@ class BootstrapTest {
     }
 
     /**
-     * 输出压测实时进度。
+     * 输出压测实时进度
      *
      * @param config           压测配置
      * @param published        发布计数
@@ -343,14 +343,14 @@ class BootstrapTest {
     }
 
     /**
-     * 构造测试用消息分发器。
+     * 构造测试用消息分发器
      *
      * @return 分发器
      */
     private PlatformDispatcher dispatcher() {
         return new PlatformDispatcher() {
             /**
-             * 处理连接消息。
+             * 处理连接消息
              *
              * @param message 连接消息
              * @return 处理结果
@@ -363,7 +363,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理断开连接消息。
+             * 处理断开连接消息
              *
              * @param message 断开消息
              * @return 处理结果
@@ -376,7 +376,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理连接丢失消息。
+             * 处理连接丢失消息
              *
              * @param message 连接丢失消息
              * @return 处理结果
@@ -389,7 +389,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理发布消息。
+             * 处理发布消息
              *
              * @param message 发布消息
              * @return 处理结果
@@ -408,7 +408,7 @@ class BootstrapTest {
     }
 
     /**
-     * 构造压测用分发器。
+     * 构造压测用分发器
      *
      * @param dispatchReceived 分发计数
      * @return 分发器
@@ -416,7 +416,7 @@ class BootstrapTest {
     private PlatformDispatcher stressDispatcher(AtomicLong dispatchReceived) {
         return new PlatformDispatcher() {
             /**
-             * 处理连接消息。
+             * 处理连接消息
              *
              * @param message 连接消息
              * @return 处理结果
@@ -427,7 +427,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理断开连接消息。
+             * 处理断开连接消息
              *
              * @param message 断开消息
              * @return 处理结果
@@ -438,7 +438,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理连接丢失消息。
+             * 处理连接丢失消息
              *
              * @param message 连接丢失消息
              * @return 处理结果
@@ -449,7 +449,7 @@ class BootstrapTest {
             }
 
             /**
-             * 处理发布消息并计数。
+             * 处理发布消息并计数
              *
              * @param message 发布消息
              * @return 处理结果
@@ -471,7 +471,7 @@ class BootstrapTest {
         private final AtomicLong localAcked = new AtomicLong();
 
         /**
-         * 构造压测客户端。
+         * 构造压测客户端
          *
          * @param clientId      客户端 ID
          * @param port          端口
@@ -484,7 +484,7 @@ class BootstrapTest {
         }
 
         /**
-         * 建立连接并完成握手。
+         * 建立连接并完成握手
          */
         void connect() {
             this.connection = TcpClient.create()
@@ -520,7 +520,7 @@ class BootstrapTest {
         }
 
         /**
-         * 循环发布消息直到超时。
+         * 循环发布消息直到超时
          *
          * @param topic          主题
          * @param payloadBytes   负载大小
@@ -585,7 +585,7 @@ class BootstrapTest {
         }
 
         /**
-         * 等待 Ack 达到预期。
+         * 等待 Ack 达到预期
          *
          * @param acked          Ack 计数
          * @param expected       预期数量
@@ -607,7 +607,7 @@ class BootstrapTest {
         }
 
         /**
-         * 发布一条消息并等待 Ack。
+         * 发布一条消息并等待 Ack
          *
          * @param topic          主题
          * @param payloadBytes   负载大小
@@ -644,7 +644,7 @@ class BootstrapTest {
         }
 
         /**
-         * 关闭连接。
+         * 关闭连接
          */
         void close() {
             if (connection != null && !connection.isDisposed()) {
@@ -653,7 +653,7 @@ class BootstrapTest {
         }
 
         /**
-         * 写入并刷新消息。
+         * 写入并刷新消息
          *
          * @param message 消息
          */
@@ -666,7 +666,7 @@ class BootstrapTest {
         }
 
         /**
-         * 提交写入操作。
+         * 提交写入操作
          *
          * @param message 消息
          */
@@ -679,7 +679,7 @@ class BootstrapTest {
         }
 
         /**
-         * 提交刷新操作。
+         * 提交刷新操作
          */
         private void submitFlush() {
             if (connection.channel().eventLoop().inEventLoop()) {
@@ -690,7 +690,7 @@ class BootstrapTest {
         }
 
         /**
-         * 确保 MQTT 编解码器存在。
+         * 确保 MQTT 编解码器存在
          */
         private void ensureMqttPipeline() {
             String bridgeName = "reactor.right.reactiveBridge";
@@ -712,7 +712,7 @@ class BootstrapTest {
         }
 
         /**
-         * 生成下一个消息 ID。
+         * 生成下一个消息 ID
          *
          * @return 消息 ID
          */
@@ -725,7 +725,7 @@ class BootstrapTest {
         }
 
         /**
-         * 处理入站消息。
+         * 处理入站消息
          *
          * @param message 入站消息
          */
@@ -739,7 +739,7 @@ class BootstrapTest {
         }
 
         /**
-         * 等待匹配的入站消息。
+         * 等待匹配的入站消息
          *
          * @param predicate 过滤条件
          * @param timeout   超时时间
@@ -784,7 +784,7 @@ class BootstrapTest {
         private final boolean completed;
 
         /**
-         * 构造压测结果。
+         * 构造压测结果
          *
          * @param sent       发送数量
          * @param startNanos 开始时间

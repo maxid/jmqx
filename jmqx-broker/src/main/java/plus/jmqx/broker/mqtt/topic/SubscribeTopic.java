@@ -24,7 +24,7 @@ public class SubscribeTopic {
     private final MqttSession session;
 
     /**
-     * 创建订阅对象。
+     * 创建订阅对象
      *
      * @param topicFilter 主题过滤器
      * @param qoS         QoS
@@ -37,7 +37,7 @@ public class SubscribeTopic {
     }
 
     /**
-     * 计算与指定 QoS 的最小值订阅。
+     * 计算与指定 QoS 的最小值订阅
      *
      * @param mqttQoS 目标 QoS
      * @return 新订阅对象
@@ -48,21 +48,21 @@ public class SubscribeTopic {
     }
 
     /**
-     * 绑定订阅到会话。
+     * 绑定订阅到会话
      */
     public void linkSubscribe() {
         session.getTopics().add(this);
     }
 
     /**
-     * 从会话解绑订阅。
+     * 从会话解绑订阅
      */
     public void unLinkSubscribe() {
         session.getTopics().remove(this);
     }
 
     /**
-     * 判断订阅是否相等。
+     * 判断订阅是否相等
      *
      * @param o 对象
      * @return 是否相等
@@ -81,7 +81,7 @@ public class SubscribeTopic {
     }
 
     /**
-     * 计算哈希值。
+     * 计算哈希值
      *
      * @return 哈希值
      */
@@ -91,7 +91,7 @@ public class SubscribeTopic {
     }
 
     /**
-     * 输出订阅信息。
+     * 输出订阅信息
      *
      * @return 字符串
      */

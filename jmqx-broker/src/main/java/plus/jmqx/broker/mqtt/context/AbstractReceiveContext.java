@@ -105,7 +105,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     private final AuthExecutor         authExecutor;
 
     /**
-     * 创建接收上下文并初始化各组件。
+     * 创建接收上下文并初始化各组件
      *
      * @param config    配置
      * @param transport 传输实现
@@ -129,7 +129,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 分发生命周期事件到平台分发器。
+     * 分发生命周期事件到平台分发器
      *
      * @param consumer 分发回调
      */
@@ -139,7 +139,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建流控处理器加载器。
+     * 创建流控处理器加载器
      *
      * @return 流控加载器
      */
@@ -179,7 +179,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建消息分发器。
+     * 创建消息分发器
      *
      * @return 消息分发器
      */
@@ -191,7 +191,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建集群注册中心。
+     * 创建集群注册中心
      *
      * @return 集群注册中心
      */
@@ -201,7 +201,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建事件注册中心。
+     * 创建事件注册中心
      *
      * @return 事件注册中心
      */
@@ -210,7 +210,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建会话注册中心。
+     * 创建会话注册中心
      *
      * @return 会话注册中心
      */
@@ -219,7 +219,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建主题注册中心。
+     * 创建主题注册中心
      *
      * @return 主题注册中心
      */
@@ -228,7 +228,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建消息注册中心。
+     * 创建消息注册中心
      *
      * @return 消息注册中心
      */
@@ -237,7 +237,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建主题访问控制管理器。
+     * 创建主题访问控制管理器
      *
      * @return ACL 管理器
      */
@@ -247,7 +247,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 创建认证管理器。
+     * 创建认证管理器
      *
      * @return 认证管理器
      */
@@ -257,7 +257,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     }
 
     /**
-     * 获取上下文持有器。
+     * 获取上下文持有器
      *
      * @return 上下文持有器
      */

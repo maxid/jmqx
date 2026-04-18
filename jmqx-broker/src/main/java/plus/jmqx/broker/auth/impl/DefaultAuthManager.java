@@ -11,7 +11,7 @@ import plus.jmqx.broker.auth.AuthManager;
 public class DefaultAuthManager implements AuthManager {
 
     /**
-     * 进行连接鉴权。
+     * 进行连接鉴权
      *
      * @param clientId 设备 ID
      * @param username 用户名

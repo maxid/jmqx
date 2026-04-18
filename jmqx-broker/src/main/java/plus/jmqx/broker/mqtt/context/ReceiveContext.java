@@ -98,7 +98,7 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
     AuthManager getAuthManager();
 
     /**
-     * MQTT 连接认证执行器。
+     * MQTT 连接认证执行器
      *
      * @return 鉴权执行器
      */

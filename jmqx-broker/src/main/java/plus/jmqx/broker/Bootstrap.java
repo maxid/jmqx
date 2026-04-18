@@ -37,35 +37,35 @@ public class Bootstrap {
     private final        PlatformDispatcher platformDispatcher;
 
     /**
-     * 创建服务入口（仅配置）。
+     * 创建服务入口（仅配置）
      */
     public Bootstrap(MqttConfiguration config) {
         this(config, null, null, null);
     }
 
     /**
-     * 创建服务入口（配置 + ACL）。
+     * 创建服务入口（配置 + ACL）
      */
     public Bootstrap(MqttConfiguration config, AclManager aclManager) {
         this(config, aclManager, null, null);
     }
 
     /**
-     * 创建服务入口（配置 + 鉴权）。
+     * 创建服务入口（配置 + 鉴权）
      */
     public Bootstrap(MqttConfiguration config, AuthManager authManager) {
         this(config, null, authManager, null);
     }
 
     /**
-     * 创建服务入口（配置 + 平台分发器）。
+     * 创建服务入口（配置 + 平台分发器）
      */
     public Bootstrap(MqttConfiguration config, PlatformDispatcher platformDispatcher) {
         this(config, null, null, platformDispatcher);
     }
 
     /**
-     * 创建服务入口（配置 + ACL + 鉴权）。
+     * 创建服务入口（配置 + ACL + 鉴权）
      */
     public Bootstrap(MqttConfiguration config, AclManager aclManager, AuthManager authManager) {
         this(config, aclManager, authManager, null);

@@ -20,21 +20,21 @@ import java.util.List;
 public interface MessageProcessor<T extends MqttMessage> {
 
     /**
-     * 获取命名空间。
+     * 获取命名空间
      *
      * @return 命名空间
      */
     String getNamespace();
 
     /**
-     * 设置命名空间。
+     * 设置命名空间
      *
      * @param namespace 命名空间
      */
     void setNamespace(String namespace);
 
     /**
-     * 获取上下文持有器。
+     * 获取上下文持有器
      *
      * @return 上下文持有器
      */
@@ -43,21 +43,21 @@ public interface MessageProcessor<T extends MqttMessage> {
     }
 
     /**
-     * 获取消息处理器适配的消息类型。
+     * 获取消息处理器适配的消息类型
      *
      * @return 消息类型集合
      */
     List<MqttMessageType> getMqttMessageTypes();
 
     /**
-     * 获取消息类型。
+     * 获取消息类型
      *
      * @return 消息类型
      */
     Class<?> getMessageType();
 
     /**
-     * 处理 MQTT 消息并注入上下文。
+     * 处理 MQTT 消息并注入上下文
      *
      * @param message 消息包装
      * @param session 会话
@@ -71,7 +71,7 @@ public interface MessageProcessor<T extends MqttMessage> {
     }
 
     /**
-     * 处理 MQTT 消息并注入上下文。
+     * 处理 MQTT 消息并注入上下文
      *
      * @param wrapper 消息包装
      * @param session 会话
@@ -88,7 +88,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttMessage> wrapper;
 
         /**
-         * 创建通用消息类型包装。
+         * 创建通用消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -107,7 +107,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttConnAckMessage> wrapper;
 
         /**
-         * 创建连接确认消息类型包装。
+         * 创建连接确认消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -126,7 +126,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttConnectMessage> wrapper;
 
         /**
-         * 创建连接消息类型包装。
+         * 创建连接消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -145,7 +145,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttPubAckMessage> wrapper;
 
         /**
-         * 创建发布确认消息类型包装。
+         * 创建发布确认消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -164,7 +164,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttPublishMessage> wrapper;
 
         /**
-         * 创建发布消息类型包装。
+         * 创建发布消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -183,7 +183,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttSubAckMessage> wrapper;
 
         /**
-         * 创建订阅确认消息类型包装。
+         * 创建订阅确认消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -202,7 +202,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttSubscribeMessage> wrapper;
 
         /**
-         * 创建订阅消息类型包装。
+         * 创建订阅消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -221,7 +221,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttUnsubAckMessage> wrapper;
 
         /**
-         * 创建去订阅确认消息类型包装。
+         * 创建去订阅确认消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象
@@ -240,7 +240,7 @@ public interface MessageProcessor<T extends MqttMessage> {
         private final MessageWrapper<MqttUnsubscribeMessage> wrapper;
 
         /**
-         * 创建去订阅消息类型包装。
+         * 创建去订阅消息类型包装
          *
          * @param wrapper 消息包装
          * @return 包装对象

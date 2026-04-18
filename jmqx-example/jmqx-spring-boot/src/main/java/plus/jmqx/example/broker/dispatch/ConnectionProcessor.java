@@ -15,7 +15,7 @@ import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
 public class ConnectionProcessor {
 
     /**
-     * 处理设备上线消息。
+     * 处理设备上线消息
      *
      * @param message 连接消息
      */

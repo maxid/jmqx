@@ -26,7 +26,7 @@ public class PlatformMqttBroker implements ApplicationRunner {
     private final PlatformDispatcher dispatcher;
 
     /**
-     * 应用启动后运行。
+     * 应用启动后运行
      *
      * @param args 启动参数
      * @throws Exception 启动异常
@@ -37,7 +37,7 @@ public class PlatformMqttBroker implements ApplicationRunner {
     }
 
     /**
-     * 启动 MQTT Broker。
+     * 启动 MQTT Broker
      *
      * @throws Exception 启动异常
      */

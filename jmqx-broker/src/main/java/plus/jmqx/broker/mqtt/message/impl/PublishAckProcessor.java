@@ -29,7 +29,7 @@ public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMess
     }
 
     /**
-     * 返回处理的消息类型列表。
+     * 返回处理的消息类型列表
      *
      * @return 消息类型列表
      */
@@ -39,7 +39,7 @@ public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMess
     }
 
     /**
-     * 返回发布确认消息类型包装。
+     * 返回发布确认消息类型包装
      *
      * @return 发布确认消息类型包装类
      */
@@ -49,7 +49,7 @@ public class PublishAckProcessor extends NamespceMessageProcessor<MqttPubAckMess
     }
 
     /**
-     * 处理发布确认消息并停止重试。
+     * 处理发布确认消息并停止重试
      *
      * @param wrapper 消息包装
      * @param session 会话

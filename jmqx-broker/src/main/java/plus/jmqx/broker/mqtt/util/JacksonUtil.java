@@ -30,7 +30,7 @@ public class JacksonUtil {
     }
 
     /**
-     * 对象转 JSON 字符串。
+     * 对象转 JSON 字符串
      *
      * @param data 对象
      * @return JSON 字符串
@@ -45,7 +45,7 @@ public class JacksonUtil {
     }
 
     /**
-     * JSON 转对象。
+     * JSON 转对象
      *
      * @param jsonData JSON 字符串
      * @param beanType 目标类型
@@ -62,7 +62,7 @@ public class JacksonUtil {
     }
 
     /**
-     * JSON 转列表。
+     * JSON 转列表
      *
      * @param jsonData JSON 字符串
      * @param beanType 列表元素类型
@@ -80,7 +80,7 @@ public class JacksonUtil {
     }
 
     /**
-     * JSON 转 Map。
+     * JSON 转 Map
      *
      * @param jsonData  JSON 字符串
      * @param keyType   Key 类型
@@ -104,7 +104,7 @@ public class JacksonUtil {
     }
 
     /**
-     * Map 转 JSON 字符串。
+     * Map 转 JSON 字符串
      *
      * @param map Map 数据
      * @param <K> Key 泛型
@@ -121,7 +121,7 @@ public class JacksonUtil {
     }
 
     /**
-     * 动态解析字符串为对象。
+     * 动态解析字符串为对象
      *
      * @param s 字符串
      * @return 解析结果
@@ -137,7 +137,7 @@ public class JacksonUtil {
     }
 
     /**
-     * 动态输出对象为 JSON 字符串。
+     * 动态输出对象为 JSON 字符串
      *
      * @param object 对象
      * @return JSON 字符串

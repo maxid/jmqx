@@ -40,7 +40,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     private final TopicFilter treeTopicFilter;
 
     /**
-     * 创建默认主题注册中心。
+     * 创建默认主题注册中心
      */
     public DefaultTopicRegistry() {
         this.fixedTopicFilter = new FixedTopicFilter();
@@ -48,7 +48,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 注册订阅主题。
+     * 注册订阅主题
      *
      * @param topicFilter 主题过滤器
      * @param session     会话
@@ -60,7 +60,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 注册订阅对象。
+     * 注册订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
@@ -74,7 +74,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 清理会话的全部订阅。
+     * 清理会话的全部订阅
      *
      * @param mqttChannel 会话
      */
@@ -88,7 +88,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 移除订阅对象。
+     * 移除订阅对象
      *
      * @param subscribeTopic 订阅对象
      */
@@ -102,7 +102,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 根据主题查询订阅列表。
+     * 根据主题查询订阅列表
      *
      * @param topicName 主题
      * @param qos       QoS
@@ -120,7 +120,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 批量注册订阅。
+     * 批量注册订阅
      *
      * @param mqttTopicSubscriptions 订阅集合
      */
@@ -130,7 +130,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 获取所有主题与会话映射。
+     * 获取所有主题与会话映射
      *
      * @return 主题映射
      */
@@ -147,7 +147,7 @@ public class DefaultTopicRegistry implements TopicRegistry {
     }
 
     /**
-     * 统计订阅数量。
+     * 统计订阅数量
      *
      * @return 订阅数量
      */

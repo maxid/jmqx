@@ -18,14 +18,14 @@ public class JacksonMessageCodec implements MessageCodec {
     private final ObjectMapper delegate;
 
     /**
-     * 构造默认 Jackson 编解码器。
+     * 构造默认 Jackson 编解码器
      */
     public JacksonMessageCodec() {
         this(DefaultObjectMapper.OBJECT_MAPPER);
     }
 
     /**
-     * 构造 Jackson 编解码器。
+     * 构造 Jackson 编解码器
      *
      * @param delegate ObjectMapper
      */
@@ -34,7 +34,7 @@ public class JacksonMessageCodec implements MessageCodec {
     }
 
     /**
-     * 反序列化消息。
+     * 反序列化消息
      *
      * @param stream 输入流
      * @return 消息
@@ -46,7 +46,7 @@ public class JacksonMessageCodec implements MessageCodec {
     }
 
     /**
-     * 序列化消息。
+     * 序列化消息
      *
      * @param message 消息
      * @param stream  输出流

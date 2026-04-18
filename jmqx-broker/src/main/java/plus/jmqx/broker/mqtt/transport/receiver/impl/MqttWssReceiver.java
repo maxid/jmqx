@@ -30,7 +30,7 @@ import reactor.util.context.ContextView;
 public class MqttWssReceiver extends SslHandler implements Receiver {
 
     /**
-     * 获取接收器名称。
+     * 获取接收器名称
      *
      * @return 名称
      */
@@ -40,7 +40,7 @@ public class MqttWssReceiver extends SslHandler implements Receiver {
     }
 
     /**
-     * 绑定 MQTT WSS 端口并启动服务。
+     * 绑定 MQTT WSS 端口并启动服务
      *
      * @return 服务端实例
      */
@@ -51,7 +51,7 @@ public class MqttWssReceiver extends SslHandler implements Receiver {
     }
 
     /**
-     * 构建 TCP 服务配置。
+     * 构建 TCP 服务配置
      *
      * @param view 上下文视图
      * @return TcpServer
