@@ -9,6 +9,7 @@ import java.util.Map;
  * @since 2025/4/16 14:13
  */
 public interface Startup {
+
     /**
      * 注入环境变量
      *
@@ -17,4 +18,5 @@ public interface Startup {
     default void startup(Map<Object, Object> env) {
 
     }
+
 }

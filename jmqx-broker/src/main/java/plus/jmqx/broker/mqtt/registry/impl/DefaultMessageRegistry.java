@@ -66,7 +66,11 @@ public class DefaultMessageRegistry implements MessageRegistry {
      */
     @Override
     public void saveRetainMessage(RetainMessage retainMessage) {
-        retainMessages.put(retainMessage.getTopic(), retainMessage);
+        if(retainMessage.getBody() == null || retainMessage.getBody().length == 0) {
+            retainMessages.remove(retainMessage.getTopic());
+        } else {
+            retainMessages.put(retainMessage.getTopic(), retainMessage);
+        }
     }
 
     /**

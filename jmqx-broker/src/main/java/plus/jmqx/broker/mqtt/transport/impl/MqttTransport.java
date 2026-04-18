@@ -152,4 +152,5 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     private void setDisposableServer(DisposableServer disposableServer) {
         this.disposableServer = disposableServer;
     }
+
 }

@@ -18,6 +18,7 @@ import java.util.Map;
  */
 @Data
 public class MqttConfiguration implements Configuration {
+
     /**
      * 默认命名空间
      */
@@ -34,15 +35,27 @@ public class MqttConfiguration implements Configuration {
     /**
      * Netty Work 线程数
      */
-    private Integer             workThreadSize       = Runtime.getRuntime().availableProcessors() * 2;
+    private Integer             workThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
     /**
      * Netty 业务线程数
      */
-    private Integer             businessThreadSize   = Runtime.getRuntime().availableProcessors() * 4;
+    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     /**
      * Netty 工作队列数、
      */
     private Integer             businessQueueSize    = 100000;
+    /**
+     * 连接鉴权超时时间（毫秒）。
+     */
+    private Long                authTimeoutMillis    = 1000L;
+    /**
+     * 鉴权线程池大小（IO 密集型建议大于 CPU 核数）。
+     */
+    private Integer             authThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
+    /**
+     * 鉴权线程池队列大小。
+     */
+    private Integer             authQueueSize        = 200000;
     /**
      * 消息最大限制值
      */
@@ -174,4 +187,5 @@ public class MqttConfiguration implements Configuration {
          */
         private Integer port;
     }
+
 }

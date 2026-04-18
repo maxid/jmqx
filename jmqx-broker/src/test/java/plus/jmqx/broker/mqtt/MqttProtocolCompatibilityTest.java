@@ -63,4 +63,5 @@ class MqttProtocolCompatibilityTest {
         assertEquals(1, ((MqttProperties.IntegerProperty) retain).value());
         assertEquals(0, ((MqttProperties.IntegerProperty) shared).value());
     }
+
 }

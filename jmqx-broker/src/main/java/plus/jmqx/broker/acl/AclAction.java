@@ -7,6 +7,7 @@ package plus.jmqx.broker.acl;
  * @since 2025/4/18 11:41
  */
 public enum AclAction {
+
     /**
      * 订阅权限
      */
@@ -19,4 +20,5 @@ public enum AclAction {
      * 订阅与发布权限
      */
     ALL
+
 }

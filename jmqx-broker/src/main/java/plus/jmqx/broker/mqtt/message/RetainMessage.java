@@ -23,6 +23,7 @@ import java.util.Optional;
 @Data
 @Builder
 public class RetainMessage {
+
     private int qos;
 
     private String topic;
@@ -64,4 +65,5 @@ public class RetainMessage {
                 PooledByteBufAllocator.DEFAULT.directBuffer().writeBytes(body),
                 JacksonUtil.json2Map(userProperties, String.class, String.class));
     }
+
 }

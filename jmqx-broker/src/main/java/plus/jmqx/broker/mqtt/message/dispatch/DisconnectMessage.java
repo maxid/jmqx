@@ -14,6 +14,8 @@ import lombok.ToString;
 @Builder
 @ToString
 public class DisconnectMessage {
+
     private final String clientId;
     private final String username;
+
 }

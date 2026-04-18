@@ -41,6 +41,27 @@ public interface Configuration {
     Integer getBusinessQueueSize();
 
     /**
+     * 连接鉴权超时时间（毫秒）
+     *
+     * @return 超时时间
+     */
+    Long getAuthTimeoutMillis();
+
+    /**
+     * 鉴权线程池大小
+     *
+     * @return 线程池大小
+     */
+    Integer getAuthThreadSize();
+
+    /**
+     * 鉴权线程池队列大小
+     *
+     * @return 队列大小
+     */
+    Integer getAuthQueueSize();
+
+    /**
      * 消息最大限制值
      *
      * @return {@link Integer} 消息最大限制值
