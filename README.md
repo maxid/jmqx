@@ -26,6 +26,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 7. 从 1.4.7 开始升级至 JDK 17, 性能有所提升, m1 下约 12w msg/s（2026-3-25）
 8. 修复发布及订阅未授权主题时, 未按 MQTT V3/V5 正确处理 ACK 消息（2026-4-1）
 9. 重要：修复因在 Netty Event Loop 线程中调用鉴权（鉴权业务由用户实现，不确定会采用何种方案）可能会发阻塞，而影响心跳、收发包和重连风暴（2026-4-17)
+10. 重要：修复 PUBREL 流程不当使用 MessageUtils.wrapPublishMessage 产生 Netty ByteBuf 泄漏（2026-4-18)
 
 ## 使用示例
 
@@ -37,7 +38,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.10</version>
+            <version>1.4.11</version>
         </dependency>
 ```
 
@@ -165,7 +166,7 @@ mvn jmqx-broker -Dtest=BootstrapTest#testBrokerStress test -Djmqx.integration.te
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.10</version>
+            <version>1.4.11</version>
         </dependency>
 ```
 
