@@ -11,6 +11,7 @@ import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MessageProcessor;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.util.MessageUtils;
 import plus.jmqx.broker.spi.DynamicLoader;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
@@ -108,12 +109,32 @@ public class MqttMessageDispatcher implements MessageDispatcher {
      */
     @Override
     public void publish(MqttPublishMessage message) {
+        publish(null, message);
+    }
+
+    /**
+     * 向指定客户端设备下发消息
+     * <p>
+     * 设置 clientId 后走完整分发管线，借用 PublishProcessor 的 ACL 检查；
+     * 集群模式由 TailIntercept 自动扩散到各节点。
+     *
+     * @param clientId 目标设备 clientId
+     * @param message  发布消息
+     */
+    @Override
+    public void publish(String clientId, MqttPublishMessage message) {
         ReceiveContext<?> context = contextHolder().getContext();
         if (context == null) {
+            MessageUtils.safeRelease(message);
             return;
         }
-        MessageWrapper<MqttMessage> wrapper = new MessageWrapper<>(message, System.currentTimeMillis(), Boolean.TRUE);
-        this.dispatch(ClusterSession.DEFAULT_CLUSTER_SESSION, wrapper, context);
+        MqttSession session = ClusterSession.DEFAULT_CLUSTER_SESSION;
+        MessageWrapper<MqttMessage> wrapper = new MessageWrapper<>(message, System.currentTimeMillis(), Boolean.FALSE);
+        if (clientId != null) {
+            session = ClusterSession.wrapClientId(clientId);
+            wrapper.setClientId(clientId);
+        }
+        this.dispatch(session, wrapper, context);
     }
 
     /**

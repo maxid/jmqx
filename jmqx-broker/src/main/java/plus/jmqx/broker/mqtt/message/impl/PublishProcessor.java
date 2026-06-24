@@ -75,10 +75,18 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.PUBLISH_EVENT).increment();
             MqttPublishMessage message = wrapper.getMessage();
             MqttPublishVariableHeader header = message.variableHeader();
+
             AclManager aclManager = context.getAclManager();
             if (!session.getIsCluster() && !aclManager.check(session, header.topicName(), AclAction.PUBLISH)) {
                 sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
                 log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ", session.getConnection(), header.topicName());
+                return;
+            }
+
+            // === 定向投递分支：平台向指定 clientId 设备下发消息 ===
+            String clientId = wrapper.getClientId();
+            if (clientId != null) {
+                send(clientId, message, context);
                 return;
             }
 
@@ -123,6 +131,28 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
         } catch (Exception e) {
             log.error("error ", e);
         }
+    }
+
+    /**
+     * 定向投递：查找目标设备 Session 并直接写入
+     *
+     * @param targetClientId 目标设备 clientId
+     * @param message        MQTT 发布消息
+     * @param context        接收上下文
+     */
+    private void send(String targetClientId, MqttPublishMessage message, ReceiveContext<?> context) {
+        // 查找目标 Session
+        MqttSession session = context.getSessionRegistry().get(targetClientId);
+        if (session == null || !session.active()) {
+            log.warn("publish: device [{}] not online, skip", targetClientId);
+            return;
+        }
+        MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(
+                message,
+                message.fixedHeader().qosLevel(),
+                session.generateMessageId()
+        );
+        session.write(pmsg, message.fixedHeader().qosLevel().value() > 0);
     }
 
     /**

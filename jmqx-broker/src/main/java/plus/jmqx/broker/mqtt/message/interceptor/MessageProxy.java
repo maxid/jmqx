@@ -51,11 +51,16 @@ public class MessageProxy {
             MessageWrapper<MqttMessage> wrapper = (MessageWrapper<MqttMessage>) invocation.getArgs()[1];
             ReceiveContext<Configuration> context = (ReceiveContext<Configuration>) invocation.getArgs()[2];
             MqttMessage message = wrapper.getMessage();
-            if (!wrapper.getClustered() && message instanceof MqttPublishMessage) {
-                MqttPublishMessage publishMessage = (MqttPublishMessage) message;
-                if(context.getConfiguration().getClusterConfig().isEnabled()) {
+            if (!wrapper.getClustered() && message instanceof MqttPublishMessage publishMessage) {
+                if (context.getConfiguration().getClusterConfig().isEnabled()) {
                     HeapMqttMessage heapMqttMessage = this.clusterMessage(publishMessage, session, wrapper.getTimestamp());
-                    context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage))
+                    // 定向投递使用 PUBLISH_TARGET 事件，复用 HeapMqttMessage.clientId 作为目标 ID
+                    ClusterMessage.ClusterEvent event = ClusterMessage.ClusterEvent.PUBLISH;
+                    if (wrapper.getClientId() != null) {
+                        event = ClusterMessage.ClusterEvent.PUBLISH_TARGET;
+                        heapMqttMessage.setClientId(wrapper.getClientId());
+                    }
+                    context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage, event))
                             .subscribeOn(Schedulers.boundedElastic())
                             .subscribe();
                 }

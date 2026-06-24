@@ -28,7 +28,11 @@ public class ClusterMessage {
         /**
          * 关闭
          */
-        CLOSE
+        CLOSE,
+        /**
+         * 向指定客户端发布
+         */
+        PUBLISH_TARGET
     }
 
     /**
@@ -37,23 +41,32 @@ public class ClusterMessage {
     public ClusterMessage(){}
 
     /**
-     * 构造发布消息事件
+     * 构造集群发布消息
      *
      * @param heapMqttMessage 发布消息
      */
     public ClusterMessage(HeapMqttMessage heapMqttMessage) {
-        this.clusterEvent = ClusterEvent.PUBLISH;
-        this.message = heapMqttMessage;
+        this(heapMqttMessage, ClusterEvent.PUBLISH);
     }
 
     /**
-     * 构造关闭消息事件
+     * 构造集群关闭消息
      *
      * @param closeMqttMessage 关闭消息
      */
     public ClusterMessage(CloseMqttMessage closeMqttMessage) {
-        this.clusterEvent = ClusterEvent.CLOSE;
-        this.message = closeMqttMessage;
+        this(closeMqttMessage, ClusterEvent.CLOSE);
+    }
+
+    /**
+     * 构造集群消息
+     *
+     * @param message 发布消息
+     * @param clusterEvent 集群事件
+     */
+    public ClusterMessage(Object message, ClusterEvent clusterEvent) {
+        this.clusterEvent = clusterEvent;
+        this.message = message;
     }
 
 }
