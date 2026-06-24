@@ -17,6 +17,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 
+import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH;
+import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH_TARGET;
+
 /**
  * 集群服务
  *
@@ -56,10 +59,11 @@ public class ClusterReceiver {
                         .doOnError(err -> log.error("cluster accept", err))
                         .onErrorResume(err -> Mono.empty())
                         .subscribe(message -> {
-                            if (ClusterMessage.ClusterEvent.PUBLISH.equals(message.getClusterEvent())) {
+                            ClusterMessage.ClusterEvent event = message.getClusterEvent();
+                            if (PUBLISH.equals(event) || PUBLISH_TARGET.equals(event)) {
                                 HeapMqttMessage heapMqttMessage = (HeapMqttMessage) message.getMessage();
                                 messageDispatcher.dispatch(ClusterSession.wrapClientId(heapMqttMessage.getClientId()),
-                                        getMqttMessage(heapMqttMessage),
+                                        getMqttMessage(heapMqttMessage, event),
                                         context);
                             } else {
                                 CloseMqttMessage closeMqttMessage = (CloseMqttMessage) message.getMessage();
@@ -74,22 +78,28 @@ public class ClusterReceiver {
     /**
      * 将集群消息转换为 MQTT 消息
      *
-     * @param heapMqttMessage 集群消息
+     * @param message 集群消息
+     * @param event   集群消息类型
      * @return MQTT 消息包装
      */
-    private MessageWrapper<MqttMessage> getMqttMessage(HeapMqttMessage heapMqttMessage) {
-        return new MessageWrapper<>(MqttMessageBuilder.publishMessage(false,
-                MqttQoS.valueOf(heapMqttMessage.getQos()),
-                heapMqttMessage.isRetain(),
+    private MessageWrapper<MqttMessage> getMqttMessage(HeapMqttMessage message, ClusterMessage.ClusterEvent event) {
+        MessageWrapper<MqttMessage> wrapper = new MessageWrapper<>(MqttMessageBuilder.publishMessage(false,
+                MqttQoS.valueOf(message.getQos()),
+                message.isRetain(),
                 0,
-                heapMqttMessage.getTopic(),
+                message.getTopic(),
                 PooledByteBufAllocator.DEFAULT.buffer().writeBytes(
-                        JacksonUtil.dynamicJson(heapMqttMessage.getMessage()).getBytes(StandardCharsets.UTF_8)
+                        JacksonUtil.dynamicJson(message.getMessage()).getBytes(StandardCharsets.UTF_8)
                 ),
-                heapMqttMessage.getProperties()),
+                message.getProperties()),
                 System.currentTimeMillis(),
                 Boolean.TRUE
         );
+        // 设置向指定客户端设备发布消息
+        if (PUBLISH_TARGET.equals(event)) {
+            wrapper.setClientId(message.getClientId());
+        }
+        return wrapper;
     }
 
 }

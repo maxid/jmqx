@@ -29,6 +29,10 @@ public class MessageWrapper<T extends MqttMessage> {
      */
     private final Boolean     clustered;
     /**
+     * 定向投递目标设备 clientId（非空=定向投递，null=广播/主题路由）
+     */
+    private       String      clientId;
+    /**
      * MQTT 会话
      */
     private       MqttSession session;

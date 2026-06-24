@@ -39,11 +39,22 @@ public interface MessageDispatcher {
     <C extends Configuration> void dispatch(MqttSession session, MessageWrapper<MqttMessage> wrapper, ReceiveContext<C> context);
 
     /**
-     * 下发消息
+     * 下发消息（基于主题路由，投递到所有匹配的订阅者）
      *
      * @param message 发布消息
      */
     void publish(MqttPublishMessage message);
+
+    /**
+     * 向指定客户端设备下发消息（直接写入设备 Session，不经过主题路由）
+     * <p>
+     * 通过 {@link MessageWrapper#setClientId(String)} 标识定向投递，
+     * 走完整分发管线（含 ACL 检查），集群模式由 TailIntercept 自动扩散。
+     *
+     * @param clientId 目标设备 clientId
+     * @param message  发布消息
+     */
+    void publish(String clientId, MqttPublishMessage message);
 
     /**
      * 消息处理适配器代理
