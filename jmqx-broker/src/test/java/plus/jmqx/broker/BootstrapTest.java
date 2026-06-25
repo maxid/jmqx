@@ -12,6 +12,8 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.resolver.NoopAddressResolverGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import reactor.netty.tcp.TcpClient;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -104,59 +107,20 @@ class BootstrapTest {
     @Test
     void testPublishToClient() throws Exception {
         String ns = "jmqx-publish-target-" + UUID.randomUUID();
-        MqttConfiguration config = new MqttConfiguration();
-        config.setBusinessQueueSize(Integer.MAX_VALUE);
-        config.setSslEnable(false);
-        config.setPort(4883);
-        config.setSecurePort(-1);
-        config.setWebsocketPort(-1);
-        config.setWebsocketSecurePort(-1);
-        config.getClusterConfig().setNamespace(ns);
+        MqttConfiguration config = config(ns, 4883);
         Bootstrap bootstrap = new Bootstrap(config);
         try {
             bootstrap.start().block(Duration.ofSeconds(5));
-            String targetClientId = "publish-target-device";
-            String topic = "test/target";
-            byte[] payload = "hello-target".getBytes(StandardCharsets.UTF_8);
+            MqttDevice device = connect("publish-target-device", 4883);
 
-            // 设备连接
-            Connection dev = TcpClient.create()
-                    .resolver(NoopAddressResolverGroup.INSTANCE)
-                    .remoteAddress(() -> new InetSocketAddress("127.0.0.1", 4883))
-                    .connectNow(Duration.ofSeconds(5));
-            addMqttCodec(dev);
-            ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
-            dev.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
-                if (msg instanceof MqttPublishMessage) {
-                    ((MqttPublishMessage) msg).retain();
-                }
-                inbox.add(msg);
-            });
-            dev.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
-                    targetClientId, "", "", "", "", false, false, false, 0, 60));
-            MqttConnAckMessage ack = (MqttConnAckMessage) awaitPublish(inbox, msg -> msg instanceof MqttConnAckMessage, 5);
-            assertNotNull(ack, "device connect ack timeout");
-            log.info("device [{}] connected", targetClientId);
-
-            // 通过 dispatcher 定向投递
             MessageDispatcher dispatcher = NamespaceContextHolder.get(ns, "").getContext().getMessageDispatcher();
             MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
-                    false, MqttQoS.AT_LEAST_ONCE, 0, topic, Unpooled.wrappedBuffer(payload));
-            dispatcher.publish(targetClientId, pubMsg);
-            log.info("published to [{}] topic [{}]", targetClientId, topic);
+                    false, MqttQoS.AT_LEAST_ONCE, 0, "test/target",
+                    Unpooled.wrappedBuffer("hello-target".getBytes(StandardCharsets.UTF_8)));
+            dispatcher.publish(device.clientId, pubMsg);
+            log.info("published to [{}] topic [test/target]", device.clientId);
 
-            // 设备验证收到消息
-            MqttMessage received = awaitPublish(inbox,
-                    msg -> msg instanceof MqttPublishMessage
-                            && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
-                    5);
-            assertNotNull(received, "device did not receive targeted publish");
-            MqttPublishMessage rp = (MqttPublishMessage) received;
-            assertEquals(topic, rp.variableHeader().topicName());
-            byte[] rpPayload = new byte[rp.payload().readableBytes()];
-            rp.payload().readBytes(rpPayload);
-            assertEquals("hello-target", new String(rpPayload, StandardCharsets.UTF_8));
-            log.info("device received targeted publish verified");
+            assertReceived(device, "test/target", "hello-target");
         } finally {
             bootstrap.shutdown();
         }
@@ -196,6 +160,132 @@ class BootstrapTest {
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
         config.getClusterConfig().setNamespace(namespace);
         return config;
+    }
+
+    /**
+     * 创建基础配置（无 SSL，单端口）
+     *
+     * @param namespace 命名空间
+     * @param mqttPort  MQTT 端口
+     * @return MQTT 配置
+     */
+    private static MqttConfiguration config(String namespace, int mqttPort) {
+        MqttConfiguration config = new MqttConfiguration();
+        config.setBusinessQueueSize(Integer.MAX_VALUE);
+        config.setSslEnable(false);
+        config.setPort(mqttPort);
+        config.setSecurePort(-1);
+        config.setWebsocketPort(-1);
+        config.setWebsocketSecurePort(-1);
+        config.getClusterConfig().setNamespace(namespace);
+        config.getClusterConfig().setNode("");
+        return config;
+    }
+
+    /**
+     * 创建集群节点配置（无 SSL，单端口）
+     *
+     * @param namespace 命名空间
+     * @param node      节点名称
+     * @param mqttPort  MQTT 端口
+     * @return MQTT 配置
+     */
+    private static MqttConfiguration config(String namespace, String node, int mqttPort) {
+        MqttConfiguration config = config(namespace, mqttPort);
+        config.getClusterConfig().setNode(node);
+        config.getClusterConfig().setEnabled(true);
+        return config;
+    }
+
+    /**
+     * MQTT 设备抽象，持有连接、收件箱和 clientId
+     */
+    private static class MqttDevice {
+        final Connection connection;
+        final ConcurrentLinkedQueue<MqttMessage> inbox;
+        final String clientId;
+
+        MqttDevice(Connection connection, ConcurrentLinkedQueue<MqttMessage> inbox, String clientId) {
+            this.connection = connection;
+            this.inbox = inbox;
+            this.clientId = clientId;
+        }
+
+        /**
+         * 订阅主题
+         *
+         * @param topic 主题
+         * @param qos   QoS 等级
+         */
+        void subscribe(String topic, MqttQoS qos) {
+            connection.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
+                    Collections.singletonList(new MqttTopicSubscription(topic, qos))));
+            assertNotNull(awaitPublish(inbox, msg -> msg instanceof MqttSubAckMessage, 5),
+                    "subscribe ack timeout for " + topic);
+        }
+    }
+
+    /**
+     * 连接设备并完成 MQTT 握手
+     *
+     * @param clientId 客户端 ID
+     * @param port     MQTT 端口
+     * @return MQTT 设备
+     */
+    private static MqttDevice connect(String clientId, int port) {
+        Connection connection = TcpClient.create()
+                .resolver(NoopAddressResolverGroup.INSTANCE)
+                .remoteAddress(() -> new InetSocketAddress("127.0.0.1", port))
+                .connectNow(Duration.ofSeconds(5));
+        addMqttCodec(connection);
+        ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
+        connection.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
+            if (msg instanceof MqttPublishMessage) {
+                ((MqttPublishMessage) msg).retain();
+            }
+            inbox.add(msg);
+        });
+        connection.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
+                clientId, "", "", "", "", false, false, false, 0, 60));
+        MqttConnAckMessage ack = (MqttConnAckMessage) awaitPublish(inbox,
+                msg -> msg instanceof MqttConnAckMessage, 5);
+        assertNotNull(ack, "device connect ack timeout for " + clientId);
+        return new MqttDevice(connection, inbox, clientId);
+    }
+
+    /**
+     * 验证设备收到指定主题和内容的发布消息
+     *
+     * @param device          设备
+     * @param expectedTopic   期望主题
+     * @param expectedPayload 期望负载
+     */
+    private static void assertReceived(MqttDevice device, String expectedTopic, String expectedPayload) {
+        MqttMessage received = awaitPublish(device.inbox,
+                msg -> msg instanceof MqttPublishMessage
+                        && expectedTopic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
+                5);
+        assertNotNull(received, "device [" + device.clientId + "] did not receive publish on " + expectedTopic);
+        MqttPublishMessage rp = (MqttPublishMessage) received;
+        assertEquals(expectedTopic, rp.variableHeader().topicName());
+        byte[] rpPayload = new byte[rp.payload().readableBytes()];
+        rp.payload().readBytes(rpPayload);
+        assertEquals(expectedPayload, new String(rpPayload, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * 验证设备在指定时间内未收到消息
+     *
+     * @param device        设备
+     * @param topic         主题
+     * @param timeoutSecond 超时秒数
+     */
+    private static void assertNotReceived(MqttDevice device, String topic, long timeoutSecond) {
+        MqttMessage notReceived = awaitPublish(device.inbox,
+                msg -> msg instanceof MqttPublishMessage
+                        && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
+                timeoutSecond);
+        assertNull(notReceived, "device [" + device.clientId + "] should NOT have received publish on " + topic);
     }
 
     /**
