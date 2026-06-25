@@ -24,6 +24,10 @@ public class MqttConfiguration implements Configuration {
      */
     public static final String DEFAULT_NAMESPACE  = "jmqx-broker";
     /**
+     * 默认节点标识
+     */
+    public static final String DEFAULT_NODE  = "node-1";
+    /**
      * 默认 MQTT-WS 监听端点
      */
     public static final String WEBSOCKET_ENDPOINT = "/mqtt";
@@ -139,6 +143,7 @@ public class MqttConfiguration implements Configuration {
     private ClusterConfig       clusterConfig        = ClusterConfig.builder()
             .enabled(false)
             .namespace(DEFAULT_NAMESPACE)
+            .node(DEFAULT_NODE)
             .port(7771)
             .build();
 
