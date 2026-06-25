@@ -112,7 +112,8 @@ public class MqttTransport implements Transport<MqttConfiguration> {
     public ReceiveContext<MqttConfiguration> context(MqttConfiguration configuration) {
         synchronized (this) {
             String namespace = configuration.getClusterConfig().getNamespace();
-            ContextHolder holder = NamespaceContextHolder.get(namespace);
+            String node = configuration.getClusterConfig().getNode();
+            ContextHolder holder = NamespaceContextHolder.get(namespace, node);
             if (holder.getContext() == null) {
                 MqttReceiveContext context = new MqttReceiveContext(configuration, this);
                 holder.setContext(context);

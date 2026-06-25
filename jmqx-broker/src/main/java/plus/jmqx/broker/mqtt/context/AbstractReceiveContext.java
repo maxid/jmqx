@@ -13,6 +13,7 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.spi.DynamicLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
@@ -196,8 +197,10 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 集群注册中心
      */
     private ClusterRegistry clusterRegistry() {
-        ClusterRegistry instance = configuration.getClusterConfig().isEnabled() ? ClusterRegistry.INSTANCE : null;
-        return Optional.ofNullable(instance).orElseGet(DefaultClusterRegistry::new);
+        if (configuration.getClusterConfig().isEnabled()) {
+            return DynamicLoader.findFirst(ClusterRegistry.class).orElseGet(DefaultClusterRegistry::new);
+        }
+        return new DefaultClusterRegistry();
     }
 
     /**
@@ -262,7 +265,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 上下文持有器
      */
     private ContextHolder contextHolder() {
-        return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace());
+        return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace(),
+                configuration.getClusterConfig().getNode());
     }
 
     /**

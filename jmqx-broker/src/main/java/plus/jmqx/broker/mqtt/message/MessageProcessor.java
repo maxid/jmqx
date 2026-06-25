@@ -34,12 +34,29 @@ public interface MessageProcessor<T extends MqttMessage> {
     void setNamespace(String namespace);
 
     /**
+     * 获取节点名称
+     *
+     * @return 节点名称
+     */
+    default String getNode() {
+        return "";
+    }
+
+    /**
+     * 设置节点名称
+     *
+     * @param node 节点名称
+     */
+    default void setNode(String node) {
+    }
+
+    /**
      * 获取上下文持有器
      *
      * @return 上下文持有器
      */
     default ContextHolder contextHolder() {
-        return NamespaceContextHolder.get(getNamespace());
+        return NamespaceContextHolder.get(getNamespace(), getNode());
     }
 
     /**

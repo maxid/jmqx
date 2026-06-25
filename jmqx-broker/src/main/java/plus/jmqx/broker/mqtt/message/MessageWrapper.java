@@ -3,6 +3,7 @@ package plus.jmqx.broker.mqtt.message;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import lombok.*;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.ReceiveContext;
 
 /**
  * MQTT 消息包装
@@ -35,6 +36,10 @@ public class MessageWrapper<T extends MqttMessage> {
     /**
      * MQTT 会话
      */
-    private       MqttSession session;
+    private       MqttSession    session;
+    /**
+     * 接收上下文（用于发布消息时携带，以便 processWrapper 优先使用）
+     */
+    private       ReceiveContext<?> receiveContext;
 
 }

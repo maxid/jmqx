@@ -50,7 +50,8 @@ public class PublishMessageProcessor {
     private MessageDispatcher getDispatcher() {
         if (dispatcher == null) {
             String namespace = configuration.getClusterConfig().getNamespace();
-            dispatcher = NamespaceContextHolder.get(namespace).getContext().getMessageDispatcher();
+            String node = configuration.getClusterConfig().getNode();
+            dispatcher = NamespaceContextHolder.get(namespace, node).getContext().getMessageDispatcher();
         }
         return dispatcher;
     }

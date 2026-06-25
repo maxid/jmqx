@@ -189,8 +189,9 @@ public class Bootstrap {
      */
     private ContextHolder contextHolder() throws Exception {
         String namespace = config.getClusterConfig().getNamespace();
-        NamespaceContextHolder.checkNamespace(namespace);
-        return NamespaceContextHolder.get(namespace);
+        String node = config.getClusterConfig().getNode();
+        NamespaceContextHolder.checkNamespace(namespace, node);
+        return NamespaceContextHolder.get(namespace, node);
     }
 
 }
