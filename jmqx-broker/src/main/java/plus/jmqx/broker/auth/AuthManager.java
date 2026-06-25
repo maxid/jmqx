@@ -10,6 +10,9 @@ import plus.jmqx.broker.spi.DynamicLoader;
  */
 public interface AuthManager {
 
+    /**
+     * 用户自定义实例
+     */
     AuthManager INSTANCE = DynamicLoader.findFirst(AuthManager.class).orElse(null);
 
     /**

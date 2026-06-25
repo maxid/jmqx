@@ -14,6 +14,9 @@ import java.util.Map;
  */
 public class OptionHandler {
 
+    /**
+     * TcpServer 实例
+     */
     protected TcpServer server;
 
     /**

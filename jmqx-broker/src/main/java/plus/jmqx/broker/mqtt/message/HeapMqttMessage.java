@@ -35,6 +35,11 @@ public class HeapMqttMessage {
 
     private MqttProperties properties;
 
+    /**
+     * 获取消息关键字段映射
+     *
+     * @return 关键字段映射
+     */
     public Map<String, Object> getKeyMap() {
         Map<String, Object> keys = new HashMap<>(5);
         keys.put("clientId", this.clientId);

@@ -147,6 +147,9 @@ public class MqttConfiguration implements Configuration {
             .port(7771)
             .build();
 
+    /**
+     * 集群配置
+     */
     @Data
     @Builder
     @NoArgsConstructor
@@ -189,6 +192,9 @@ public class MqttConfiguration implements Configuration {
 
     }
 
+    /**
+     * 集群外部曝光配置
+     */
     @Data
     @Builder
     @NoArgsConstructor

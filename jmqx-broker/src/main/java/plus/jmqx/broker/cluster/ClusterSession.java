@@ -17,6 +17,9 @@ public class ClusterSession extends MqttSession {
     private ClusterSession() {
     }
 
+    /**
+     * 默认集群会话实例
+     */
     public final static ClusterSession DEFAULT_CLUSTER_SESSION = new ClusterSession();
 
     /**

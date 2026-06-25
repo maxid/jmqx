@@ -11,6 +11,9 @@ import plus.jmqx.broker.spi.DynamicLoader;
  */
 public interface AclManager {
 
+    /**
+     * 用户自定义实例
+     */
     AclManager INSTANCE = DynamicLoader.findFirst(AclManager.class).orElse(null);
 
     /**

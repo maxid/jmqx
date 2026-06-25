@@ -152,6 +152,12 @@ public class TreeNode {
         }
     }
 
+    /**
+     * 从树结构中移除订阅
+     *
+     * @param subscribeTopic 订阅对象
+     * @return 是否移除成功
+     */
     public boolean removeSubscribeTopic(SubscribeTopic subscribeTopic) {
         TreeNode node = this;
         String[] topics = TopicUtils.splitTopic(subscribeTopic.getTopicFilter());

@@ -16,6 +16,9 @@ import java.util.Set;
  */
 public interface TopicRegistry {
 
+    /**
+     * Topic 注册中心单例
+     */
     TopicRegistry INSTANCE = DynamicLoader.findFirst(TopicRegistry.class).orElse(null);
 
     /**
