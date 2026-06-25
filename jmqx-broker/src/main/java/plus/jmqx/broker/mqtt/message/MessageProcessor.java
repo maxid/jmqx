@@ -38,17 +38,14 @@ public interface MessageProcessor<T extends MqttMessage> {
      *
      * @return 节点名称
      */
-    default String getNode() {
-        return "";
-    }
+    String getNode();
 
     /**
      * 设置节点名称
      *
      * @param node 节点名称
      */
-    default void setNode(String node) {
-    }
+    void setNode(String node);
 
     /**
      * 获取上下文持有器

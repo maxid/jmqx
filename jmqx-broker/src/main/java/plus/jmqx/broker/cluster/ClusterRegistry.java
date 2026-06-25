@@ -15,7 +15,9 @@ import java.util.List;
  */
 public interface ClusterRegistry {
 
-    ClusterRegistry INSTANCE = DynamicLoader.findFirst(ClusterRegistry.class).orElse(null);
+    static ClusterRegistry getInstance() {
+        return DynamicLoader.findFirst(ClusterRegistry.class).orElse(null);
+    }
 
     /**
      * 开始监听

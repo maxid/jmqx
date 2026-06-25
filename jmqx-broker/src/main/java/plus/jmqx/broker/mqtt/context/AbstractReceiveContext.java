@@ -197,10 +197,8 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 集群注册中心
      */
     private ClusterRegistry clusterRegistry() {
-        if (configuration.getClusterConfig().isEnabled()) {
-            return DynamicLoader.findFirst(ClusterRegistry.class).orElseGet(DefaultClusterRegistry::new);
-        }
-        return new DefaultClusterRegistry();
+        ClusterRegistry instance = configuration.getClusterConfig().isEnabled() ? ClusterRegistry.getInstance() : null;
+        return Optional.ofNullable(instance).orElseGet(DefaultClusterRegistry::new);
     }
 
     /**
