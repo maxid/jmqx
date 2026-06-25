@@ -19,6 +19,7 @@ import reactor.netty.tcp.TcpClient;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -131,41 +132,20 @@ public class BootstrapTest {
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
 
-        String namespace = "jmqx-publish-target-cluster-" + UUID.randomUUID();
+        String namespace = "jmqx-cluster-" + UUID.randomUUID().toString().split("-")[0];
         String topic = "cluster/target";
-        byte[] payload = "hello-cluster".getBytes(StandardCharsets.UTF_8);
-        String deviceA = "device-a";
-        String deviceB = "device-b";
 
         // Node-1: MQTT port 5883, cluster port 7773
-        MqttConfiguration config1 = new MqttConfiguration();
-        config1.setBusinessQueueSize(Integer.MAX_VALUE);
-        config1.setSslEnable(false);
-        config1.setPort(5883);
-        config1.setSecurePort(-1);
-        config1.setWebsocketPort(-1);
-        config1.setWebsocketSecurePort(-1);
-        config1.getClusterConfig().setEnabled(true);
+        MqttConfiguration config1 = config(namespace, "node-1", 5883);
         config1.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
         config1.getClusterConfig().setPort(7773);
-        config1.getClusterConfig().setNode("node-1");
-        config1.getClusterConfig().setNamespace(namespace);
         Bootstrap bootstrap1 = new Bootstrap(config1);
         bootstrap1.start().block(Duration.ofSeconds(10));
 
         // Node-2: MQTT port 6883, cluster port 7774
-        MqttConfiguration config2 = new MqttConfiguration();
-        config2.setBusinessQueueSize(Integer.MAX_VALUE);
-        config2.setSslEnable(false);
-        config2.setPort(6883);
-        config2.setSecurePort(-1);
-        config2.setWebsocketPort(-1);
-        config2.setWebsocketSecurePort(-1);
-        config2.getClusterConfig().setEnabled(true);
+        MqttConfiguration config2 = config(namespace, "node-2", 6883);
         config2.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
         config2.getClusterConfig().setPort(7774);
-        config2.getClusterConfig().setNode("node-2");
-        config2.getClusterConfig().setNamespace(namespace);
         Bootstrap bootstrap2 = new Bootstrap(config2);
         bootstrap2.start().block(Duration.ofSeconds(10));
 
@@ -173,84 +153,23 @@ public class BootstrapTest {
         Thread.sleep(3000);
 
         try {
-            // ---- Device A 连接到 node-1，订阅 topic ----
-            Connection devA = TcpClient.create()
-                    .resolver(NoopAddressResolverGroup.INSTANCE)
-                    .remoteAddress(() -> new InetSocketAddress("127.0.0.1", 5883))
-                    .connectNow(Duration.ofSeconds(5));
-            addMqttCodec(devA);
-            ConcurrentLinkedQueue<MqttMessage> inboxA = new ConcurrentLinkedQueue<>();
-            devA.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
-                if (msg instanceof MqttPublishMessage) {
-                    ((MqttPublishMessage) msg).retain();
-                }
-                inboxA.add(msg);
-            });
-            devA.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
-                    deviceA, "", "", "", "", false, false, false, 0, 60));
-            assertNotNull(awaitPublish(inboxA, msg -> msg instanceof MqttConnAckMessage, 5),
-                    "deviceA connect ack timeout");
-            log.info("deviceA [{}] connected to node-1", deviceA);
-            // Device A subscribe
-            devA.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
-                    java.util.Collections.singletonList(new MqttTopicSubscription(topic, MqttQoS.AT_LEAST_ONCE))));
-            assertNotNull(awaitPublish(inboxA, msg -> msg instanceof MqttSubAckMessage, 5),
-                    "deviceA subscribe ack timeout");
-            log.info("deviceA subscribed to [{}]", topic);
+            MqttDevice deviceA = connect("device-a", 5883);
+            deviceA.subscribe(topic, MqttQoS.AT_LEAST_ONCE);
 
-            // ---- Device B 连接到 node-1，订阅同一 topic ----
-            Connection devB = TcpClient.create()
-                    .resolver(NoopAddressResolverGroup.INSTANCE)
-                    .remoteAddress(() -> new InetSocketAddress("127.0.0.1", 5883))
-                    .connectNow(Duration.ofSeconds(5));
-            addMqttCodec(devB);
-            ConcurrentLinkedQueue<MqttMessage> inboxB = new ConcurrentLinkedQueue<>();
-            devB.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
-                if (msg instanceof MqttPublishMessage) {
-                    ((MqttPublishMessage) msg).retain();
-                }
-                inboxB.add(msg);
-            });
-            devB.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
-                    deviceB, "", "", "", "", false, false, false, 0, 60));
-            assertNotNull(awaitPublish(inboxB, msg -> msg instanceof MqttConnAckMessage, 5),
-                    "deviceB connect ack timeout");
-            log.info("deviceB [{}] connected to node-1", deviceB);
-            // Device B subscribe
-            devB.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
-                    java.util.Collections.singletonList(new MqttTopicSubscription(topic, MqttQoS.AT_LEAST_ONCE))));
-            assertNotNull(awaitPublish(inboxB, msg -> msg instanceof MqttSubAckMessage, 5),
-                    "deviceB subscribe ack timeout");
-            log.info("deviceB subscribed to [{}]", topic);
+            MqttDevice deviceB = connect("device-b", 5883);
+            deviceB.subscribe(topic, MqttQoS.AT_LEAST_ONCE);
 
-            // ---- 从 node-2 向 deviceA 定向投递 ----
+            // 从 node-2 向 deviceA 定向投递
             MessageDispatcher dispatcher = NamespaceContextHolder.get(namespace, "node-2")
                     .getContext().getMessageDispatcher();
             MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
-                    false, MqttQoS.AT_LEAST_ONCE, 0, topic, Unpooled.wrappedBuffer(payload));
-            dispatcher.publish(deviceA, pubMsg);
-            log.info("published to [{}] topic [{}] from node-2", deviceA, topic);
+                    false, MqttQoS.AT_LEAST_ONCE, 0, topic,
+                    Unpooled.wrappedBuffer("hello-cluster".getBytes(StandardCharsets.UTF_8)));
+            dispatcher.publish(deviceA.clientId, pubMsg);
+            log.info("published to [{}] topic [{}] from node-2", deviceA.clientId, topic);
 
-            // Device A 应收到消息
-            MqttMessage received = awaitPublish(inboxA,
-                    msg -> msg instanceof MqttPublishMessage
-                            && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
-                    5);
-            assertNotNull(received, "target deviceA should receive targeted publish in cluster mode");
-            MqttPublishMessage rp = (MqttPublishMessage) received;
-            assertEquals(topic, rp.variableHeader().topicName());
-            byte[] rpPayload = new byte[rp.payload().readableBytes()];
-            rp.payload().readBytes(rpPayload);
-            assertEquals("hello-cluster", new String(rpPayload, StandardCharsets.UTF_8));
-            log.info("deviceA received targeted publish verified");
-
-            // Device B 不应收到消息（定向投递不经过主题路由）
-            MqttMessage notReceived = awaitPublish(inboxB,
-                    msg -> msg instanceof MqttPublishMessage
-                            && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
-                    2);
-            assertNull(notReceived, "non-target deviceB should NOT receive targeted publish");
-            log.info("deviceB correctly did not receive the targeted publish");
+            assertReceived(deviceA, topic, "hello-cluster");
+            assertNotReceived(deviceB, topic, 2);
         } finally {
             bootstrap2.shutdown();
             bootstrap1.shutdown();
@@ -318,6 +237,110 @@ public class BootstrapTest {
             return def;
         }
         return Integer.parseInt(value);
+    }
+
+    // ========== 通用测试辅助方法 ==========
+
+    /**
+     * 创建基础配置（无 SSL，单端口）
+     */
+    private static MqttConfiguration config(String namespace, int mqttPort) {
+        MqttConfiguration config = new MqttConfiguration();
+        config.setBusinessQueueSize(Integer.MAX_VALUE);
+        config.setSslEnable(false);
+        config.setPort(mqttPort);
+        config.setSecurePort(-1);
+        config.setWebsocketPort(-1);
+        config.setWebsocketSecurePort(-1);
+        config.getClusterConfig().setNamespace(namespace);
+        config.getClusterConfig().setNode("");
+        return config;
+    }
+
+    /**
+     * 创建集群节点配置（无 SSL，单端口）
+     */
+    private static MqttConfiguration config(String namespace, String node, int mqttPort) {
+        MqttConfiguration config = config(namespace, mqttPort);
+        config.getClusterConfig().setNode(node);
+        config.getClusterConfig().setEnabled(true);
+        return config;
+    }
+
+    /**
+     * MQTT 设备抽象，持有连接、收件箱和 clientId
+     */
+    private static class MqttDevice {
+        final Connection connection;
+        final ConcurrentLinkedQueue<MqttMessage> inbox;
+        final String clientId;
+
+        MqttDevice(Connection connection, ConcurrentLinkedQueue<MqttMessage> inbox, String clientId) {
+            this.connection = connection;
+            this.inbox = inbox;
+            this.clientId = clientId;
+        }
+
+        /**
+         * 订阅主题
+         */
+        void subscribe(String topic, MqttQoS qos) {
+            connection.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
+                    Collections.singletonList(new MqttTopicSubscription(topic, qos))));
+            assertNotNull(awaitPublish(inbox, msg -> msg instanceof MqttSubAckMessage, 5),
+                    "subscribe ack timeout for " + topic);
+        }
+    }
+
+    /**
+     * 连接设备并完成 MQTT 握手
+     */
+    private static MqttDevice connect(String clientId, int port) {
+        Connection connection = TcpClient.create()
+                .resolver(NoopAddressResolverGroup.INSTANCE)
+                .remoteAddress(() -> new InetSocketAddress("127.0.0.1", port))
+                .connectNow(Duration.ofSeconds(5));
+        addMqttCodec(connection);
+        ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
+        connection.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
+            if (msg instanceof MqttPublishMessage) {
+                ((MqttPublishMessage) msg).retain();
+            }
+            inbox.add(msg);
+        });
+        connection.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
+                clientId, "", "", "", "", false, false, false, 0, 60));
+        MqttConnAckMessage ack = (MqttConnAckMessage) awaitPublish(inbox,
+                msg -> msg instanceof MqttConnAckMessage, 5);
+        assertNotNull(ack, "device connect ack timeout for " + clientId);
+        return new MqttDevice(connection, inbox, clientId);
+    }
+
+    /**
+     * 验证设备收到指定主题和内容的发布消息
+     */
+    private static void assertReceived(MqttDevice device, String expectedTopic, String expectedPayload) {
+        MqttMessage received = awaitPublish(device.inbox,
+                msg -> msg instanceof MqttPublishMessage
+                        && expectedTopic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
+                5);
+        assertNotNull(received, "device [" + device.clientId + "] did not receive publish on " + expectedTopic);
+        MqttPublishMessage rp = (MqttPublishMessage) received;
+        assertEquals(expectedTopic, rp.variableHeader().topicName());
+        byte[] rpPayload = new byte[rp.payload().readableBytes()];
+        rp.payload().readBytes(rpPayload);
+        assertEquals(expectedPayload, new String(rpPayload, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * 验证设备在指定时间内未收到消息
+     */
+    private static void assertNotReceived(MqttDevice device, String topic, long timeoutSecond) {
+        MqttMessage notReceived = awaitPublish(device.inbox,
+                msg -> msg instanceof MqttPublishMessage
+                        && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
+                timeoutSecond);
+        assertNull(notReceived, "device [" + device.clientId + "] should NOT have received publish on " + topic);
     }
 
 }
