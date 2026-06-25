@@ -118,6 +118,10 @@ public class BootstrapTest {
 
     /**
      * 定向投递：向指定 clientId 设备发送消息（集群模式）
+     * <p>
+     * 启动两个节点，两个设备都连接 node-1 并订阅同一主题，
+     * 从 node-2 通过 MqttMessageDispatcher.publish(clientId, message) 向其中一个设备定向投递，
+     * 验证目标设备收到消息、非目标设备未收到。
      *
      * @throws Exception 测试异常
      */
@@ -127,68 +131,129 @@ public class BootstrapTest {
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
 
-        MqttConfiguration config = new MqttConfiguration();
-        config.setBusinessQueueSize(Integer.MAX_VALUE);
-        config.setSslEnable(false);
-        config.setPort(5883);
-        config.setSecurePort(-1);
-        config.setWebsocketPort(-1);
-        config.setWebsocketSecurePort(-1);
-        config.getClusterConfig().setEnabled(true);
-        config.getClusterConfig().setUrl("127.0.0.1:7773");
-        config.getClusterConfig().setPort(7773);
-        config.getClusterConfig().setNode("node-publish-target");
-        config.getClusterConfig().setNamespace("jmqx-publish-target-cluster");
+        String namespace = "jmqx-publish-target-cluster-" + UUID.randomUUID();
+        String topic = "cluster/target";
+        byte[] payload = "hello-cluster".getBytes(StandardCharsets.UTF_8);
+        String deviceA = "device-a";
+        String deviceB = "device-b";
 
-        Bootstrap bootstrap = new Bootstrap(config);
+        // Node-1: MQTT port 5883, cluster port 7773
+        MqttConfiguration config1 = new MqttConfiguration();
+        config1.setBusinessQueueSize(Integer.MAX_VALUE);
+        config1.setSslEnable(false);
+        config1.setPort(5883);
+        config1.setSecurePort(-1);
+        config1.setWebsocketPort(-1);
+        config1.setWebsocketSecurePort(-1);
+        config1.getClusterConfig().setEnabled(true);
+        config1.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
+        config1.getClusterConfig().setPort(7773);
+        config1.getClusterConfig().setNode("node-1");
+        config1.getClusterConfig().setNamespace(namespace);
+        Bootstrap bootstrap1 = new Bootstrap(config1);
+        bootstrap1.start().block(Duration.ofSeconds(10));
+
+        // Node-2: MQTT port 6883, cluster port 7774
+        MqttConfiguration config2 = new MqttConfiguration();
+        config2.setBusinessQueueSize(Integer.MAX_VALUE);
+        config2.setSslEnable(false);
+        config2.setPort(6883);
+        config2.setSecurePort(-1);
+        config2.setWebsocketPort(-1);
+        config2.setWebsocketSecurePort(-1);
+        config2.getClusterConfig().setEnabled(true);
+        config2.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
+        config2.getClusterConfig().setPort(7774);
+        config2.getClusterConfig().setNode("node-2");
+        config2.getClusterConfig().setNamespace(namespace);
+        Bootstrap bootstrap2 = new Bootstrap(config2);
+        bootstrap2.start().block(Duration.ofSeconds(10));
+
+        // 等待集群形成
+        Thread.sleep(3000);
+
         try {
-            bootstrap.start().block(Duration.ofSeconds(10));
-            String targetClientId = "cluster-target-device";
-            String topic = "cluster/target";
-            byte[] payload = "hello-cluster".getBytes(StandardCharsets.UTF_8);
-
-            // 设备连接
-            Connection dev = TcpClient.create()
+            // ---- Device A 连接到 node-1，订阅 topic ----
+            Connection devA = TcpClient.create()
                     .resolver(NoopAddressResolverGroup.INSTANCE)
                     .remoteAddress(() -> new InetSocketAddress("127.0.0.1", 5883))
                     .connectNow(Duration.ofSeconds(5));
-            addMqttCodec(dev);
-            ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
-            dev.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
+            addMqttCodec(devA);
+            ConcurrentLinkedQueue<MqttMessage> inboxA = new ConcurrentLinkedQueue<>();
+            devA.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
                 if (msg instanceof MqttPublishMessage) {
                     ((MqttPublishMessage) msg).retain();
                 }
-                inbox.add(msg);
+                inboxA.add(msg);
             });
-            dev.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
-                    targetClientId, "", "", "", "", false, false, false, 0, 60));
-            MqttConnAckMessage ack = (MqttConnAckMessage) awaitPublish(inbox,
-                    msg -> msg instanceof MqttConnAckMessage, 5);
-            assertNotNull(ack, "device connect ack timeout");
-            log.info("device [{}] connected to cluster broker", targetClientId);
+            devA.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
+                    deviceA, "", "", "", "", false, false, false, 0, 60));
+            assertNotNull(awaitPublish(inboxA, msg -> msg instanceof MqttConnAckMessage, 5),
+                    "deviceA connect ack timeout");
+            log.info("deviceA [{}] connected to node-1", deviceA);
+            // Device A subscribe
+            devA.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
+                    java.util.Collections.singletonList(new MqttTopicSubscription(topic, MqttQoS.AT_LEAST_ONCE))));
+            assertNotNull(awaitPublish(inboxA, msg -> msg instanceof MqttSubAckMessage, 5),
+                    "deviceA subscribe ack timeout");
+            log.info("deviceA subscribed to [{}]", topic);
 
-            // 通过 dispatcher 定向投递（集群模式走 PUBLISH_TARGET + TailIntercept）
-            MessageDispatcher dispatcher = NamespaceContextHolder.get(
-                    config.getClusterConfig().getNamespace()).getContext().getMessageDispatcher();
+            // ---- Device B 连接到 node-1，订阅同一 topic ----
+            Connection devB = TcpClient.create()
+                    .resolver(NoopAddressResolverGroup.INSTANCE)
+                    .remoteAddress(() -> new InetSocketAddress("127.0.0.1", 5883))
+                    .connectNow(Duration.ofSeconds(5));
+            addMqttCodec(devB);
+            ConcurrentLinkedQueue<MqttMessage> inboxB = new ConcurrentLinkedQueue<>();
+            devB.inbound().receiveObject().ofType(MqttMessage.class).subscribe(msg -> {
+                if (msg instanceof MqttPublishMessage) {
+                    ((MqttPublishMessage) msg).retain();
+                }
+                inboxB.add(msg);
+            });
+            devB.channel().writeAndFlush(MqttMessageBuilder.connectMessage(
+                    deviceB, "", "", "", "", false, false, false, 0, 60));
+            assertNotNull(awaitPublish(inboxB, msg -> msg instanceof MqttConnAckMessage, 5),
+                    "deviceB connect ack timeout");
+            log.info("deviceB [{}] connected to node-1", deviceB);
+            // Device B subscribe
+            devB.channel().writeAndFlush(MqttMessageBuilder.subMessage(1,
+                    java.util.Collections.singletonList(new MqttTopicSubscription(topic, MqttQoS.AT_LEAST_ONCE))));
+            assertNotNull(awaitPublish(inboxB, msg -> msg instanceof MqttSubAckMessage, 5),
+                    "deviceB subscribe ack timeout");
+            log.info("deviceB subscribed to [{}]", topic);
+
+            // ---- 从 node-2 向 deviceA 定向投递 ----
+            MessageDispatcher dispatcher = NamespaceContextHolder.get(namespace, "node-2")
+                    .getContext().getMessageDispatcher();
             MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
                     false, MqttQoS.AT_LEAST_ONCE, 0, topic, Unpooled.wrappedBuffer(payload));
-            dispatcher.publish(targetClientId, pubMsg);
-            log.info("published to [{}] topic [{}] (cluster mode)", targetClientId, topic);
+            dispatcher.publish(deviceA, pubMsg);
+            log.info("published to [{}] topic [{}] from node-2", deviceA, topic);
 
-            // 设备验证收到消息
-            MqttMessage received = awaitPublish(inbox,
+            // Device A 应收到消息
+            MqttMessage received = awaitPublish(inboxA,
                     msg -> msg instanceof MqttPublishMessage
                             && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
                     5);
-            assertNotNull(received, "device did not receive targeted publish in cluster mode");
+            assertNotNull(received, "target deviceA should receive targeted publish in cluster mode");
             MqttPublishMessage rp = (MqttPublishMessage) received;
             assertEquals(topic, rp.variableHeader().topicName());
             byte[] rpPayload = new byte[rp.payload().readableBytes()];
             rp.payload().readBytes(rpPayload);
             assertEquals("hello-cluster", new String(rpPayload, StandardCharsets.UTF_8));
-            log.info("device received targeted publish verified (cluster mode)");
+            log.info("deviceA received targeted publish verified");
+
+            // Device B 不应收到消息（定向投递不经过主题路由）
+            MqttMessage notReceived = awaitPublish(inboxB,
+                    msg -> msg instanceof MqttPublishMessage
+                            && topic.equals(((MqttPublishMessage) msg).variableHeader().topicName()),
+                    2);
+            assertNull(notReceived, "non-target deviceB should NOT receive targeted publish");
+            log.info("deviceB correctly did not receive the targeted publish");
         } finally {
-            bootstrap.shutdown();
+            bootstrap2.shutdown();
+            bootstrap1.shutdown();
         }
     }
 

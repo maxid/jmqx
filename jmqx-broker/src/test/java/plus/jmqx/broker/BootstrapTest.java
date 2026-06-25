@@ -139,7 +139,7 @@ class BootstrapTest {
             log.info("device [{}] connected", targetClientId);
 
             // 通过 dispatcher 定向投递
-            MessageDispatcher dispatcher = NamespaceContextHolder.get(ns).getContext().getMessageDispatcher();
+            MessageDispatcher dispatcher = NamespaceContextHolder.get(ns, "").getContext().getMessageDispatcher();
             MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
                     false, MqttQoS.AT_LEAST_ONCE, 0, topic, Unpooled.wrappedBuffer(payload));
             dispatcher.publish(targetClientId, pubMsg);
