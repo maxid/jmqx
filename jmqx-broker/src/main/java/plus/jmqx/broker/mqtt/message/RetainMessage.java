@@ -34,6 +34,12 @@ public class RetainMessage {
 
     private String userProperties;
 
+    /**
+     * 根据 MQTT 发布消息构建保留消息
+     *
+     * @param message MQTT 发布消息
+     * @return 保留消息
+     */
     public static RetainMessage of(MqttPublishMessage message) {
         MqttPublishVariableHeader header = message.variableHeader();
         return RetainMessage.builder()

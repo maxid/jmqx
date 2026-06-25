@@ -15,6 +15,11 @@ import java.util.List;
  */
 public interface ClusterRegistry {
 
+    /**
+     * 获取集群注册中心实例
+     *
+     * @return 集群注册中心实例
+     */
     static ClusterRegistry getInstance() {
         return DynamicLoader.findFirst(ClusterRegistry.class).orElse(null);
     }

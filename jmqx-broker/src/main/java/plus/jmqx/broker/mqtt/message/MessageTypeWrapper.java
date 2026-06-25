@@ -11,6 +11,11 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
  */
 public interface MessageTypeWrapper<T extends MqttMessage> {
 
+    /**
+     * 获取消息包装器
+     *
+     * @return 消息包装器
+     */
     MessageWrapper<T> getWrapper();
 
 }

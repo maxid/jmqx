@@ -38,6 +38,8 @@ public class Bootstrap {
 
     /**
      * 创建服务入口（仅配置）
+     *
+     * @param config MQTT 配置
      */
     public Bootstrap(MqttConfiguration config) {
         this(config, null, null, null);
@@ -45,6 +47,9 @@ public class Bootstrap {
 
     /**
      * 创建服务入口（配置 + ACL）
+     *
+     * @param config     MQTT 配置
+     * @param aclManager ACL 管理器
      */
     public Bootstrap(MqttConfiguration config, AclManager aclManager) {
         this(config, aclManager, null, null);
@@ -52,6 +57,9 @@ public class Bootstrap {
 
     /**
      * 创建服务入口（配置 + 鉴权）
+     *
+     * @param config      MQTT 配置
+     * @param authManager 鉴权管理器
      */
     public Bootstrap(MqttConfiguration config, AuthManager authManager) {
         this(config, null, authManager, null);
@@ -59,6 +67,9 @@ public class Bootstrap {
 
     /**
      * 创建服务入口（配置 + 平台分发器）
+     *
+     * @param config             MQTT 配置
+     * @param platformDispatcher 平台分发器
      */
     public Bootstrap(MqttConfiguration config, PlatformDispatcher platformDispatcher) {
         this(config, null, null, platformDispatcher);
@@ -66,6 +77,10 @@ public class Bootstrap {
 
     /**
      * 创建服务入口（配置 + ACL + 鉴权）
+     *
+     * @param config      MQTT 配置
+     * @param aclManager  ACL 管理器
+     * @param authManager 鉴权管理器
      */
     public Bootstrap(MqttConfiguration config, AclManager aclManager, AuthManager authManager) {
         this(config, aclManager, authManager, null);
@@ -75,6 +90,7 @@ public class Bootstrap {
      * 启动服务
      *
      * @return 服务
+     * @throws Exception 启动异常
      */
     public Mono<Bootstrap> start() throws Exception {
         ContextHolder holder = contextHolder();
@@ -98,6 +114,8 @@ public class Bootstrap {
 
     /**
      * 启动服务，并阻塞
+     *
+     * @throws Exception 启动异常
      */
     public void startAwait() throws Exception {
         this.start().doOnError(err -> {

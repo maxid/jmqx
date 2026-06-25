@@ -219,6 +219,9 @@ public class MqttMessageDispatcher implements MessageDispatcher {
      */
     public static class RetryFailureHandler implements Sinks.EmitFailureHandler {
 
+        /**
+         * 非串行化失败重试处理器单例
+         */
         public static final RetryFailureHandler RETRY_NON_SERIALIZED = new RetryFailureHandler();
 
         /**
