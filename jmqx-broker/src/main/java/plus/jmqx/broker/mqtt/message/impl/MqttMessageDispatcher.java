@@ -42,6 +42,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     private final Configuration                                       config;
     private final Map<MqttMessageType, MessageProcessor<MqttMessage>> processorMap;
     private final MessageProcessor<MqttMessage>                       defaultProcessor;
+    private final MessageDispatcher                                   proxySelf;
 
     /**
      * 构建分发器并初始化处理管线
@@ -64,6 +65,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         MessageProcessor<MqttMessage>[] commonHolder = new MessageProcessor[1];
         processors.forEach(p -> {
             p.setNamespace(config.getClusterConfig().getNamespace());
+            p.setNode(config.getClusterConfig().getNode());
             if (p.getMessageType() == MessageProcessor.CommonMessageType.class) {
                 commonHolder[0] = (MessageProcessor<MqttMessage>) p;
             }
@@ -76,6 +78,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         });
         this.processorMap = map;
         this.defaultProcessor = commonHolder[0];
+        this.proxySelf = MESSAGE_PROXY.proxy(this);
 
         startConsumer(publishAcceptor, publishScheduler, publishThreads);
         startConsumer(controlAcceptor, controlScheduler, controlThreads);
@@ -134,7 +137,9 @@ public class MqttMessageDispatcher implements MessageDispatcher {
             session = ClusterSession.wrapClientId(clientId);
             wrapper.setClientId(clientId);
         }
-        this.dispatch(session, wrapper, context);
+        wrapper.setReceiveContext(context);
+        // 走代理管线，确保 TailIntercept 执行集群扩散
+        proxySelf.dispatch(session, wrapper, context);
     }
 
     /**
@@ -175,7 +180,10 @@ public class MqttMessageDispatcher implements MessageDispatcher {
                 return;
             }
         }
-        ReceiveContext<?> context = contextHolder().getContext();
+        ReceiveContext<?> context = wrapper.getReceiveContext();
+        if (context == null) {
+            context = contextHolder().getContext();
+        }
         if (context == null) {
             ReactorNetty.safeRelease(message.payload());
             return;
@@ -239,7 +247,8 @@ public class MqttMessageDispatcher implements MessageDispatcher {
      * @return 上下文持有器
      */
     private ContextHolder contextHolder() {
-        return NamespaceContextHolder.get(config.getClusterConfig().getNamespace());
+        return NamespaceContextHolder.get(config.getClusterConfig().getNamespace(),
+                config.getClusterConfig().getNode());
     }
 
 }

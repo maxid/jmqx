@@ -11,6 +11,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 public abstract class NamespceMessageProcessor<T extends MqttMessage> implements MessageProcessor<T> {
 
     private String namespace;
+    private String node;
 
     @Override
     public String getNamespace() {
@@ -20,6 +21,16 @@ public abstract class NamespceMessageProcessor<T extends MqttMessage> implements
     @Override
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    @Override
+    public String getNode() {
+        return node;
+    }
+
+    @Override
+    public void setNode(String node) {
+        this.node = node;
     }
 
 }
