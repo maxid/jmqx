@@ -29,6 +29,18 @@ public class MqttMessageBuilder {
         return mqttProperties;
     }
 
+    /**
+     * 创建 PUBLISH 消息（带 MqttProperties）
+     *
+     * @param isDup     是否重复分发
+     * @param qoS       MQTT 服务质量等级
+     * @param isRetain  是否保留消息
+     * @param messageId 消息 ID
+     * @param topic     主题
+     * @param message   消息体
+     * @param properties MQTT 属性
+     * @return PUBLISH 消息
+     */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, boolean isRetain, int messageId, String topic, ByteBuf message, MqttProperties properties) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, isRetain, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId, properties);
@@ -36,6 +48,17 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    /**
+     * 创建 PUBLISH 消息（带用户属性，不保留）
+     *
+     * @param isDup              是否重复分发
+     * @param qoS                MQTT 服务质量等级
+     * @param messageId          消息 ID
+     * @param topic              主题
+     * @param message            消息体
+     * @param userPropertiesMap  用户属性映射
+     * @return PUBLISH 消息
+     */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, int messageId, String topic, ByteBuf message, Map<String, String> userPropertiesMap) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, false, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId, genMqttProperties(userPropertiesMap));
@@ -43,6 +66,18 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    /**
+     * 创建 PUBLISH 消息（带用户属性和保留标志）
+     *
+     * @param isDup              是否重复分发
+     * @param qoS                MQTT 服务质量等级
+     * @param isRetain           是否保留消息
+     * @param messageId          消息 ID
+     * @param topic              主题
+     * @param message            消息体
+     * @param userPropertiesMap  用户属性映射
+     * @return PUBLISH 消息
+     */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, boolean isRetain, int messageId, String topic, ByteBuf message, Map<String, String> userPropertiesMap) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, isRetain, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId, genMqttProperties(userPropertiesMap));
@@ -50,6 +85,16 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    /**
+     * 创建 PUBLISH 消息（无保留、无属性）
+     *
+     * @param isDup     是否重复分发
+     * @param qoS       MQTT 服务质量等级
+     * @param messageId 消息 ID
+     * @param topic     主题
+     * @param message   消息体
+     * @return PUBLISH 消息
+     */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, int messageId, String topic, ByteBuf message) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, false, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId);
@@ -57,6 +102,17 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    /**
+     * 创建 PUBLISH 消息（带保留标志，无属性）
+     *
+     * @param isDup     是否重复分发
+     * @param qoS       MQTT 服务质量等级
+     * @param isRetain  是否保留消息
+     * @param messageId 消息 ID
+     * @param topic     主题
+     * @param message   消息体
+     * @return PUBLISH 消息
+     */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, boolean isRetain, int messageId, String topic, ByteBuf message) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, isDup, qoS, isRetain, 0);
         MqttPublishVariableHeader mqttPublishVariableHeader = new MqttPublishVariableHeader(topic, messageId);
@@ -64,18 +120,44 @@ public class MqttMessageBuilder {
         return mqttPublishMessage;
     }
 
+    /**
+     * 创建 PUBACK 消息
+     *
+     * @param messageId 消息 ID
+     * @return PUBACK 消息
+     */
     public static MqttPubAckMessage publishAckMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBACK, messageId, false);
     }
 
+    /**
+     * 创建 PUBACK 消息（带原因码）
+     *
+     * @param messageId  消息 ID
+     * @param reasonCode 原因码
+     * @return PUBACK 消息
+     */
     public static MqttPubAckMessage publishAckMessage(int messageId, byte reasonCode) {
         return ackMessage(MqttMessageType.PUBACK, messageId, false, reasonCode);
     }
 
+    /**
+     * 创建 PUBREC 消息
+     *
+     * @param messageId 消息 ID
+     * @return PUBREC 消息
+     */
     public static MqttPubAckMessage publishRecMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBREC, messageId, false);
     }
 
+    /**
+     * 创建 PUBREC 消息（带原因码）
+     *
+     * @param messageId  消息 ID
+     * @param reasonCode 原因码
+     * @return PUBREC 消息
+     */
     public static MqttPubAckMessage publishRecMessage(int messageId, byte reasonCode) {
         return ackMessage(MqttMessageType.PUBREC, messageId, false, reasonCode);
     }
@@ -92,6 +174,12 @@ public class MqttMessageBuilder {
         return new MqttPubAckMessage(mqttFixedHeader, from);
     }
 
+    /**
+     * 创建 PUBCOMP 消息
+     *
+     * @param messageId 消息 ID
+     * @return PUBCOMP 消息
+     */
     public static MqttPubAckMessage publishCompMessage(int messageId) {
         return ackMessage(MqttMessageType.PUBCOMP, messageId, false);
 
@@ -109,6 +197,13 @@ public class MqttMessageBuilder {
         return new MqttPubAckMessage(mqttFixedHeader, from);
     }
 
+    /**
+     * 创建 SUBACK 消息
+     *
+     * @param messageId 消息 ID
+     * @param qos       服务质量等级列表
+     * @return SUBACK 消息
+     */
     public static MqttSubAckMessage subAckMessage(int messageId, List<Integer> qos) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
@@ -116,12 +211,25 @@ public class MqttMessageBuilder {
         return new MqttSubAckMessage(mqttFixedHeader, variableHeader, payload);
     }
 
+    /**
+     * 创建 UNSUBACK 消息
+     *
+     * @param messageId 消息 ID
+     * @return UNSUBACK 消息
+     */
     public static MqttUnsubAckMessage unsubAckMessage(int messageId) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0x02);
         MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
         return new MqttUnsubAckMessage(mqttFixedHeader, variableHeader);
     }
 
+    /**
+     * 创建 CONNACK 消息
+     *
+     * @param connectReturnCode 连接返回码
+     * @param version           MQTT 协议版本
+     * @return CONNACK 消息
+     */
     public static MqttConnAckMessage connectAckMessage(MqttConnectReturnCode connectReturnCode, byte version) {
         MqttProperties properties = MqttProperties.NO_PROPERTIES;
         if (MqttVersion.MQTT_5.protocolLevel() == version) {
@@ -156,6 +264,13 @@ public class MqttMessageBuilder {
         return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
     }
 
+    /**
+     * 创建 SUBSCRIBE 消息
+     *
+     * @param messageId          消息 ID
+     * @param topicSubscriptions 主题订阅列表
+     * @return SUBSCRIBE 消息
+     */
     public static MqttSubscribeMessage subMessage(int messageId, List<MqttTopicSubscription> topicSubscriptions) {
         MqttSubscribePayload mqttSubscribePayload = new MqttSubscribePayload(topicSubscriptions);
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -163,6 +278,13 @@ public class MqttMessageBuilder {
         return new MqttSubscribeMessage(mqttFixedHeader, mqttMessageIdVariableHeader, mqttSubscribePayload);
     }
 
+    /**
+     * 创建 UNSUBSCRIBE 消息
+     *
+     * @param messageId 消息 ID
+     * @param topics    取消订阅的主题列表
+     * @return UNSUBSCRIBE 消息
+     */
     public static MqttUnsubscribeMessage unSubMessage(int messageId, List<String> topics) {
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0x02);
         MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader.from(messageId);
@@ -170,6 +292,21 @@ public class MqttMessageBuilder {
         return new MqttUnsubscribeMessage(mqttFixedHeader, variableHeader, MqttUnsubscribeMessage);
     }
 
+    /**
+     * 创建 CONNECT 消息
+     *
+     * @param clientId   客户端 ID
+     * @param willTopic  遗嘱主题
+     * @param willMessage 遗嘱消息
+     * @param username   用户名
+     * @param password   密码
+     * @param isUsername 是否包含用户名
+     * @param isPassword 是否包含密码
+     * @param isWill     是否包含遗嘱
+     * @param willQos    遗嘱消息 QoS
+     * @param heart      心跳间隔（秒）
+     * @return CONNECT 消息
+     */
     public static MqttConnectMessage connectMessage(String clientId, String willTopic, String willMessage, String username, String password, boolean isUsername, boolean isPassword, boolean isWill, int willQos, int heart) {
         MqttConnectVariableHeader mqttConnectVariableHeader = new MqttConnectVariableHeader(MqttVersion.MQTT_3_1_1.protocolName(), MqttVersion.MQTT_3_1_1.protocolLevel(), isUsername, isPassword, false, willQos, isWill, false, heart);
         MqttConnectPayload mqttConnectPayload = new MqttConnectPayload(clientId, willTopic, isWill ? willMessage.getBytes() : null, username, isPassword ? password.getBytes() : null);
@@ -177,6 +314,11 @@ public class MqttMessageBuilder {
         return new MqttConnectMessage(mqttFixedHeader, mqttConnectVariableHeader, mqttConnectPayload);
     }
 
+    /**
+     * 创建 PINGREQ 消息
+     *
+     * @return PINGREQ 消息
+     */
     public static MqttMessage pingMessage() {
         return new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0));
     }

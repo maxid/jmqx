@@ -36,6 +36,13 @@ public class SessionMessage {
 
     private String userProperties;
 
+    /**
+     * 根据客户端 ID 和 MQTT 发布消息构建会话消息
+     *
+     * @param clientId 客户端 ID
+     * @param message  MQTT 发布消息
+     * @return 会话消息
+     */
     public static SessionMessage of(String clientId, MqttPublishMessage message) {
         MqttPublishVariableHeader header = message.variableHeader();
         return SessionMessage.builder()

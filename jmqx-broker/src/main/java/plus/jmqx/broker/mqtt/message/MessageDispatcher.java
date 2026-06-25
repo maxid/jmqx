@@ -48,7 +48,7 @@ public interface MessageDispatcher {
     /**
      * 向指定客户端设备下发消息（直接写入设备 Session，不经过主题路由）
      * <p>
-     * 通过 {@link MessageWrapper#setClientId(String)} 标识定向投递，
+     * 通过 {@link MessageWrapper#clientId} 标识定向投递，
      * 走完整分发管线（含 ACL 检查），集群模式由 TailIntercept 自动扩散。
      *
      * @param clientId 目标设备 clientId

@@ -14,6 +14,9 @@ import java.util.List;
  */
 public interface MessageRegistry extends Startup {
 
+    /**
+     * 消息注册中心单例
+     */
     MessageRegistry INSTANCE = DynamicLoader.findFirst(MessageRegistry.class).orElse(null);
 
     /**

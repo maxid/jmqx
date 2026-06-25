@@ -30,11 +30,26 @@ public class AuthExecutor {
     private final long timeoutMillis;
     private final String namespace;
 
+    /**
+     * 构造鉴权执行器（基于配置对象）
+     *
+     * @param authManager 鉴权管理器
+     * @param config      配置
+     */
     public AuthExecutor(AuthManager authManager, Configuration config) {
         this(authManager, config.getClusterConfig().getNamespace(), config.getAuthTimeoutMillis(),
                 config.getAuthThreadSize(), config.getAuthQueueSize());
     }
 
+    /**
+     * 构造鉴权执行器（基于明细参数）
+     *
+     * @param authManager    鉴权管理器
+     * @param namespace      命名空间
+     * @param timeoutMillis  鉴权超时时间（毫秒）
+     * @param authThreadSize 鉴权线程池大小
+     * @param authQueueSize  鉴权线程池队列大小
+     */
     public AuthExecutor(AuthManager authManager, String namespace, long timeoutMillis,
                         Integer authThreadSize, Integer authQueueSize) {
         this.authManager = authManager;
