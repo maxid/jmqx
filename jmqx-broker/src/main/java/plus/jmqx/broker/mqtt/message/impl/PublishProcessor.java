@@ -1,13 +1,10 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
+import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
@@ -136,15 +133,17 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     /**
      * 定向投递：查找目标设备 Session 并直接写入
      *
-     * @param targetClientId 目标设备 clientId
-     * @param message        MQTT 发布消息
-     * @param context        接收上下文
+     * @param clientId 目标设备 clientId
+     * @param message  MQTT 发布消息
+     * @param context  接收上下文
      */
-    private void send(String targetClientId, MqttPublishMessage message, ReceiveContext<?> context) {
+    private void send(String clientId, MqttPublishMessage message, ReceiveContext<?> context) {
         // 查找目标 Session
-        MqttSession session = context.getSessionRegistry().get(targetClientId);
+        MqttSession session = context.getSessionRegistry().get(clientId);
         if (session == null || !session.active()) {
-            log.warn("publish: device [{}] not online, skip", targetClientId);
+            MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
+            String ns = config.getNamespace() + "#" + config.getNode();
+            log.debug("[{}] publish: device [{}] not online, skip", ns, clientId);
             return;
         }
         MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(
@@ -157,8 +156,9 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
 
     /**
      * MQTT V5 时发送拒绝确认消息
-     * @param session 会话
-     * @param qos QoS
+     *
+     * @param session  会话
+     * @param qos      QoS
      * @param packetId 消息ID
      */
     private void sendRejectAck(MqttSession session, MqttQoS qos, int packetId) {
