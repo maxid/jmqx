@@ -288,6 +288,24 @@ class DispatcherBenchmarkTest {
         public void setNamespace(String namespace) {}
 
         /**
+         * 获取节点名称
+         *
+         * @return 节点名称
+         */
+        @Override
+        public String getNode() {
+            return "node-1";
+        }
+
+        /**
+         * 设置节点名称
+         *
+         * @param node 节点名称
+         */
+        @Override
+        public void setNode(String node) {}
+
+        /**
          * 获取处理的消息类型集合
          *
          * @return 消息类型列表
