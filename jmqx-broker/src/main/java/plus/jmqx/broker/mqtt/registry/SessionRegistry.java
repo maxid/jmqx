@@ -13,6 +13,9 @@ import java.util.Collection;
  */
 public interface SessionRegistry extends Startup {
 
+    /**
+     * 会话注册中心单例
+     */
     SessionRegistry INSTANCE = DynamicLoader.findFirst(SessionRegistry.class).orElse(null);
 
     /**

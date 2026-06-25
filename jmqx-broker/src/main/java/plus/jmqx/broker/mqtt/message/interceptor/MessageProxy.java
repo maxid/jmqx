@@ -34,6 +34,12 @@ public class MessageProxy {
             .sorted(Comparator.comparing(Interceptor::sort))
             .collect(Collectors.toList());
 
+    /**
+     * 对消息分发器进行代理包装，形成拦截器链
+     *
+     * @param adapter 消息分发器
+     * @return 代理后的消息分发器
+     */
     public MessageDispatcher proxy(MessageDispatcher adapter) {
         adapter = new TailIntercept().proxy(adapter);
         for (Interceptor interceptor : interceptors) {
