@@ -26,7 +26,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 默认节点标识
      */
-    public static final String DEFAULT_NODE  = "node-1";
+    public static final String DEFAULT_NODE       = "node-1";
     /**
      * 默认 MQTT-WS 监听端点
      */
@@ -152,6 +152,7 @@ public class MqttConfiguration implements Configuration {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ClusterConfig {
+
         /**
          * 开启集群
          */
@@ -176,6 +177,16 @@ public class MqttConfiguration implements Configuration {
          * 集群额外配置（主要用于容器映射）
          */
         private ClusterExternal external;
+
+        /**
+         * 获取集群唯一标识
+         *
+         * @return 集群唯一标识
+         */
+        public String getClusterId() {
+            return namespace + ":" + node;
+        }
+
     }
 
     @Data
@@ -183,6 +194,7 @@ public class MqttConfiguration implements Configuration {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ClusterExternal {
+
         /**
          * 本地曝光host
          */
@@ -191,6 +203,7 @@ public class MqttConfiguration implements Configuration {
          * 本地曝光port
          */
         private Integer port;
+
     }
 
 }

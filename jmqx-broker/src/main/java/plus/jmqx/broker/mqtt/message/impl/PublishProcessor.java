@@ -142,8 +142,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
         MqttSession session = context.getSessionRegistry().get(clientId);
         if (session == null || !session.active()) {
             MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
-            String ns = config.getNamespace() + "#" + config.getNode();
-            log.debug("[{}] publish: device [{}] not online, skip", ns, clientId);
+            log.warn("[{}] publish: device [{}] not online, skip", config.getClusterId(), clientId);
             return;
         }
         MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(
