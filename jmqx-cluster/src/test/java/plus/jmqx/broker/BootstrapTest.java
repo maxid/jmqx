@@ -867,7 +867,7 @@ public class BootstrapTest {
                     break;
                 }
                 while ((localSent - localAcked.get()) >= inFlightLimit) {
-                    submitFlush();
+                    if (!safeFlush()) break;
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
@@ -876,7 +876,7 @@ public class BootstrapTest {
                     }
                 }
                 while (!connection.channel().isWritable()) {
-                    submitFlush();
+                    if (!safeFlush()) break;
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
@@ -884,20 +884,23 @@ public class BootstrapTest {
                         break;
                     }
                 }
+                if (!connection.channel().isActive()) {
+                    break;
+                }
                 MqttFixedHeader fixedHeader = new MqttFixedHeader(
                         MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
                 int messageId = nextPacketId();
                 MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, messageId);
                 MqttPublishMessage message = new MqttPublishMessage(fixedHeader, header, Unpooled.wrappedBuffer(payload));
-                submitWrite(message);
+                if (!safeWrite(message)) break;
                 if (flushEvery > 0 && (i + 1) % flushEvery == 0) {
-                    submitFlush();
+                    if (!safeFlush()) break;
                 }
                 published.incrementAndGet();
                 i++;
                 localSent++;
             }
-            submitFlush();
+            safeFlush();
             return localSent;
         }
 
@@ -944,6 +947,30 @@ public class BootstrapTest {
             if (connection != null && !connection.isDisposed()) {
                 connection.disposeNow();
             }
+        }
+
+        private boolean safeFlush() {
+            try {
+                if (connection != null && connection.channel().isActive()) {
+                    submitFlush();
+                    return true;
+                }
+            } catch (Exception e) {
+                // channel closed
+            }
+            return false;
+        }
+
+        private boolean safeWrite(MqttMessage message) {
+            try {
+                if (connection != null && connection.channel().isActive()) {
+                    submitWrite(message);
+                    return true;
+                }
+            } catch (Exception e) {
+                // channel closed
+            }
+            return false;
         }
 
         private void writeAndFlush(MqttMessage message) {
