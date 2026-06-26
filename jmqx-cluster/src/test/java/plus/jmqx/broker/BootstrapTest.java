@@ -140,6 +140,20 @@ public class BootstrapTest {
         }
     }
 
+    @Test
+    void clusterDispatcher01() throws Exception {
+        cluster("jmqx-cluster", "node-1", "127.0.0.1:7771,127.0.0.1:7772", 7771, 5,
+                true, 1883, 8883, 1884, 8884,
+                false, this::dispatcher);
+    }
+
+    @Test
+    void clusterDispatcher02() throws Exception {
+        cluster("jmqx-cluster", "node-2", "127.0.0.1:7771,127.0.0.1:7772", 7772, 5,
+                true, 2883, 9883, 2884, 9884,
+                true, this::dispatcher);
+    }
+
     /**
      * 启动集群节点
      *

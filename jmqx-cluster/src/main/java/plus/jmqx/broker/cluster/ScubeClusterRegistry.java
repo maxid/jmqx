@@ -39,7 +39,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ScubeClusterRegistry implements ClusterRegistry {
 
-    private final Sinks.Many<ClusterMessage> messageMany = Sinks.many().replay().all();
+    /**
+     * 集群消息管道
+     * <p>
+     * 默认 buffer = Queues.SMALL_BUFFER_SIZE (256)，可通过
+     * -Dreactor.bufferSize.small=<size> 调大。
+     */
+    private final Sinks.Many<ClusterMessage> messageMany = Sinks.many().multicast().onBackpressureBuffer();
 
     private final Sinks.Many<ClusterStatus> eventMany = Sinks.many().multicast().onBackpressureBuffer();
 
