@@ -13,6 +13,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
+import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import plus.jmqx.broker.mqtt.message.dispatch.*;
@@ -24,11 +25,9 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -51,21 +50,8 @@ public class BootstrapTest {
      */
     @Test
     void cluster01() throws Exception {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.getLogger("root").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
-        loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
-        MqttConfiguration config = new MqttConfiguration();
-        config.getClusterConfig().setEnabled(true);
-        config.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
-        config.getClusterConfig().setPort(7771);
-        config.getClusterConfig().setNode("node-1");
-        config.getClusterConfig().setNamespace("jmqx-cluster");
-        Bootstrap bootstrap = new Bootstrap(config, dispatcher(config.getClusterConfig(), false));
-        bootstrap.start().block();
-        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
-        bootstrap.shutdown();
+        cluster("jmqx-cluster", "node-1", "127.0.0.1:7771,127.0.0.1:7772", 7771, 5,
+                true, 1883, 8883, 1884, 8884);
     }
 
     /**
@@ -75,25 +61,8 @@ public class BootstrapTest {
      */
     @Test
     void cluster02() throws Exception {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.getLogger("root").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
-        loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
-        MqttConfiguration config = new MqttConfiguration();
-        config.setPort(2883);
-        config.setSecurePort(2884);
-        config.setWebsocketPort(9883);
-        config.setWebsocketSecurePort(9884);
-        config.getClusterConfig().setEnabled(true);
-        config.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
-        config.getClusterConfig().setPort(7772);
-        config.getClusterConfig().setNode("node-2");
-        config.getClusterConfig().setNamespace("jmqx-cluster");
-        Bootstrap bootstrap = new Bootstrap(config, dispatcher(config.getClusterConfig(), true));
-        bootstrap.start().block();
-        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
-        bootstrap.shutdown();
+        cluster("jmqx-cluster", "node-2", "127.0.0.1:7771,127.0.0.1:7772", 7772, 5,
+                true, 2883, 9883, 2884, 9884);
     }
 
     /**
@@ -103,25 +72,8 @@ public class BootstrapTest {
      */
     @Test
     void clusterSingle() throws Exception {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.getLogger("root").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
-        loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
-        MqttConfiguration config = new MqttConfiguration();
-        config.setPort(3883);
-        config.setSecurePort(3884);
-        config.setWebsocketPort(10883);
-        config.setWebsocketSecurePort(10884);
-        config.getClusterConfig().setEnabled(false);
-        config.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
-        config.getClusterConfig().setPort(7772);
-        config.getClusterConfig().setNode("node-3");
-        config.getClusterConfig().setNamespace("jmqx-cluster");
-        Bootstrap bootstrap = new Bootstrap(config);
-        bootstrap.start().block();
-        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
-        bootstrap.shutdown();
+        cluster("jmqx-cluster", "node-3", "127.0.0.1:7771,127.0.0.1:7772", 7773, 5,
+                false, 3883, 9083, 3884, 9084);
     }
 
     /**
@@ -141,46 +93,131 @@ public class BootstrapTest {
 
         String namespace = "jmqx-cluster-" + UUID.randomUUID().toString().split("-")[0];
         String topic = "cluster/target";
+        String node1 = "node-1";
+        String node2 = "node-2";
+        int mqtt1Port = 1883;
+        int mqtt2Port = 2883;
+        String clusterUrls = "127.0.0.1:7771,127.0.0.1:7772";
+        String client1Id = "device-a";
+        String client2Id = "device-b";
+        String testPayload = "hello-cluster";
+        ExecutorService exec = Executors.newFixedThreadPool(2);
 
-        // Node-1: MQTT port 5883, cluster port 7773
-        MqttConfiguration config1 = config(namespace, "node-1", 5883);
-        config1.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
-        config1.getClusterConfig().setPort(7773);
-        Bootstrap bootstrap1 = new Bootstrap(config1);
-        bootstrap1.start().block(Duration.ofSeconds(10));
+        // Node-1: MQTT port 1883, cluster port 7771
+        exec.submit(() -> cluster(namespace, node1, clusterUrls, 7771, 10,
+                true, mqtt1Port, 8883, 1884, 8884));
 
-        // Node-2: MQTT port 6883, cluster port 7774
-        MqttConfiguration config2 = config(namespace, "node-2", 6883);
-        config2.getClusterConfig().setUrl("127.0.0.1:7773,127.0.0.1:7774");
-        config2.getClusterConfig().setPort(7774);
-        Bootstrap bootstrap2 = new Bootstrap(config2);
-        bootstrap2.start().block(Duration.ofSeconds(10));
+        // Node-2: MQTT port 2883, cluster port 7772;
+        exec.submit(() -> cluster(namespace, node2, clusterUrls, 7772, 10,
+                true, mqtt2Port, 9883, 2884, 9884));
 
         // 等待集群形成
         Thread.sleep(3000);
 
         try {
-            MqttDevice deviceA = connect("device-a", 5883);
+            ReceiveContext<?> context1 = NamespaceContextHolder.get(namespace, node1).getContext();
+            ReceiveContext<?> context2 = NamespaceContextHolder.get(namespace, node2).getContext();
+            MqttDevice deviceA = connect(client1Id, context1.getConfiguration().getPort());
             deviceA.subscribe(topic, MqttQoS.AT_LEAST_ONCE);
 
-            MqttDevice deviceB = connect("device-b", 5883);
+            MqttDevice deviceB = connect(client2Id, context1.getConfiguration().getPort());
             deviceB.subscribe(topic, MqttQoS.AT_LEAST_ONCE);
 
             // 从 node-2 向 deviceA 定向投递
-            MessageDispatcher dispatcher = NamespaceContextHolder.get(namespace, "node-2")
-                    .getContext().getMessageDispatcher();
-            MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
-                    false, MqttQoS.AT_LEAST_ONCE, 0, topic,
-                    Unpooled.wrappedBuffer("hello-cluster".getBytes(StandardCharsets.UTF_8)));
+            MessageDispatcher dispatcher = context2.getMessageDispatcher();
+            MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(false, MqttQoS.AT_MOST_ONCE,
+                    0, topic, Unpooled.wrappedBuffer(testPayload.getBytes(StandardCharsets.UTF_8)));
             dispatcher.publish(deviceA.clientId, pubMsg);
             log.info("published to [{}] topic [{}] from node-2", deviceA.clientId, topic);
 
-            assertReceived(deviceA, topic, "hello-cluster");
+            assertReceived(deviceA, topic, testPayload);
             assertNotReceived(deviceB, topic, 2);
         } finally {
-            bootstrap2.shutdown();
-            bootstrap1.shutdown();
+            exec.shutdown();
         }
+    }
+
+    /**
+     * 启动集群节点
+     *
+     * @param namespace 命名空间
+     * @param node      节点名称
+     * @param urls      集群节点地址
+     * @param port      集群节点端口
+     * @param timeout   测试超时时间（秒）
+     * @param mqttPort  MQTT 端口
+     * @param wsPort    WebSocket 端口
+     * @param mqttsPort MQTTS 端口
+     * @param wssPort   WebSocket Secure 端口
+     */
+    private void cluster(String namespace, String node, String urls, int port, int timeout, boolean enabled,
+                         int mqttPort, int wsPort, int mqttsPort, int wssPort) {
+        cluster(namespace, node, urls, port, timeout, enabled, mqttPort, mqttsPort, wsPort, wssPort, false, null);
+    }
+
+    /**
+     * 启动集群节点
+     *
+     * @param namespace   命名空间
+     * @param node        节点名称
+     * @param urls        集群节点地址
+     * @param port        集群节点端口
+     * @param timeout     测试超时时间（秒）
+     * @param mqttPort    MQTT 端口
+     * @param wsPort      WebSocket 端口
+     * @param mqttsPort   MQTTS 端口
+     * @param wssPort     WebSocket Secure 端口
+     * @param enableReply 是否启用回复
+     * @param dispatcher  消息分发器
+     */
+    private void cluster(String namespace, String node, String urls, int port, int timeout, boolean enabled,
+                         int mqttPort, int wsPort, int mqttsPort, int wssPort, boolean enableReply,
+                         DispatcherApply dispatcher) {
+        Bootstrap bootstrap = null;
+        try {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            loggerContext.getLogger("root").setLevel(Level.INFO);
+            loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+            loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
+            loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
+            MqttConfiguration config = new MqttConfiguration();
+            config.setPort(mqttPort);
+            config.setWebsocketPort(wsPort);
+            config.setSslEnable(true);
+            config.setSecurePort(mqttsPort);
+            config.setWebsocketSecurePort(wssPort);
+            config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
+            config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
+            config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
+            config.getClusterConfig().setEnabled(enabled);
+            config.getClusterConfig().setUrl(urls);
+            config.getClusterConfig().setPort(port);
+            config.getClusterConfig().setNode(node);
+            config.getClusterConfig().setNamespace(namespace);
+            bootstrap = dispatcher == null ? new Bootstrap(config)
+                    : new Bootstrap(config, dispatcher.apply(config.getClusterConfig(), enableReply));
+            bootstrap.start().block();
+            Thread.sleep(intProp("jmqx.test.await.seconds", timeout) * TimeUnit.SECONDS.toMillis(1));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (bootstrap != null) {
+                bootstrap.shutdown();
+            }
+        }
+    }
+
+    interface DispatcherApply {
+
+        /**
+         * 应用消息分发器
+         *
+         * @param config      集群配置
+         * @param enableReply 是否启用回复
+         * @return 消息分发器
+         */
+        PlatformDispatcher apply(MqttConfiguration.ClusterConfig config, boolean enableReply);
+
     }
 
     /**
@@ -220,7 +257,7 @@ public class BootstrapTest {
             @Override
             public Mono<Void> onConnect(ConnectMessage message) {
                 return Mono.fromRunnable(() -> {
-                    //log.info("{}", message);
+                    log.info("{}", message);
                 });
             }
 
@@ -233,7 +270,7 @@ public class BootstrapTest {
             @Override
             public Mono<Void> onDisconnect(DisconnectMessage message) {
                 return Mono.fromRunnable(() -> {
-                    //log.info("{}", message);
+                    log.info("{}", message);
                 });
             }
 
@@ -246,7 +283,7 @@ public class BootstrapTest {
             @Override
             public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
                 return Mono.fromRunnable(() -> {
-                    //log.info("{}", message);
+                    log.info("{}", message);
                 });
             }
 
@@ -260,7 +297,7 @@ public class BootstrapTest {
             public Mono<Void> onPublish(PublishMessage message) {
                 return Mono.fromRunnable(() -> {
                     String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
-                    /*
+                    //*
                     log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})",
                             message.getClientId(),
                             message.getUsername(),
