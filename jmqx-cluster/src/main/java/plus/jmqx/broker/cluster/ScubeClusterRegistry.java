@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ScubeClusterRegistry implements ClusterRegistry {
 
-    private final Sinks.Many<ClusterMessage> messageMany = Sinks.many().multicast().onBackpressureBuffer();
+    private final Sinks.Many<ClusterMessage> messageMany = Sinks.many().replay().all();
 
     private final Sinks.Many<ClusterStatus> eventMany = Sinks.many().multicast().onBackpressureBuffer();
 
@@ -80,8 +80,9 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                         .namespace(clusterConfig.getNamespace())
                         .suspicionMult(clusterConfig.getSuspicionMult() != null
                                 ? clusterConfig.getSuspicionMult() : 10))
-                .failureDetector(fdet -> fdet.pingTimeout(clusterConfig.getPingTimeout() != null
-                        ? clusterConfig.getPingTimeout() : 3000))
+                .failureDetector(fdet -> fdet.pingInterval(2000)
+                        .pingTimeout(clusterConfig.getPingTimeout() != null
+                                ? clusterConfig.getPingTimeout() : 5000))
                 .handler(cluster -> new ClusterHandler())
                 .startAwait();
     }
