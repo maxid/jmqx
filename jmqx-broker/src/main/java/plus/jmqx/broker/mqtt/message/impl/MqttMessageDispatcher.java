@@ -1,6 +1,7 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
 import io.netty.handler.codec.mqtt.*;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterSession;
 import plus.jmqx.broker.config.Configuration;
@@ -23,6 +24,7 @@ import reactor.util.context.Context;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 
@@ -180,13 +182,19 @@ public class MqttMessageDispatcher implements MessageDispatcher {
                 return;
             }
         }
+        /*
         ReceiveContext<?> context = wrapper.getReceiveContext();
         if (context == null) {
             context = contextHolder().getContext();
         }
+        */
+        ReceiveContext<?> context = contextHolder().getContext();
         if (context == null) {
             ReactorNetty.safeRelease(message.payload());
             return;
+        }
+        if (Objects.equals(context, wrapper.getReceiveContext())) {
+            log.info("-------------------------- context is same --------------------------");
         }
         try {
             processor.process(wrapper, wrapper.getSession(), Context.of(ReceiveContext.class, context));
@@ -238,7 +246,7 @@ public class MqttMessageDispatcher implements MessageDispatcher {
          * @return 是否继续重试
          */
         @Override
-        public boolean onEmitFailure(SignalType signalType, Sinks.EmitResult emitResult) {
+        public boolean onEmitFailure(@NonNull SignalType signalType, Sinks.@NonNull EmitResult emitResult) {
             LockSupport.parkNanos(10);
             return emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED;
         }

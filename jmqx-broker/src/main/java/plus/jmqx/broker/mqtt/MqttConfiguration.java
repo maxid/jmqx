@@ -157,6 +157,10 @@ public class MqttConfiguration implements Configuration {
     public static class ClusterConfig {
 
         /**
+         * 集群标识分隔符
+         */
+        public static final String SEPARATOR = ":";
+        /**
          * 开启集群
          */
         private boolean         enabled;
@@ -187,7 +191,7 @@ public class MqttConfiguration implements Configuration {
          * @return 集群唯一标识
          */
         public String getClusterId() {
-            return namespace + ":" + node;
+            return node != null && !node.isEmpty() ? namespace + SEPARATOR + node : namespace;
         }
 
     }
