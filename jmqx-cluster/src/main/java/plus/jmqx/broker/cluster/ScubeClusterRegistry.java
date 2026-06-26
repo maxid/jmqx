@@ -37,7 +37,6 @@ public class ScubeClusterRegistry implements ClusterRegistry {
 
     private Cluster cluster;
 
-
     /**
      * 注册集群并启动
      *
@@ -141,7 +140,6 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     public Flux<ClusterStatus> clusterEvent() {
         return eventMany.asFlux();
     }
-
 
     class ClusterHandler implements ClusterMessageHandler {
 

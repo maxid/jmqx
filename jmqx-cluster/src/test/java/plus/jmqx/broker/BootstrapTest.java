@@ -2,6 +2,8 @@ package plus.jmqx.broker;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -13,6 +15,8 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
+import plus.jmqx.broker.mqtt.message.dispatch.*;
+import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
 import reactor.netty.tcp.TcpClient;
 
@@ -22,7 +26,10 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +62,7 @@ public class BootstrapTest {
         config.getClusterConfig().setPort(7771);
         config.getClusterConfig().setNode("node-1");
         config.getClusterConfig().setNamespace("jmqx-cluster");
-        Bootstrap bootstrap = new Bootstrap(config);
+        Bootstrap bootstrap = new Bootstrap(config, dispatcher(config.getClusterConfig(), false));
         bootstrap.start().block();
         Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
         bootstrap.shutdown();
@@ -83,7 +90,7 @@ public class BootstrapTest {
         config.getClusterConfig().setPort(7772);
         config.getClusterConfig().setNode("node-2");
         config.getClusterConfig().setNamespace("jmqx-cluster");
-        Bootstrap bootstrap = new Bootstrap(config);
+        Bootstrap bootstrap = new Bootstrap(config, dispatcher(config.getClusterConfig(), true));
         bootstrap.start().block();
         Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
         bootstrap.shutdown();
@@ -174,6 +181,102 @@ public class BootstrapTest {
             bootstrap2.shutdown();
             bootstrap1.shutdown();
         }
+    }
+
+    /**
+     * 构造测试用消息分发器（不适合用于压测）
+     *
+     * @return 分发器
+     */
+    private PlatformDispatcher dispatcher(MqttConfiguration.ClusterConfig config, boolean enableReply) {
+        AtomicReference<String> clientId = new AtomicReference<>();
+        if (enableReply) {
+            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r);
+                thread.setName("jmqx-target-reply");
+                return thread;
+            });
+            executor.scheduleAtFixedRate(() -> {
+                // 消息下发示例, QoS 必须为 0
+                MqttPublishMessage reply = MqttMessageBuilder.publishMessage(
+                        false, MqttQoS.AT_MOST_ONCE, 0, "target_client_reply",
+                        Unpooled.wrappedBuffer("message reply".getBytes(StandardCharsets.UTF_8)));
+                MessageDispatcher dispatcher = NamespaceContextHolder.get(config.getNamespace(), config.getNode())
+                        .getContext().getMessageDispatcher();
+                if (clientId.get() != null && !clientId.get().isEmpty()) {
+                    // 向指定 clientId 设备发送消息
+                    dispatcher.publish(clientId.get(), reply);
+                }
+            }, 5, 5, TimeUnit.SECONDS);
+        }
+        return new PlatformDispatcher() {
+
+            /**
+             * 处理连接消息
+             *
+             * @param message 连接消息
+             * @return 处理结果
+             */
+            @Override
+            public Mono<Void> onConnect(ConnectMessage message) {
+                return Mono.fromRunnable(() -> {
+                    //log.info("{}", message);
+                });
+            }
+
+            /**
+             * 处理断开连接消息
+             *
+             * @param message 断开消息
+             * @return 处理结果
+             */
+            @Override
+            public Mono<Void> onDisconnect(DisconnectMessage message) {
+                return Mono.fromRunnable(() -> {
+                    //log.info("{}", message);
+                });
+            }
+
+            /**
+             * 处理连接丢失消息
+             *
+             * @param message 连接丢失消息
+             * @return 处理结果
+             */
+            @Override
+            public Mono<Void> onConnectionLost(ConnectionLostMessage message) {
+                return Mono.fromRunnable(() -> {
+                    //log.info("{}", message);
+                });
+            }
+
+            /**
+             * 处理发布消息
+             *
+             * @param message 发布消息
+             * @return 处理结果
+             */
+            @Override
+            public Mono<Void> onPublish(PublishMessage message) {
+                return Mono.fromRunnable(() -> {
+                    String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
+                    /*
+                    log.info("PublishMessage(clientId={}, username={}, topic={}, payload={})",
+                            message.getClientId(),
+                            message.getUsername(),
+                            message.getTopic(),
+                            payload);
+                    //*/
+                    if (payload.startsWith("{") && payload.endsWith("}") && payload.contains("clientId")) {
+                        JSONObject json = JSONUtil.parseObj(payload);
+                        if (json.containsKey("clientId")) {
+                            clientId.set(json.getStr("clientId"));
+                        }
+                    }
+                });
+            }
+
+        };
     }
 
     /**
@@ -271,9 +374,9 @@ public class BootstrapTest {
      * MQTT 设备抽象，持有连接、收件箱和 clientId
      */
     private static class MqttDevice {
-        final Connection connection;
+        final Connection                         connection;
         final ConcurrentLinkedQueue<MqttMessage> inbox;
-        final String clientId;
+        final String                             clientId;
 
         MqttDevice(Connection connection, ConcurrentLinkedQueue<MqttMessage> inbox, String clientId) {
             this.connection = connection;

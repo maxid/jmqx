@@ -3,6 +3,8 @@ package plus.jmqx.broker.mqtt.context;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static plus.jmqx.broker.mqtt.MqttConfiguration.ClusterConfig.SEPARATOR;
+
 /**
  * 支持多命名空间的上下文持有器
  *
@@ -70,7 +72,7 @@ public class NamespaceContextHolder {
      * @return 组合键
      */
     private static String key(String namespace, String node) {
-        return node != null && !node.isEmpty() ? namespace + ":" + node : namespace;
+        return node != null && !node.isEmpty() ? namespace + SEPARATOR + node : namespace;
     }
 
 }
