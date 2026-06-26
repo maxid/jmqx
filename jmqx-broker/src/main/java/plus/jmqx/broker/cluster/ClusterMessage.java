@@ -32,7 +32,11 @@ public class ClusterMessage {
         /**
          * 向指定客户端发布
          */
-        PUBLISH_TARGET
+        PUBLISH_TARGET,
+        /**
+         * 订阅变更通知（用于主题路由同步）
+         */
+        SUBSCRIBE
     }
 
     /**

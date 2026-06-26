@@ -3,13 +3,18 @@ package plus.jmqx.broker.mqtt.message.impl;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import plus.jmqx.broker.cluster.ClusterMessage;
+import plus.jmqx.broker.cluster.ClusterRegistry;
+import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
+import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -29,46 +34,41 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
         MESSAGE_TYPES.add(MqttMessageType.UNSUBSCRIBE);
     }
 
-    /**
-     * 返回处理的消息类型列表
-     *
-     * @return 消息类型列表
-     */
     @Override
     public List<MqttMessageType> getMqttMessageTypes() {
         return MESSAGE_TYPES;
     }
 
-    /**
-     * 返回去订阅消息类型包装
-     *
-     * @return 去订阅消息类型包装类
-     */
     @Override
     public Class<UnsubscribeMessageType> getMessageType() {
         return UnsubscribeMessageType.class;
     }
 
-    /**
-     * 处理去订阅消息并移除订阅关系
-     *
-     * @param wrapper 消息包装
-     * @param session 会话
-     * @param view    上下文视图
-     */
     @Override
     public void process(MessageWrapper<MqttUnsubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttUnsubscribeMessage msg = wrapper.getMessage();
-        //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.UN_SUBSCRIBE_EVENT).increment();
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         TopicRegistry topicRegistry = context.getTopicRegistry();
         msg.payload()
                 .topics()
                 .stream()
-                // 随机设置一个MqttQoS 用于删除topic订阅
                 .map(topic -> new SubscribeTopic(topic, MqttQoS.AT_MOST_ONCE, session))
-                .forEach(topicRegistry::removeSubscribeTopic);
+                .forEach(topic -> {
+                    topicRegistry.removeSubscribeTopic(topic);
+                    clusterUnsubscribe(context, topic.getTopicFilter());
+                });
         session.write(MqttMessageBuilder.unsubAckMessage(msg.variableHeader().messageId()), false);
+    }
+
+    private void clusterUnsubscribe(ReceiveContext<?> context, String topicFilter) {
+        ClusterRegistry registry = context.getClusterRegistry();
+        if (registry == null) return;
+        MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
+        if (config == null || !config.isEnabled()) return;
+        SubscribeTopicMessage stm = new SubscribeTopicMessage(config.getClusterId(), topicFilter, false);
+        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
 }

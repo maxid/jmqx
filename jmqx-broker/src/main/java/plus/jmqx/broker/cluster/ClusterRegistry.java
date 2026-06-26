@@ -72,9 +72,6 @@ public interface ClusterRegistry {
 
     /**
      * 注册会话与所在节点的映射关系
-     * <p>
-     * 用于优化集群路由：后续针对该 clientId 的 PUBLISH_TARGET 和 CLOSE 消息
-     * 将只发送到注册的节点而非全量广播。
      *
      * @param clientId 客户端 ID
      */
@@ -87,6 +84,24 @@ public interface ClusterRegistry {
      * @param clientId 客户端 ID
      */
     default void unregisterSession(String clientId) {
+    }
+
+    /**
+     * 注册主题订阅路由
+     *
+     * @param topicFilter 主题过滤器
+     * @param nodeId      节点 ID
+     */
+    default void subscribeTopic(String topicFilter, String nodeId) {
+    }
+
+    /**
+     * 移除主题订阅路由
+     *
+     * @param topicFilter 主题过滤器
+     * @param nodeId      节点 ID
+     */
+    default void unsubscribeTopic(String topicFilter, String nodeId) {
     }
 
     /**
