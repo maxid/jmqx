@@ -71,6 +71,25 @@ public interface ClusterRegistry {
     }
 
     /**
+     * 注册会话与所在节点的映射关系
+     * <p>
+     * 用于优化集群路由：后续针对该 clientId 的 PUBLISH_TARGET 和 CLOSE 消息
+     * 将只发送到注册的节点而非全量广播。
+     *
+     * @param clientId 客户端 ID
+     */
+    default void registerSession(String clientId) {
+    }
+
+    /**
+     * 移除会话与所在节点的映射关系
+     *
+     * @param clientId 客户端 ID
+     */
+    default void unregisterSession(String clientId) {
+    }
+
+    /**
      * 停止
      *
      * @return 处理结果

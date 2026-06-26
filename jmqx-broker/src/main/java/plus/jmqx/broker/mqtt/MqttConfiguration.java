@@ -186,10 +186,12 @@ public class MqttConfiguration implements Configuration {
          * 集群额外配置（主要用于容器映射）
          */
         private             ClusterExternal external;
+
         /**
          * 集群故障检测器 Ping 超时（毫秒）
          */
         private             Integer         pingTimeout;
+
         /**
          * 集群成员怀疑倍数
          */
