@@ -58,7 +58,6 @@ public class ClusterReceiver {
                 cluster.registry(config);
                 // 监听集群消息
                 cluster.handlerClusterMessage()
-                        .publishOn(Schedulers.boundedElastic())
                         .doOnError(err -> log.error("cluster accept", err))
                         .onErrorResume(err -> Mono.empty())
                         .subscribe(message -> {
