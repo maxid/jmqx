@@ -183,6 +183,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         closeMqttMessage.setClientId(clientId);
         ClusterMessage clusterMessage = new ClusterMessage(closeMqttMessage);
         context.getClusterRegistry().spreadPublishMessage(clusterMessage).subscribe();
+        // 注册会话到集群路由表，后续定向消息仅发送到本节点
+        context.getClusterRegistry().registerSession(clientId);
         // 遗愿消息处理
         session.registryClose(s1 -> Optional.ofNullable(s1.getWill())
                 .ifPresent(will -> topicRegistry.getSubscribesByTopic(will.getWillTopic(), will.getMqttQoS())
@@ -308,6 +310,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
         //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
+        context.getClusterRegistry().unregisterSession(session.getClientId());
         session.close();
         dispatchConnectionLost(session, context);
     }
