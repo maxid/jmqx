@@ -145,6 +145,8 @@ public class MqttConfiguration implements Configuration {
             .namespace(DEFAULT_NAMESPACE)
             .node(DEFAULT_NODE)
             .port(7771)
+            .suspicionMult(10)
+            .pingTimeout(3000)
             .build();
 
     /**
@@ -159,41 +161,39 @@ public class MqttConfiguration implements Configuration {
         /**
          * 集群标识分隔符
          */
-        public static final String SEPARATOR = ":";
+        public static final String          SEPARATOR = ":";
         /**
          * 开启集群
          */
-        private boolean         enabled;
+        private             boolean         enabled;
         /**
          * 集群url
          */
-        private String          url;
+        private             String          url;
         /**
          * 集群启动本地端口
          */
-        private Integer         port;
+        private             Integer         port;
         /**
          * 集群名称 需要唯一
          */
-        private String          node;
+        private             String          node;
         /**
          * 集群空间 需要一致才能通信
          */
-        private String          namespace;
+        private             String          namespace;
         /**
          * 集群额外配置（主要用于容器映射）
          */
-        private ClusterExternal external;
-
+        private             ClusterExternal external;
         /**
-         * 集群故障检测器 Ping 超时（毫秒），默认 3000
+         * 集群故障检测器 Ping 超时（毫秒）
          */
-        private Integer         pingTimeout        = 3000;
-
+        private             Integer         pingTimeout;
         /**
-         * 集群成员怀疑倍数，默认 10
+         * 集群成员怀疑倍数
          */
-        private Integer         suspicionMult      = 10;
+        private             Integer         suspicionMult;
 
         /**
          * 获取集群唯一标识

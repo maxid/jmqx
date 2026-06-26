@@ -1,6 +1,6 @@
 package plus.jmqx.broker.cluster;
 
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +88,7 @@ public class ClusterReceiver {
                 message.isRetain(),
                 0,
                 message.getTopic(),
-                PooledByteBufAllocator.DEFAULT.buffer().writeBytes(
+                Unpooled.wrappedBuffer(
                         JacksonUtil.dynamicJson(message.getMessage()).getBytes(StandardCharsets.UTF_8)
                 ),
                 message.getProperties()),
