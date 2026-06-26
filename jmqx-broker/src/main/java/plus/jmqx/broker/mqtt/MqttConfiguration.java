@@ -186,6 +186,16 @@ public class MqttConfiguration implements Configuration {
         private ClusterExternal external;
 
         /**
+         * 集群故障检测器 Ping 超时（毫秒），默认 3000
+         */
+        private Integer         pingTimeout        = 3000;
+
+        /**
+         * 集群成员怀疑倍数，默认 10
+         */
+        private Integer         suspicionMult      = 10;
+
+        /**
          * 获取集群唯一标识
          *
          * @return 集群唯一标识
