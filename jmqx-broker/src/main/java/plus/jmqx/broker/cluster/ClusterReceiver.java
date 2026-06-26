@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH;
 import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH_TARGET;
+import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.SUBSCRIBE;
 
 /**
  * 集群服务
@@ -67,6 +68,14 @@ public class ClusterReceiver {
                                 messageDispatcher.dispatch(ClusterSession.wrapClientId(heapMqttMessage.getClientId()),
                                         getMqttMessage(heapMqttMessage, event),
                                         context);
+                            } else if (SUBSCRIBE.equals(event)) {
+                                SubscribeTopicMessage stm = (SubscribeTopicMessage) message.getMessage();
+                                ClusterRegistry registry = context.getClusterRegistry();
+                                if (stm.isSubscribe()) {
+                                    registry.subscribeTopic(stm.getTopicFilter(), stm.getNodeId());
+                                } else {
+                                    registry.unsubscribeTopic(stm.getTopicFilter(), stm.getNodeId());
+                                }
                             } else {
                                 CloseMqttMessage closeMqttMessage = (CloseMqttMessage) message.getMessage();
                                 Optional.ofNullable(context.getSessionRegistry().get(closeMqttMessage.getClientId()))
