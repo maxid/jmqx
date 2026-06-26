@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -636,6 +637,9 @@ public class BootstrapTest {
         }
     }
 
+    private static final Semaphore CONNECT_SEMAPHORE = new Semaphore(
+            Integer.parseInt(System.getProperty("jmqx.stress.connectLimit", "50")));
+
     /**
      * 运行单个压测设备
      *
@@ -652,7 +656,12 @@ public class BootstrapTest {
                                  List<MqttStressClient> allClients, CountDownLatch latch) {
         MqttStressClient client = new MqttStressClient(clientId, port, acked);
         try {
-            client.connect();
+            CONNECT_SEMAPHORE.acquire();
+            try {
+                client.connect();
+            } finally {
+                CONNECT_SEMAPHORE.release();
+            }
             synchronized (allClients) {
                 allClients.add(client);
             }
