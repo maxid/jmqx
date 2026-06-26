@@ -503,7 +503,7 @@ public class BootstrapTest {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.DEBUG);
+        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.INFO);
 
         StressConfig stress = loadStressConfig();
         String namespace = "jmqx-cluster-stress-" + UUID.randomUUID().toString().split("-")[0];

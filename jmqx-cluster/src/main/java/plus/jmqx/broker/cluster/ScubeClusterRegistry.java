@@ -61,7 +61,10 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                                 .getUrl()
                                 .split(","))
                                 .map(Address::from)
-                        .collect(Collectors.toList())).namespace(clusterConfig.getNamespace()))
+                        .collect(Collectors.toList()))
+                        .namespace(clusterConfig.getNamespace())
+                        .suspicionMult(10))
+                .failureDetector(fdet -> fdet.pingTimeout(3000))
                 .handler(cluster -> new ClusterHandler())
                 .startAwait();
     }
