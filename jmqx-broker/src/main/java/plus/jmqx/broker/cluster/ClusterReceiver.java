@@ -12,6 +12,7 @@ import plus.jmqx.broker.mqtt.message.*;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -56,6 +57,7 @@ public class ClusterReceiver {
                 cluster.registry(config);
                 // 监听集群消息
                 cluster.handlerClusterMessage()
+                        .publishOn(Schedulers.boundedElastic())
                         .doOnError(err -> log.error("cluster accept", err))
                         .onErrorResume(err -> Mono.empty())
                         .subscribe(message -> {
