@@ -225,18 +225,30 @@ public class ScubeClusterRegistry implements ClusterRegistry {
      * @return 是否匹配
      */
     static boolean topicMatches(String filter, String topic) {
-        if (filter == null || topic == null) return false;
-        if (filter.equals(topic)) return true;
-        if (filter.equals("#")) return true;
+        if (filter == null || topic == null) {
+            return false;
+        }
+        if (filter.equals(topic)) {
+            return true;
+        }
+        if (filter.equals("#")) {
+            return true;
+        }
         if (filter.endsWith("/#")) {
             String prefix = filter.substring(0, filter.length() - 2);
-            if (topic.equals(prefix) || topic.startsWith(prefix + "/")) return true;
+            if (topic.equals(prefix) || topic.startsWith(prefix + "/")) {
+                return true;
+            }
         }
         String[] f = filter.split("/");
         String[] t = topic.split("/");
-        if (f.length != t.length) return false;
+        if (f.length != t.length) {
+            return false;
+        }
         for (int i = 0; i < f.length; i++) {
-            if (!f[i].equals("+") && !f[i].equals(t[i])) return false;
+            if (!f[i].equals("+") && !f[i].equals(t[i])) {
+                return false;
+            }
         }
         return true;
     }
@@ -247,8 +259,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
      * @param topicFilter 主题过滤器
      * @param nodeId      节点 ID
      */
+    @Override
     public void subscribeTopic(String topicFilter, String nodeId) {
-        if (topicFilter == null || nodeId == null) return;
+        if (topicFilter == null || nodeId == null) {
+            return;
+        }
         topicNodes.computeIfAbsent(topicFilter, k -> ConcurrentHashMap.newKeySet()).add(nodeId);
         log.debug("topic route added: topic=[{}] -> node=[{}]", topicFilter, nodeId);
     }
@@ -259,8 +274,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
      * @param topicFilter 主题过滤器
      * @param nodeId      节点 ID
      */
+    @Override
     public void unsubscribeTopic(String topicFilter, String nodeId) {
-        if (topicFilter == null || nodeId == null) return;
+        if (topicFilter == null || nodeId == null) {
+            return;
+        }
         topicNodes.computeIfPresent(topicFilter, (k, v) -> {
             v.remove(nodeId);
             return v.isEmpty() ? null : v;
@@ -276,7 +294,9 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     private void removeTopicRouteByNode(String nodeId) {
         int[] count = {0};
         topicNodes.values().forEach(nodes -> {
-            if (nodes.remove(nodeId)) count[0]++;
+            if (nodes.remove(nodeId)) {
+                count[0]++;
+            }
         });
         topicNodes.entrySet().removeIf(e -> e.getValue().isEmpty());
         if (count[0] > 0) {
