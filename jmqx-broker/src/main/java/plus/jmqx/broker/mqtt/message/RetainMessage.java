@@ -7,6 +7,7 @@ import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
@@ -22,6 +23,7 @@ import java.util.Optional;
  */
 @Data
 @Builder
+@Slf4j
 public class RetainMessage {
 
     private int qos;
@@ -62,11 +64,17 @@ public class RetainMessage {
     }
 
     public MqttPublishMessage toPublishMessage(MqttSession session, int topicQos) {
+        int packetId = qos > 0 ? session.generateMessageId() : 0;
+        if (packetId < 0) {
+            // 65535 个 ID 全占满（极端场景），降级为 QoS0 投递，避免构造非法 packetId
+            log.warn("no available packet ID for [{}], degrade retain msg to QoS0", session.getClientId());
+            packetId = 0;
+        }
         return MqttMessageBuilder.publishMessage(
                 false,
                 MqttQoS.valueOf(Math.min(topicQos, this.qos)),
                 retain,
-                qos > 0 ? session.generateMessageId() : 0,
+                packetId,
                 topic,
                 PooledByteBufAllocator.DEFAULT.directBuffer().writeBytes(body),
                 JacksonUtil.json2Map(userProperties, String.class, String.class));

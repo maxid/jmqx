@@ -248,20 +248,20 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         if (single != null) candidates.addAll(single);
         Set<String> any = prefixIndex.get("");
         if (any != null) candidates.addAll(any);
-        // 3. 精确匹配
-        if (!prefix.equals(topic)) {
-            Set<String> exact = topicNodes.get(topic);
-            if (exact != null) {
-                // 仅为查找 candidate 标记
-                for (String nodeId : exact) {
-                    if (!candidates.contains(topic)) {
-                        candidates.add(topic);
-                    }
-                }
-            }
+        // 3. 精确匹配 topic 的 filter 肯定匹配（无需通配符校验）
+        // 注意：topicNodes.get(topic) 返回的是路由表内部 Set 引用，
+        // 必须复制后再排除本节点，避免污染全局路由表。
+        Set<String> exactNodes = topicNodes.get(topic);
+        Set<String> remoteExact = null;
+        if (exactNodes != null) {
+            remoteExact = new HashSet<>(exactNodes);
+            remoteExact.remove(localNodeId);
+            // 把精确匹配的 topic 从 candidates 中移除，以免重复验证
+            candidates.remove(topic);
         }
-        // 4. 逐一验证候选（保留精确匹配不走通配符检查加速）
-        Set<String> targets = new HashSet<>();
+        // 4. 逐一验证候选 filter
+        Set<String> targets = remoteExact != null && !remoteExact.isEmpty()
+                ? new HashSet<>(remoteExact) : new HashSet<>();
         for (String filter : candidates) {
             Set<String> nodes = topicNodes.get(filter);
             if (nodes != null && topicMatchesWithCache(filter, topic)) {

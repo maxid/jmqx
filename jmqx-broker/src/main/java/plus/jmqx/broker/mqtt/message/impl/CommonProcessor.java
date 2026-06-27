@@ -114,7 +114,14 @@ public class CommonProcessor extends NamespceMessageProcessor<MqttMessage> {
                         Set<SubscribeTopic> subscribeTopics = topicRegistry.getSubscribesByTopic(pmsg.variableHeader().topicName(), pmsg.fixedHeader().qosLevel());
                         subscribeTopics.stream()
                                 .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, pmsg))
-                                .forEach(t2 -> t2.getSession().write(MessageUtils.wrapPublishMessage(pmsg, t2.getQoS(), t2.getSession().generateMessageId()), t2.getQoS().value() > 0));
+                                .forEach(t2 -> {
+                                    int packetId = t2.getSession().generateMessageId();
+                                    if (packetId < 0) {
+                                        log.warn("skip publish to [{}]: no available packet ID", t2.getSession().getClientId());
+                                        return;
+                                    }
+                                    t2.getSession().write(MessageUtils.wrapPublishMessage(pmsg, t2.getQoS(), packetId), t2.getQoS().value() > 0);
+                                });
                         Optional.ofNullable(context.getTimeAckManager().getAck(session.generateId(MqttMessageType.PUBREC, header2.messageId()))).ifPresent(Ack::stop);
                     } finally {
                         MessageUtils.safeRelease(pmsg);

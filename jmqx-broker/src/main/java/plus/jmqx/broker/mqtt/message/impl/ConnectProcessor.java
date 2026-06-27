@@ -219,10 +219,15 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                 .ifPresent(will -> topicRegistry.getSubscribesByTopic(will.getWillTopic(), will.getMqttQoS())
                         .forEach(topic -> {
                             MqttSession s2 = topic.getSession();
+                            int packetId = topic.getQoS() == MqttQoS.AT_MOST_ONCE ? 0 : s2.generateMessageId();
+                            if (packetId < 0) {
+                                log.warn("skip will publish to [{}]: no available packet ID", s2.getClientId());
+                                return;
+                            }
                             s2.write(MqttMessageBuilder.publishMessage(
                                     false,
                                     topic.getQoS(),
-                                    topic.getQoS() == MqttQoS.AT_MOST_ONCE ? 0 : s2.generateMessageId(),
+                                    packetId,
                                     will.getWillTopic(),
                                     Unpooled.wrappedBuffer(will.getWillMessage())
                             ), topic.getQoS().value() > 0);
@@ -241,11 +246,10 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             session.setMaxInflightQos2(mqttConfig.getMaxInflightQos2());
         }
         registry(session, channelRegistry, topicRegistry);
-        // 注册关闭 MQTT 会话事件
+        // 注册关闭 MQTT 会话事件（close() 内部已统一处理 decrementConnections）
         session.registryClose(s1 -> this.close(session, context, eventRegistry));
-        // 连接成功指标
+        // 连接成功指标（连接关闭的递减在 close() 中完成，避免双重计数）
         MetricsManagerHolder.get().incrementConnections();
-        session.registryClose(channel -> MetricsManagerHolder.get().decrementConnections());
         // 触发连接事件
         eventRegistry.registry(Event.CONNECT, session, message, context);
         //
