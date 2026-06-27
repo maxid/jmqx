@@ -9,6 +9,7 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
@@ -77,7 +78,7 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
     @Override
     public void process(MessageWrapper<MqttSubscribeMessage> wrapper, MqttSession session, ContextView view) {
         MqttSubscribeMessage message = wrapper.getMessage();
-        // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE_EVENT).increment();
+        MetricsManagerHolder.get().incrementSubscribeEvents();
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         TopicRegistry topicRegistry = context.getTopicRegistry();
         MessageRegistry messageRegistry = context.getMessageRegistry();
@@ -86,11 +87,27 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
                 ? CONNECTION_REFUSED_NOT_AUTHORIZED_5.byteValue() : CONNECTION_REFUSED_UNSPECIFIED_ERROR.byteValue();
         Set<SubscribeTopic> topics = new LinkedHashSet<>();
         List<Integer> reasonCodes = new ArrayList<>();
+        // 每会话订阅数上限
+        final int subscriptionLimit;
+        if (context.getConfiguration() instanceof MqttConfiguration mqttCfg
+                && mqttCfg.getMaxTopicSubscriptions() != null && mqttCfg.getMaxTopicSubscriptions() > 0) {
+            subscriptionLimit = mqttCfg.getMaxTopicSubscriptions();
+        } else {
+            subscriptionLimit = 0;
+        }
+        int[] addedCount = {0};
         message.payload().topicSubscriptions().forEach(s -> {
+            // 订阅数上限检查
+            if (subscriptionLimit > 0 && session.getTopics().size() + addedCount[0] >= subscriptionLimit) {
+                log.warn("max subscriptions ({}) reached for [{}]", subscriptionLimit, session.getClientId());
+                reasonCodes.add(reasonCode);
+                return;
+            }
             SubscribeTopic topic = new SubscribeTopic(s.topicFilter(), s.qualityOfService(), session);
             if (aclManager.check(session, topic.getTopicFilter(), AclAction.SUBSCRIBE)) {
                 this.loadRetainMessage(messageRegistry, session, s);
                 topics.add(topic);
+                addedCount[0]++;
                 reasonCodes.add(s.qualityOfService().value());
             } else {
                 reasonCodes.add(reasonCode);

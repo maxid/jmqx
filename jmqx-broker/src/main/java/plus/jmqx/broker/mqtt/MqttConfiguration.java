@@ -73,13 +73,13 @@ public class MqttConfiguration implements Configuration {
      */
     private String              channelReadWriteSize = "10000000,100000000";
     /**
-     * Netty 低水位，不建议配置 默认 32768
+     * Netty 低水位，默认 65536（64KB）
      */
-    private Integer             lowWaterMark         = 4000000;
+    private Integer             lowWaterMark         = 65536;
     /**
-     * Netty 高水位，不建议配置 默认 65536
+     * Netty 高水位，默认 1048576（1MB）
      */
-    private Integer             highWaterMark        = 80000000;
+    private Integer             highWaterMark        = 1048576;
     /**
      * 是否开启 Netty Tcp 二进制日志，前提是 logLevel = DEBUG
      */
@@ -148,6 +148,53 @@ public class MqttConfiguration implements Configuration {
             .suspicionMult(10)
             .pingTimeout(3000)
             .build();
+
+    // ========== 海量设备支撑配置（以下均为可选，默认 0 = 不限制） ==========
+
+    /**
+     * 最大连接数限制，0=不限制
+     */
+    private Integer maxConnections = 0;
+
+    /**
+     * 每客户端离线消息队列上限，0=不限制
+     */
+    private Integer maxOfflineQueueSize = 0;
+
+    /**
+     * 总离线消息存储上限，0=不限制
+     */
+    private Long maxTotalOfflineMessages = 0L;
+
+    /**
+     * 保留消息总数上限，0=不限制
+     */
+    private Long maxRetainMessageCount = 0L;
+
+    /**
+     * 每会话 QoS2 飞行消息上限，0=不限制
+     */
+    private Integer maxInflightQos2 = 0;
+
+    /**
+     * 每会话主题订阅数上限，0=不限制
+     */
+    private Integer maxTopicSubscriptions = 0;
+
+    /**
+     * 是否启用指标收集
+     */
+    private Boolean metricsEnabled = false;
+
+    /**
+     * 集群消息 Sink 缓冲区大小，默认 1024
+     */
+    private Integer clusterMessageBufferSize = 1024;
+
+    /**
+     * 连接速率限制（连接/秒），0=不限制
+     */
+    private Integer connectionRateLimit = 0;
 
     /**
      * 集群配置

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterMessage;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.ConnectMode;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
@@ -22,6 +23,7 @@ import plus.jmqx.broker.mqtt.registry.EventRegistry;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
+import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import reactor.core.scheduler.Schedulers;
@@ -203,11 +205,24 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                             ), topic.getQoS().value() > 0);
                         })));
         // 各注册中心关联会话处理
+        // 连接准入检查：超过最大连接数时拒绝
+        if (channelRegistry instanceof DefaultSessionRegistry dsr && !dsr.hasCapacity()) {
+            log.warn("max connections reached ({}), rejecting [{}]", dsr.getMaxConnections(), clientId);
+            MetricsManagerHolder.get().recordDroppedMessage("max_connections");
+            rejectedQuota(session, mqttVersion);
+            return;
+        }
+        // 设置 QoS2 飞行窗上限
+        MqttConfiguration mqttConfig = context.getConfiguration();
+        if (mqttConfig.getMaxInflightQos2() != null && mqttConfig.getMaxInflightQos2() > 0) {
+            session.setMaxInflightQos2(mqttConfig.getMaxInflightQos2());
+        }
         registry(session, channelRegistry, topicRegistry);
         // 注册关闭 MQTT 会话事件
         session.registryClose(s1 -> this.close(session, context, eventRegistry));
-        // metricManager.getMetricRegistry().getMetricCounter(CounterType.CONNECT).increment();
-        // session.registryClose(channel -> metricManager.getMetricRegistry().getMetricCounter(CounterType.CONNECT).decrement());
+        // 连接成功指标
+        MetricsManagerHolder.get().incrementConnections();
+        session.registryClose(channel -> MetricsManagerHolder.get().decrementConnections());
         // 触发连接事件
         eventRegistry.registry(Event.CONNECT, session, message, context);
         //
@@ -221,6 +236,27 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                 .subscribe());
         // 连接确认
         ok(session, context, mqttVersion);
+    }
+
+    /**
+     * 连接数超限拒绝
+     *
+     * @param session     会话
+     * @param mqttVersion 协议版本
+     */
+    private void rejectedQuota(MqttSession session, byte mqttVersion) {
+        MqttConnAckMessage ack;
+        if (mqttVersion >= MqttVersion.MQTT_5.protocolLevel()) {
+            // MQTT 5: 0x95 表示 Quota Exceeded
+            ack = MqttMessageBuilder.connectAckMessage(
+                    MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE, mqttVersion);
+        } else {
+            // MQTT 3.1/3.1.1: Server Unavailable (0x03)
+            ack = MqttMessageBuilder.connectAckMessage(
+                    MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE, mqttVersion);
+        }
+        session.write(ack, false);
+        session.close();
     }
 
     /**
@@ -319,7 +355,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             unsubTopics.forEach(tf -> clusterUnsubscribeTopic(context, tf));
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
-        //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
+        MetricsManagerHolder.get().decrementConnections();
         context.getClusterRegistry().unregisterSession(session.getClientId());
         session.close();
         dispatchConnectionLost(session, context);
