@@ -147,6 +147,7 @@ public class MqttConfiguration implements Configuration {
             .port(7771)
             .suspicionMult(10)
             .pingTimeout(3000)
+            .clusterMessageBufferSize(1024)
             .build();
 
     // ========== 海量设备支撑配置（以下均为可选，默认 0 = 不限制） ==========
@@ -185,11 +186,6 @@ public class MqttConfiguration implements Configuration {
      * 是否启用指标收集
      */
     private Boolean metricsEnabled = false;
-
-    /**
-     * 集群消息 Sink 缓冲区大小，默认 1024
-     */
-    private Integer clusterMessageBufferSize = 1024;
 
     /**
      * 连接速率限制（连接/秒），0=不限制
@@ -243,6 +239,11 @@ public class MqttConfiguration implements Configuration {
          * 集群成员怀疑倍数
          */
         private             Integer         suspicionMult;
+
+        /**
+         * 集群消息 Sink 缓冲区大小，默认 1024
+         */
+        private Integer clusterMessageBufferSize = 1024;
 
         /**
          * 获取集群唯一标识

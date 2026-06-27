@@ -1,11 +1,14 @@
 package plus.jmqx.broker.auth;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author maxid
  * @since 2026/4/16 23:04
  */
+@Slf4j
 public class AuthExecutor {
 
     private static final int DEFAULT_AUTH_THREADS = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
@@ -59,7 +63,7 @@ public class AuthExecutor {
     }
 
     /**
-     * 执行鉴权并在超时/异常场景下返回失败
+     * 执行鉴权并在超时/异常/队列满场景下返回失败
      *
      * @param clientId 设备 ID
      * @param username 用户名
@@ -67,14 +71,21 @@ public class AuthExecutor {
      * @return 鉴权结果
      */
     public CompletableFuture<Boolean> execute(String clientId, String username, byte[] password) {
-        CompletableFuture<Boolean> source = CompletableFuture.supplyAsync(
-                () -> authManager.auth(clientId, username, password),
-                executor
-        );
-        return source
-                .thenApply(Boolean.TRUE::equals)
-                .completeOnTimeout(Boolean.FALSE, timeoutMillis, TimeUnit.MILLISECONDS)
-                .exceptionally(ex -> Boolean.FALSE);
+        try {
+            CompletableFuture<Boolean> source = CompletableFuture.supplyAsync(
+                    () -> authManager.auth(clientId, username, password),
+                    executor
+            );
+            return source
+                    .thenApply(Boolean.TRUE::equals)
+                    .completeOnTimeout(Boolean.FALSE, timeoutMillis, TimeUnit.MILLISECONDS)
+                    .exceptionally(ex -> Boolean.FALSE);
+        } catch (RejectedExecutionException e) {
+            log.warn("[{}] auth queue full (size={}), rejecting [{}]",
+                    namespace, ((ThreadPoolExecutor) executor).getQueue().size(), clientId);
+            MetricsManagerHolder.get().recordDroppedMessage("auth_queue_full");
+            return CompletableFuture.completedFuture(Boolean.FALSE);
+        }
     }
 
     private static Executor executor(Integer authThreadSize, Integer authQueueSize) {
@@ -89,7 +100,7 @@ public class AuthExecutor {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(queueSize),
                 factory,
-                new ThreadPoolExecutor.CallerRunsPolicy()
+                new ThreadPoolExecutor.AbortPolicy()
         );
     }
 

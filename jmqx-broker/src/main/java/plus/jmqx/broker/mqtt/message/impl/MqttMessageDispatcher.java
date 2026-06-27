@@ -5,6 +5,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterSession;
 import plus.jmqx.broker.config.Configuration;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
@@ -25,7 +26,6 @@ import reactor.util.context.Context;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 
 /**
@@ -56,8 +56,8 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     @SuppressWarnings("unchecked")
     public MqttMessageDispatcher(Configuration config, Integer threadSize, Integer queueSize) {
         this.config = config;
-        int publishThreads = Math.max(1, threadSize - 1);
-        int controlThreads = Math.max(1, threadSize - publishThreads);
+        int publishThreads = Math.max(threadSize * 3 / 4, 1);
+        int controlThreads = Math.max(threadSize - publishThreads, 2);
         this.publishScheduler = Schedulers.newParallel("jmqx-publish-io", publishThreads);
         this.controlScheduler = Schedulers.newParallel("jmqx-control-io", controlThreads);
         this.publishAcceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
@@ -247,8 +247,16 @@ public class MqttMessageDispatcher implements MessageDispatcher {
          */
         @Override
         public boolean onEmitFailure(@NonNull SignalType signalType, Sinks.@NonNull EmitResult emitResult) {
-            LockSupport.parkNanos(10);
-            return emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED;
+            if (emitResult == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+                Thread.yield();
+                return true;
+            }
+            if (emitResult == Sinks.EmitResult.FAIL_OVERFLOW) {
+                log.warn("{} sink overflow, dropping message", signalType);
+                MetricsManagerHolder.get().recordOverflow(signalType.name());
+                return false;
+            }
+            return false;
         }
     }
 

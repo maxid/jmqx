@@ -63,7 +63,7 @@ public class TreeTopicFilter implements TopicFilter {
     }
 
     /**
-     * 注册订阅对象并刷新缓存
+     * 注册订阅对象并刷新缓存（仅清理受影响分桶）
      *
      * @param subscribeTopic 订阅对象
      */
@@ -73,12 +73,12 @@ public class TreeTopicFilter implements TopicFilter {
             subscribeNumber.add(1);
             //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE).increment();
             subscribeTopic.linkSubscribe();
-            bucketCaches.clear();
+            invalidateBucket(subscribeTopic.getTopicFilter());
         }
     }
 
     /**
-     * 移除订阅对象并刷新缓存
+     * 移除订阅对象并刷新缓存（仅清理受影响分桶）
      *
      * @param subscribeTopic 订阅对象
      */
@@ -88,7 +88,22 @@ public class TreeTopicFilter implements TopicFilter {
             subscribeNumber.add(-1);
             //MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.SUBSCRIBE).decrement();
             subscribeTopic.unLinkSubscribe();
-            bucketCaches.clear();
+            invalidateBucket(subscribeTopic.getTopicFilter());
+        }
+    }
+
+    /**
+     * 清除指定 topic 对应的分桶缓存（替代原来全量 bucketCaches.clear()）
+     *
+     * @param topic 主题或过滤器
+     */
+    private void invalidateBucket(String topic) {
+        String key = bucketKey(topic);
+        if (key != null && !key.isEmpty()) {
+            Map<String, List<SubscribeTopic>> bucket = bucketCaches.get(key);
+            if (bucket != null) {
+                bucket.clear();
+            }
         }
     }
 

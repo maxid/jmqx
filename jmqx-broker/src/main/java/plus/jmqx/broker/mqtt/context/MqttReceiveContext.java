@@ -1,6 +1,7 @@
 package plus.jmqx.broker.mqtt.context;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,9 @@ import plus.jmqx.broker.cluster.ClusterReceiver;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
+import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import plus.jmqx.broker.mqtt.transport.Transport;
+import reactor.core.publisher.Mono;
 
 /**
  * MQTT服务上下文
@@ -53,12 +56,20 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
 
     /**
      * 接收并分发消息到消息处理器
+     * <p>
+     * PINGREQ 绕过调度管线直接回复 PONG，减少控制通道压力。
      *
      * @param session 会话
      * @param message 消息包装
      */
     @Override
     public void accept(MqttSession session, MessageWrapper<MqttMessage> message) {
+        // PINGREQ 旁路：直接在 EventLoop 上写 PONG，不经过 Sink
+        if (message.getMessage().fixedHeader().messageType() == MqttMessageType.PINGREQ) {
+            MqttMessage pong = MqttMessageBuilder.pongMessage();
+            session.getConnection().outbound().sendObject(Mono.just(pong)).then().subscribe();
+            return;
+        }
         this.getMessageDispatcher().dispatch(session, message, this);
     }
 
