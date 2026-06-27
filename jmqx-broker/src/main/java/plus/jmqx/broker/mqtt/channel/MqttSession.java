@@ -224,23 +224,33 @@ public class MqttSession {
     }
 
     /**
+     * MQTT 消息 ID 上限（1-65535）
+     */
+    private static final int MAX_PACKET_ID = 65535;
+
+    /**
      * 生成序列消息 ID（无锁 CAS 版本）
      * <p>
      * 移除原 synchronized(this) 锁，改为 CAS 自旋。
-     * 65535 个 ID 全占满概率极低（需单会话 65535 条 QoS>0 并发），
-     * 发生时直接回绕等待。
+     * 65535 个 ID 全占满概率极低（需单会话 65535 条 QoS&gt;0 并发飞行），
+     * 发生时返回 -1，由调用方决定是否跳过，避免无限自旋占用线程。
      *
-     * @return 消息 ID（1-65535）
+     * @return 消息 ID（1-65535）；全占满时返回 -1
      */
     public int generateMessageId() {
         for (;;) {
             int value = atomicInteger.incrementAndGet();
-            if (value > 65535) {
+            if (value > MAX_PACKET_ID) {
                 atomicInteger.compareAndSet(value, 0);
                 continue;
             }
             if (!qos2MsgCache.containsKey(value)) {
                 return value;
+            }
+            // 所有可用 ID 均在飞行中，返回 -1 让调用方跳过，而非无限自旋
+            if (qos2MsgCache.size() >= MAX_PACKET_ID) {
+                log.warn("all packet IDs in use for [{}] ({}), skip publish", clientId, MAX_PACKET_ID);
+                return -1;
             }
             Thread.yield();
         }

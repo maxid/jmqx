@@ -153,6 +153,10 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
                 message.fixedHeader().qosLevel(),
                 session.generateMessageId()
         );
+        if (pmsg.variableHeader().packetId() < 0) {
+            log.warn("skip publish to [{}]: no available packet ID", clientId);
+            return;
+        }
         session.write(pmsg, message.fixedHeader().qosLevel().value() > 0);
     }
 
@@ -192,7 +196,12 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
         subscribeTopics.stream()
                 .filter(t1 -> filterOfflineSession(t1.getSession(), messageRegistry, message))
                 .forEach(t2 -> {
-                    MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, t2.getQoS(), t2.getSession().generateMessageId());
+                    int packetId = t2.getSession().generateMessageId();
+                    if (packetId < 0) {
+                        log.warn("skip publish to [{}]: no available packet ID", t2.getSession().getClientId());
+                        return;
+                    }
+                    MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, t2.getQoS(), packetId);
                     t2.getSession().write(pmsg, t2.getQoS().value() > 0);
                 });
     }
