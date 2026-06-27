@@ -40,12 +40,12 @@ public class MqttKeepaliveClient {
             .pendingAcquireTimeout(Duration.ofMinutes(3))
             .build();
 
-    private final String clientId;
-    private final int port;
-    private final int keepAliveSeconds;
-    private Connection connection;
-    private volatile ScheduledFuture<?> pingFuture;
-    private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
+    private final    String                             clientId;
+    private final    int                                port;
+    private final    int                                keepAliveSeconds;
+    private          Connection                         connection;
+    private volatile ScheduledFuture<?>                 pingFuture;
+    private final    ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
 
     public MqttKeepaliveClient(String clientId, int port) {
         this(clientId, port, 60);

@@ -26,7 +26,7 @@ class AuthExecutorTest {
         AuthManager authManager = (clientId, username, password) -> {
             throw new IllegalStateException("auth error");
         };
-        AuthExecutor executor = new AuthExecutor(authManager,"mqtt", 1000, 8, 1000);
+        AuthExecutor executor = new AuthExecutor(authManager, "mqtt", 1000, 8, 1000);
         Boolean passed = executor.execute("c1", "u1", new byte[]{1}).join();
         assertEquals(Boolean.FALSE, passed);
     }

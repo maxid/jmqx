@@ -25,14 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class AuthExecutor {
 
-    private static final int DEFAULT_AUTH_THREADS = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
-    private static final int DEFAULT_AUTH_QUEUE_SIZE = 200000;
-    private static final AtomicInteger AUTH_EXECUTOR_INDEX = new AtomicInteger(1);
+    private static final int           DEFAULT_AUTH_THREADS    = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
+    private static final int           DEFAULT_AUTH_QUEUE_SIZE = 200000;
+    private static final AtomicInteger AUTH_EXECUTOR_INDEX     = new AtomicInteger(1);
 
     private final AuthManager authManager;
-    private final Executor executor;
-    private final long timeoutMillis;
-    private final String namespace;
+    private final Executor    executor;
+    private final long        timeoutMillis;
+    private final String      namespace;
 
     /**
      * 构造鉴权执行器（基于配置对象）
@@ -111,7 +111,7 @@ public class AuthExecutor {
     private static class AuthThreadFactory implements ThreadFactory {
 
         private final AtomicInteger sequence = new AtomicInteger(1);
-        private final String prefix;
+        private final String        prefix;
 
         private AuthThreadFactory(int index) {
             this.prefix = "jmqx-auth-io-" + index + "-";

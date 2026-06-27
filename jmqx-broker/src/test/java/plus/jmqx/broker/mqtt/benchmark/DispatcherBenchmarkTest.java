@@ -114,12 +114,14 @@ class DispatcherBenchmarkTest {
          * @param context   上下文
          */
         void start(MessageProcessor<MqttPublishMessage> processor, ReceiveContext<Configuration> context);
+
         /**
          * 发送消息包装
          *
          * @param wrapper 消息包装
          */
         void emit(MessageWrapper<MqttPublishMessage> wrapper);
+
         @Override
         /**
          * 关闭管道
@@ -128,9 +130,9 @@ class DispatcherBenchmarkTest {
     }
 
     private static final class LegacyPipeline implements Pipeline {
-        private final Scheduler scheduler;
+        private final Scheduler                                      scheduler;
         private final Sinks.Many<MessageWrapper<MqttPublishMessage>> sink;
-        private final EmitFailureHandler emitFailureHandler = new EmitFailureHandler();
+        private final EmitFailureHandler                             emitFailureHandler = new EmitFailureHandler();
 
         /**
          * 构造 Legacy 管道
@@ -157,8 +159,10 @@ class DispatcherBenchmarkTest {
                         MqttMessage message = wrapper.getMessage();
                         processor.process(wrapper, wrapper.getSession())
                                 .contextWrite(Context.of(ReceiveContext.class, context))
-                                .onErrorContinue((e, o) -> {})
-                                .subscribe(v -> {},
+                                .onErrorContinue((e, o) -> {
+                                })
+                                .subscribe(v -> {
+                                        },
                                         e -> ReactorNetty.safeRelease(message.payload()),
                                         () -> ReactorNetty.safeRelease(message.payload()));
                     });
@@ -184,10 +188,10 @@ class DispatcherBenchmarkTest {
     }
 
     private static final class OptimizedPipeline implements Pipeline {
-        private final Scheduler scheduler;
+        private final Scheduler                                      scheduler;
         private final Sinks.Many<MessageWrapper<MqttPublishMessage>> sink;
-        private final EmitFailureHandler emitFailureHandler = new EmitFailureHandler();
-        private final int concurrency;
+        private final EmitFailureHandler                             emitFailureHandler = new EmitFailureHandler();
+        private final int                                            concurrency;
 
         /**
          * 构造 Optimized 管道
@@ -245,8 +249,8 @@ class DispatcherBenchmarkTest {
         /**
          * 处理发送失败
          *
-         * @param signalType  信号类型
-         * @param emitResult  发送结果
+         * @param signalType 信号类型
+         * @param emitResult 发送结果
          * @return 是否重试
          */
         @Override
@@ -258,7 +262,7 @@ class DispatcherBenchmarkTest {
 
     private static final class NoopProcessor implements MessageProcessor<MqttPublishMessage> {
         private final CountDownLatch latch;
-        private final AtomicLong counter = new AtomicLong();
+        private final AtomicLong     counter = new AtomicLong();
 
         /**
          * 构造空处理器
@@ -285,7 +289,8 @@ class DispatcherBenchmarkTest {
          * @param namespace 命名空间
          */
         @Override
-        public void setNamespace(String namespace) {}
+        public void setNamespace(String namespace) {
+        }
 
         /**
          * 获取节点名称
@@ -303,7 +308,8 @@ class DispatcherBenchmarkTest {
          * @param node 节点名称
          */
         @Override
-        public void setNode(String node) {}
+        public void setNode(String node) {
+        }
 
         /**
          * 获取处理的消息类型集合
@@ -346,84 +352,119 @@ class DispatcherBenchmarkTest {
          * @return 配置
          */
         @Override
-        public Configuration getConfiguration() { return null; }
+        public Configuration getConfiguration() {
+            return null;
+        }
+
         /**
          * 获取 ACK 管理器
          *
          * @return ACK 管理器
          */
         @Override
-        public plus.jmqx.broker.mqtt.retry.TimeAckManager getTimeAckManager() { return null; }
+        public plus.jmqx.broker.mqtt.retry.TimeAckManager getTimeAckManager() {
+            return null;
+        }
+
         /**
          * 获取集群注册中心
          *
          * @return 集群注册中心
          */
         @Override
-        public plus.jmqx.broker.cluster.ClusterRegistry getClusterRegistry() { return null; }
+        public plus.jmqx.broker.cluster.ClusterRegistry getClusterRegistry() {
+            return null;
+        }
+
         /**
          * 获取事件注册中心
          *
          * @return 事件注册中心
          */
         @Override
-        public plus.jmqx.broker.mqtt.registry.EventRegistry getEventRegistry() { return null; }
+        public plus.jmqx.broker.mqtt.registry.EventRegistry getEventRegistry() {
+            return null;
+        }
+
         /**
          * 获取会话注册中心
          *
          * @return 会话注册中心
          */
         @Override
-        public plus.jmqx.broker.mqtt.registry.SessionRegistry getSessionRegistry() { return null; }
+        public plus.jmqx.broker.mqtt.registry.SessionRegistry getSessionRegistry() {
+            return null;
+        }
+
         /**
          * 获取主题注册中心
          *
          * @return 主题注册中心
          */
         @Override
-        public plus.jmqx.broker.mqtt.registry.TopicRegistry getTopicRegistry() { return null; }
+        public plus.jmqx.broker.mqtt.registry.TopicRegistry getTopicRegistry() {
+            return null;
+        }
+
         /**
          * 获取消息注册中心
          *
          * @return 消息注册中心
          */
         @Override
-        public plus.jmqx.broker.mqtt.registry.MessageRegistry getMessageRegistry() { return null; }
+        public plus.jmqx.broker.mqtt.registry.MessageRegistry getMessageRegistry() {
+            return null;
+        }
+
         /**
          * 获取消息分发器
          *
          * @return 消息分发器
          */
         @Override
-        public plus.jmqx.broker.mqtt.message.MessageDispatcher getMessageDispatcher() { return null; }
+        public plus.jmqx.broker.mqtt.message.MessageDispatcher getMessageDispatcher() {
+            return null;
+        }
+
         /**
          * 获取 ACL 管理器
          *
          * @return ACL 管理器
          */
         @Override
-        public plus.jmqx.broker.acl.AclManager getAclManager() { return null; }
+        public plus.jmqx.broker.acl.AclManager getAclManager() {
+            return null;
+        }
+
         /**
          * 获取鉴权管理器
          *
          * @return 鉴权管理器
          */
         @Override
-        public plus.jmqx.broker.auth.AuthManager getAuthManager() { return null; }
+        public plus.jmqx.broker.auth.AuthManager getAuthManager() {
+            return null;
+        }
+
         /**
          * 获取鉴权执行器
          *
          * @return 鉴权执行器
          */
         @Override
-        public plus.jmqx.broker.auth.AuthExecutor getAuthExecutor() { return null; }
+        public plus.jmqx.broker.auth.AuthExecutor getAuthExecutor() {
+            return null;
+        }
+
         /**
          * 调用分发器
          *
          * @param consumer 分发器消费者
          */
         @Override
-        public void dispatch(java.util.function.Consumer<plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher> consumer) {}
+        public void dispatch(java.util.function.Consumer<plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher> consumer) {
+        }
+
         /**
          * 接收消息
          *
@@ -431,14 +472,15 @@ class DispatcherBenchmarkTest {
          * @param wrapper 消息包装
          */
         @Override
-        public void accept(MqttSession session, MessageWrapper<MqttMessage> wrapper) {}
+        public void accept(MqttSession session, MessageWrapper<MqttMessage> wrapper) {
+        }
     }
 
     private static final class BenchmarkResult {
         private final String name;
-        private final int count;
-        private final long startNs;
-        private final long endNs;
+        private final int    count;
+        private final long   startNs;
+        private final long   endNs;
 
         /**
          * 构造基准结果

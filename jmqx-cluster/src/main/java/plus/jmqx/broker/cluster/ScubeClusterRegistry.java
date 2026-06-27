@@ -13,14 +13,12 @@ import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.message.CloseMqttMessage;
 import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
-import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.util.PortUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -107,10 +105,10 @@ public class ScubeClusterRegistry implements ClusterRegistry {
                 .transportFactory(TcpTransportFactory::new)
                 .transport(transportConfig -> transportConfig.port(clusterConfig.getPort()))
                 .membership(opts -> opts.seedMembers(Arrays.stream(clusterConfig
-                                .getUrl()
-                                .split(","))
+                                        .getUrl()
+                                        .split(","))
                                 .map(Address::from)
-                        .collect(Collectors.toList()))
+                                .collect(Collectors.toList()))
                         .namespace(clusterConfig.getNamespace())
                         .suspicionMult(clusterConfig.getSuspicionMult() != null
                                 ? clusterConfig.getSuspicionMult() : 10))

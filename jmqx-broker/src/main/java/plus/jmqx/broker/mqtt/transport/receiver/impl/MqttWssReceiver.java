@@ -11,8 +11,8 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
-import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
 import plus.jmqx.broker.mqtt.transport.handler.SslHandler;
+import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.ByteBufToWebSocketFrameEncoder;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.WebSocketFrameToByteBufDecoder;
 import plus.jmqx.broker.util.PortUtil;
@@ -47,7 +47,7 @@ public class MqttWssReceiver extends SslHandler implements Receiver {
     @Override
     public Mono<DisposableServer> bind() {
         return Mono.deferContextual(view -> Mono.just(this.serv(view))
-                .flatMap(serv-> serv.bind().cast(DisposableServer.class)));
+                .flatMap(serv -> serv.bind().cast(DisposableServer.class)));
     }
 
     /**

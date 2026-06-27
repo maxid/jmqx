@@ -13,7 +13,6 @@ import plus.jmqx.broker.auth.impl.DefaultAuthManager;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
-import plus.jmqx.broker.spi.DynamicLoader;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
@@ -34,7 +33,6 @@ import plus.jmqx.broker.mqtt.transport.Transport;
 import reactor.netty.resources.LoopResources;
 
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
