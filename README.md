@@ -34,6 +34,14 @@ SMQTT 作者开源了那么优秀的项目。
     检查），集群模式自动扩散（2026-6-24）
 12. 测试：同一 JVM 内可通过 namespace + node 组合键启动多个集群节点，支持集成测试验证集群间消息路由（2026-6-25）
 13. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`（2026-6-27）
+14. 路由表在 topic 变更后不残留旧数据；消息 ID 分配有界可终止；连接计数严格跟随连接生命周期不会为负；
+    ClusterReceiver 零 ByteBuf 泄漏；集群注册中心高负载下稳定运行（2026-6-26~27）
+15. 鉴权阻塞与 IO 线程隔离互不影响；连接风暴不冲击集群间通道；消息分发使用有界队列防止 OOM（2026-6-27）
+16. 订阅感知路由：PUBLISH 仅转发给有订阅者的节点，避免集群内无效广播（2026-6-26）
+17. MqttConfiguration 支持 maxConnections 连接上限与连接准入拦截；MetricsManager 提供指标 SPI 可替换监控实现；
+    消息处理链内存安全加固（2026-6-27）
+18. 高负载下集群节点不再被误判离线；pingTimeout、suspicionMult 可按部署场景配置（2026-6-26）
+19. ClusterReceiver 移除不必要的线程切换，集群消息吞吐恢复至 20k msg/s（2026-6-26）
 
 ## 使用示例
 
