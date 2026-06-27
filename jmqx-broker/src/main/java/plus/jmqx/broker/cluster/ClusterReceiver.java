@@ -1,6 +1,6 @@
 package plus.jmqx.broker.cluster;
 
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +12,7 @@ import plus.jmqx.broker.mqtt.message.*;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH;
 import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.PUBLISH_TARGET;
+import static plus.jmqx.broker.cluster.ClusterMessage.ClusterEvent.SUBSCRIBE;
 
 /**
  * 集群服务
@@ -65,6 +67,14 @@ public class ClusterReceiver {
                                 messageDispatcher.dispatch(ClusterSession.wrapClientId(heapMqttMessage.getClientId()),
                                         getMqttMessage(heapMqttMessage, event),
                                         context);
+                            } else if (SUBSCRIBE.equals(event)) {
+                                SubscribeTopicMessage stm = (SubscribeTopicMessage) message.getMessage();
+                                ClusterRegistry registry = context.getClusterRegistry();
+                                if (stm.isSubscribe()) {
+                                    registry.subscribeTopic(stm.getTopicFilter(), stm.getNodeId());
+                                } else {
+                                    registry.unsubscribeTopic(stm.getTopicFilter(), stm.getNodeId());
+                                }
                             } else {
                                 CloseMqttMessage closeMqttMessage = (CloseMqttMessage) message.getMessage();
                                 Optional.ofNullable(context.getSessionRegistry().get(closeMqttMessage.getClientId()))
@@ -88,7 +98,7 @@ public class ClusterReceiver {
                 message.isRetain(),
                 0,
                 message.getTopic(),
-                PooledByteBufAllocator.DEFAULT.buffer().writeBytes(
+                Unpooled.wrappedBuffer(
                         JacksonUtil.dynamicJson(message.getMessage()).getBytes(StandardCharsets.UTF_8)
                 ),
                 message.getProperties()),

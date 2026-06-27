@@ -39,7 +39,7 @@ public class PublishMessageProcessor {
         MqttPublishMessage reply = MqttMessageBuilder.publishMessage(
                 false, MqttQoS.AT_MOST_ONCE, 0, message.getTopic() + "_reply",
                 Unpooled.wrappedBuffer("message reply".getBytes(StandardCharsets.UTF_8)));
-        getDispatcher().publish(reply);
+        getDispatcher().publish(message.getClientId(), reply);
     }
 
     /**

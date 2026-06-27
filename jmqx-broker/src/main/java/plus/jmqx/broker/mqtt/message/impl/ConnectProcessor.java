@@ -4,7 +4,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterMessage;
+import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.ConnectMode;
+import plus.jmqx.broker.mqtt.MqttConfiguration;
+import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.context.MqttReceiveContext;
@@ -21,6 +24,7 @@ import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -183,6 +187,8 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         closeMqttMessage.setClientId(clientId);
         ClusterMessage clusterMessage = new ClusterMessage(closeMqttMessage);
         context.getClusterRegistry().spreadPublishMessage(clusterMessage).subscribe();
+        // 注册会话到集群路由表，后续定向消息仅发送到本节点
+        context.getClusterRegistry().registerSession(clientId);
         // 遗愿消息处理
         session.registryClose(s1 -> Optional.ofNullable(s1.getWill())
                 .ifPresent(will -> topicRegistry.getSubscribesByTopic(will.getWillTopic(), will.getMqttQoS())
@@ -303,13 +309,34 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         log.debug("【{}】【{}】【{}】", Thread.currentThread().getName(), "CLOSE", session);
         session.setStatus(SessionStatus.OFFLINE);
         if (!session.isSessionPersistent()) {
+            // 收集会话订阅的主题，在清理前用于广播取消订阅
+            Set<String> unsubTopics = session.getTopics().stream()
+                    .map(SubscribeTopic::getTopicFilter)
+                    .collect(Collectors.toSet());
             context.getTopicRegistry().clear(session);
             context.getSessionRegistry().close(session);
+            // 广播取消订阅到集群
+            unsubTopics.forEach(tf -> clusterUnsubscribeTopic(context, tf));
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
         //metricManager.getMetricRegistry().getMetricCounter(CounterType.CLOSE_EVENT).increment();
+        context.getClusterRegistry().unregisterSession(session.getClientId());
         session.close();
         dispatchConnectionLost(session, context);
+    }
+
+    /**
+     * 广播取消订阅到集群
+     */
+    private void clusterUnsubscribeTopic(MqttReceiveContext context, String topicFilter) {
+        ClusterRegistry registry = context.getClusterRegistry();
+        if (registry == null) return;
+        MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
+        if (config == null || !config.isEnabled()) return;
+        SubscribeTopicMessage stm = new SubscribeTopicMessage(config.getClusterId(), topicFilter, false);
+        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 
     /**

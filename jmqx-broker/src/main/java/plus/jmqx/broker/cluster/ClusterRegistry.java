@@ -71,6 +71,40 @@ public interface ClusterRegistry {
     }
 
     /**
+     * 注册会话与所在节点的映射关系
+     *
+     * @param clientId 客户端 ID
+     */
+    default void registerSession(String clientId) {
+    }
+
+    /**
+     * 移除会话与所在节点的映射关系
+     *
+     * @param clientId 客户端 ID
+     */
+    default void unregisterSession(String clientId) {
+    }
+
+    /**
+     * 注册主题订阅路由
+     *
+     * @param topicFilter 主题过滤器
+     * @param nodeId      节点 ID
+     */
+    default void subscribeTopic(String topicFilter, String nodeId) {
+    }
+
+    /**
+     * 移除主题订阅路由
+     *
+     * @param topicFilter 主题过滤器
+     * @param nodeId      节点 ID
+     */
+    default void unsubscribeTopic(String topicFilter, String nodeId) {
+    }
+
+    /**
      * 停止
      *
      * @return 处理结果
