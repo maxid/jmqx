@@ -1,8 +1,11 @@
 package plus.jmqx.broker;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.slf4j.LoggerFactory;
 import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
@@ -100,6 +103,11 @@ public class MassiveConnectionTest {
      */
     @Test
     void testMassiveConnectionsCluster() throws Exception {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.getLogger("root").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
+        loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.INFO);
+        loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         int targetPerNode = intProp("jmqx.test.targetConnectionsPerNode", 5000);
         int connectConcurrency = intProp("jmqx.test.connectConcurrency", 50);
         int batchIntervalMs = intProp("jmqx.test.batchIntervalMs", 10);
@@ -344,4 +352,5 @@ public class MassiveConnectionTest {
             throw new RuntimeException("cluster node [" + node + "] start failed", e);
         }
     }
+
 }
