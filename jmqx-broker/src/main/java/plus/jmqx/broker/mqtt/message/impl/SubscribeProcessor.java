@@ -9,7 +9,11 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
+import plus.jmqx.broker.cluster.ClusterMessage;
+import plus.jmqx.broker.cluster.ClusterRegistry;
+import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
@@ -17,6 +21,7 @@ import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -93,11 +98,26 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         });
         if (CollUtil.isNotEmpty(topics)) {
             topicRegistry.registrySubscribesTopic(topics);
+            clusterSubscribe(context, topics);
         }
         session.write(MqttMessageBuilder.subAckMessage(
                 message.variableHeader().messageId(),
                 reasonCodes
         ), false);
+    }
+
+    private void clusterSubscribe(ReceiveContext<?> context, Set<SubscribeTopic> topics) {
+        ClusterRegistry registry = context.getClusterRegistry();
+        if (registry == null) return;
+        MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
+        if (config == null || !config.isEnabled()) return;
+        String nodeId = config.getClusterId();
+        for (SubscribeTopic topic : topics) {
+            SubscribeTopicMessage stm = new SubscribeTopicMessage(nodeId, topic.getTopicFilter(), true);
+            registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .subscribe();
+        }
     }
 
     /**
