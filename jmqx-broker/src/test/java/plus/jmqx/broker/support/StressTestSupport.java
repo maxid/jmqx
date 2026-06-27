@@ -7,8 +7,10 @@ import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
 import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
 import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
 import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
+import plus.jmqx.broker.util.PortUtil;
 import reactor.core.publisher.Mono;
 
+import java.net.ServerSocket;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +34,18 @@ public final class StressTestSupport {
             return def;
         }
         return Integer.parseInt(value);
+    }
+
+    /**
+     * 解析可用端口：{@code configured > 0} 时从该端口起找空闲位，{@code 0} 时由 OS 分配。
+     */
+    public static int resolvePort(int configured) throws Exception {
+        if (configured > 0) {
+            return PortUtil.getAvailablePort(configured);
+        }
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 
     public static StressConfig loadStressConfig() {

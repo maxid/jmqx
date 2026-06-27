@@ -11,7 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -21,9 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public final class ClusterStressTestSupport {
 
-    private static final Semaphore CONNECT_SEMAPHORE = new Semaphore(
-            Integer.parseInt(System.getProperty("jmqx.stress.connectLimit", "50")));
-
     private ClusterStressTestSupport() {
     }
 
@@ -31,6 +27,7 @@ public final class ClusterStressTestSupport {
                                              int clusterPort, int mqttPort,
                                              PlatformDispatcher dispatcher) {
         MqttConfiguration config = new MqttConfiguration();
+        config.setBusinessQueueSize(Integer.MAX_VALUE);
         config.setPort(mqttPort);
         config.setSslEnable(false);
         config.setSecurePort(-1);
@@ -50,18 +47,27 @@ public final class ClusterStressTestSupport {
         }
     }
 
-    public static void runClusterStress(StressConfig stress, String namespace, String clusterUrls)
-            throws InterruptedException {
+    public static void runClusterStress(StressConfig stress, String namespace)
+            throws Exception {
+        int mqttPort1 = StressTestSupport.resolvePort(stress.port);
+        int mqttPort2 = StressTestSupport.resolvePort(mqttPort1 + 1000);
+        int clusterPort1 = StressTestSupport.resolvePort(
+                StressTestSupport.intProp("jmqx.stress.clusterPort1", 7771));
+        int clusterPort2 = StressTestSupport.resolvePort(
+                StressTestSupport.intProp("jmqx.stress.clusterPort2", 7772));
+        String clusterUrls = "127.0.0.1:" + clusterPort1 + ",127.0.0.1:" + clusterPort2;
+        stress.port = mqttPort1;
+
         AtomicLong dispatchReceived = new AtomicLong();
         PlatformDispatcher dispatcher = StressTestSupport.countingDispatcher(dispatchReceived);
 
-        Bootstrap bootstrap1 = startClusterNode(namespace, "node-1", clusterUrls, 7771,
-                stress.port, dispatcher);
-        log.info("cluster node-1 started on MQTT port {}", stress.port);
+        Bootstrap bootstrap1 = startClusterNode(namespace, "node-1", clusterUrls, clusterPort1,
+                mqttPort1, dispatcher);
+        log.info("cluster node-1 started on MQTT port {} (cluster {})", mqttPort1, clusterPort1);
 
-        Bootstrap bootstrap2 = startClusterNode(namespace, "node-2", clusterUrls, 7772,
-                stress.port + 1000, dispatcher);
-        log.info("cluster node-2 started on MQTT port {}", stress.port + 1000);
+        Bootstrap bootstrap2 = startClusterNode(namespace, "node-2", clusterUrls, clusterPort2,
+                mqttPort2, dispatcher);
+        log.info("cluster node-2 started on MQTT port {} (cluster {})", mqttPort2, clusterPort2);
 
         Thread.sleep(3000);
         log.info("cluster stress: cluster formed, preflight start");
@@ -69,6 +75,8 @@ public final class ClusterStressTestSupport {
         try {
             int totalDevices = Math.max(2, stress.threads);
             int devicesPerNode = totalDevices / 2;
+            int connectConcurrency = StressTestSupport.intProp("jmqx.stress.connectConcurrency", 50);
+            int connectTimeoutSeconds = StressTestSupport.intProp("jmqx.stress.connectTimeoutSeconds", 30);
             CountDownLatch latch = new CountDownLatch(totalDevices);
             ExecutorService executor = Executors.newFixedThreadPool(totalDevices);
 
@@ -87,7 +95,7 @@ public final class ClusterStressTestSupport {
                     stress.reportIntervalSeconds,
                     TimeUnit.SECONDS);
 
-            if (!StressTestSupport.preflightPublish(stress, stress.port, acked, dispatchReceived)) {
+            if (!StressTestSupport.preflightPublish(stress, mqttPort1, acked, dispatchReceived)) {
                 reporter.shutdownNow();
                 executor.shutdownNow();
                 StressResult failed = new StressResult(acked.get(), start, System.nanoTime(), false);
@@ -95,15 +103,21 @@ public final class ClusterStressTestSupport {
                 return;
             }
 
+            List<StressClientTask> tasks = new ArrayList<>(totalDevices);
             for (int i = 0; i < devicesPerNode; i++) {
-                int idx = i;
-                executor.submit(() -> runStressClient("stress-n1-" + idx, stress.port,
-                        stress, acked, published, allClients, latch));
+                tasks.add(new StressClientTask("stress-n1-" + i, mqttPort1));
             }
             for (int i = 0; i < devicesPerNode; i++) {
-                int idx = i;
-                executor.submit(() -> runStressClient("stress-n2-" + idx, stress.port + 1000,
-                        stress, acked, published, allClients, latch));
+                tasks.add(new StressClientTask("stress-n2-" + i, mqttPort2));
+            }
+            connectClientsInBatches(tasks, allClients, acked, connectConcurrency, connectTimeoutSeconds);
+
+            for (StressClientTask task : tasks) {
+                if (task.client == null) {
+                    latch.countDown();
+                    continue;
+                }
+                executor.submit(() -> runPublishPhase(task, stress, acked, published, latch));
             }
 
             boolean ok = latch.await(stress.timeoutSeconds, TimeUnit.SECONDS);
@@ -126,27 +140,65 @@ public final class ClusterStressTestSupport {
         }
     }
 
-    private static void runStressClient(String clientId, int port, StressConfig config,
+    private static void connectClientsInBatches(List<StressClientTask> tasks,
+                                                  List<MqttStressClient> allClients,
+                                                  AtomicLong acked,
+                                                  int connectConcurrency,
+                                                  int connectTimeoutSeconds)
+            throws InterruptedException {
+        ExecutorService connectExecutor = Executors.newFixedThreadPool(connectConcurrency);
+        int totalBatches = (tasks.size() + connectConcurrency - 1) / connectConcurrency;
+        for (int batch = 0; batch < totalBatches; batch++) {
+            int batchStart = batch * connectConcurrency;
+            int batchEnd = Math.min(batchStart + connectConcurrency, tasks.size());
+            CountDownLatch batchLatch = new CountDownLatch(batchEnd - batchStart);
+            for (int i = batchStart; i < batchEnd; i++) {
+                StressClientTask task = tasks.get(i);
+                connectExecutor.submit(() -> {
+                    try {
+                        MqttStressClient client = new MqttStressClient(task.clientId, task.port, acked);
+                        client.connect(connectTimeoutSeconds);
+                        task.client = client;
+                        synchronized (allClients) {
+                            allClients.add(client);
+                        }
+                    } catch (Exception e) {
+                        log.error("stress client [{}] connect failed", task.clientId, e);
+                    } finally {
+                        batchLatch.countDown();
+                    }
+                });
+            }
+            if (!batchLatch.await(connectTimeoutSeconds + 30L, TimeUnit.SECONDS)) {
+                log.warn("connect batch {}/{} did not finish in time", batch + 1, totalBatches);
+            }
+        }
+        connectExecutor.shutdownNow();
+        log.info("cluster stress: {}/{} clients connected", allClients.size(), tasks.size());
+    }
+
+    private static void runPublishPhase(StressClientTask task, StressConfig config,
                                         AtomicLong acked, AtomicLong published,
-                                        List<MqttStressClient> allClients, CountDownLatch latch) {
-        MqttStressClient client = new MqttStressClient(clientId, port, acked);
+                                        CountDownLatch latch) {
         try {
-            CONNECT_SEMAPHORE.acquire();
-            try {
-                client.connect();
-            } finally {
-                CONNECT_SEMAPHORE.release();
-            }
-            synchronized (allClients) {
-                allClients.add(client);
-            }
-            long sentCount = client.publishLoop(config.topic, config.payloadBytes,
+            long sentCount = task.client.publishLoop(config.topic, config.payloadBytes,
                     config.durationSeconds, config.flushEvery, config.inFlightLimit, published);
-            client.awaitAcks(sentCount, config.timeoutSeconds);
+            task.client.awaitAcks(sentCount, config.timeoutSeconds);
         } catch (Exception e) {
-            log.error("stress client [{}] error", clientId, e);
+            log.error("stress client [{}] publish error", task.clientId, e);
         } finally {
             latch.countDown();
+        }
+    }
+
+    private static final class StressClientTask {
+        private final String clientId;
+        private final int port;
+        private MqttStressClient client;
+
+        private StressClientTask(String clientId, int port) {
+            this.clientId = clientId;
+            this.port = port;
         }
     }
 }
