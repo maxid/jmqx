@@ -7,9 +7,9 @@ import io.scalecube.cluster.Member;
 import io.scalecube.cluster.membership.MembershipEvent;
 import io.scalecube.cluster.transport.api.Message;
 import io.scalecube.net.Address;
-import io.scalecube.reactor.RetryNonSerializedEmitFailureHandler;
 import io.scalecube.transport.netty.tcp.TcpTransportFactory;
 import lombok.extern.slf4j.Slf4j;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.message.CloseMqttMessage;
 import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,10 +43,9 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     /**
      * 集群消息管道
      * <p>
-     * 默认 buffer = Queues.SMALL_BUFFER_SIZE (256)，可通过
-     * -Dreactor.bufferSize.small=<size> 调大。
+     * 延迟初始化，在 registry() 中创建可配置大小的 Sink。
      */
-    private final Sinks.Many<ClusterMessage> messageMany = Sinks.many().multicast().onBackpressureBuffer();
+    private Sinks.Many<ClusterMessage> messageMany;
 
     private final Sinks.Many<ClusterStatus> eventMany = Sinks.many().multicast().onBackpressureBuffer();
 
@@ -67,6 +67,21 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     private final Map<String, Set<String>> topicNodes = new ConcurrentHashMap<>();
 
     /**
+     * 主题前缀索引：前缀 -> topicFilter 集合
+     * <p>
+     * 加速 resolvePublishTargets 的查找，将 O(N) 扫描降为 O(bucket)。
+     * </p>
+     */
+    private final Map<String, Set<String>> prefixIndex = new ConcurrentHashMap<>();
+
+    /**
+     * topicMatches 结果缓存（前缀分桶 + LRU）
+     */
+    private final Map<String, Map<String, Boolean>> matchCache = new ConcurrentHashMap<>();
+
+    private static final int MATCH_CACHE_ENTRY = 512;
+
+    /**
      * 注册集群并启动
      *
      * @param clusterConfig 集群配置
@@ -75,6 +90,10 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     public void registry(MqttConfiguration.ClusterConfig clusterConfig) {
         this.localNodeId = clusterConfig.getClusterId();
         clusterConfig.setPort(PortUtil.getAvailablePort(clusterConfig.getPort()));
+        // 使用配置的缓冲区大小创建 Sink
+        int bufferSize = clusterConfig.getClusterMessageBufferSize() != null
+                ? clusterConfig.getClusterMessageBufferSize() : 1024;
+        this.messageMany = Sinks.many().multicast().onBackpressureBuffer(bufferSize, false);
         this.cluster = new ClusterImpl()
                 .config(opts ->
                         opts.memberAlias(clusterConfig.getNode())
@@ -200,21 +219,72 @@ public class ScubeClusterRegistry implements ClusterRegistry {
     }
 
     /**
-     * 解析主题的订阅目标节点
+     * 提取主题/过滤器第一段作为前缀
+     */
+    private static String extractPrefix(String filter) {
+        if (filter == null || filter.isEmpty()) {
+            return "";
+        }
+        int idx = filter.indexOf('/');
+        return idx < 0 ? filter : (idx > 0 ? filter.substring(0, idx) : "/");
+    }
+
+    /**
+     * 解析主题的订阅目标节点（使用前缀索引加速）
      *
      * @param topic 发布主题
      * @return 有匹配订阅的节点 ID 集合
      */
     private Set<String> resolvePublishTargets(String topic) {
-        Set<String> targets = new HashSet<>();
-        for (Map.Entry<String, Set<String>> entry : topicNodes.entrySet()) {
-            if (topicMatches(entry.getKey(), topic)) {
-                targets.addAll(entry.getValue());
+        String prefix = extractPrefix(topic);
+        Set<String> candidates = new HashSet<>();
+        // 1. 取该前缀直接命中的 filter
+        Set<String> direct = prefixIndex.get(prefix);
+        if (direct != null) candidates.addAll(direct);
+        // 2. 通配符前缀也可能匹配任何主题
+        Set<String> multi = prefixIndex.get("#");
+        if (multi != null) candidates.addAll(multi);
+        Set<String> single = prefixIndex.get("+");
+        if (single != null) candidates.addAll(single);
+        Set<String> any = prefixIndex.get("");
+        if (any != null) candidates.addAll(any);
+        // 3. 精确匹配
+        if (!prefix.equals(topic)) {
+            Set<String> exact = topicNodes.get(topic);
+            if (exact != null) {
+                // 仅为查找 candidate 标记
+                for (String nodeId : exact) {
+                    if (!candidates.contains(topic)) {
+                        candidates.add(topic);
+                    }
+                }
             }
         }
-        // 排除本节点
+        // 4. 逐一验证候选（保留精确匹配不走通配符检查加速）
+        Set<String> targets = new HashSet<>();
+        for (String filter : candidates) {
+            Set<String> nodes = topicNodes.get(filter);
+            if (nodes != null && topicMatchesWithCache(filter, topic)) {
+                targets.addAll(nodes);
+            }
+        }
         targets.remove(localNodeId);
         return targets;
+    }
+
+    /**
+     * topicMatches 结果缓存版
+     */
+    private boolean topicMatchesWithCache(String filter, String topic) {
+        String bucketKey = extractPrefix(filter);
+        Map<String, Boolean> bucket = matchCache.computeIfAbsent(bucketKey,
+                k -> Collections.synchronizedMap(new LinkedHashMap<String, Boolean>(64, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+                        return size() > MATCH_CACHE_ENTRY;
+                    }
+                }));
+        return bucket.computeIfAbsent(topic, t -> matchFilter(filter, t));
     }
 
     /**
@@ -224,7 +294,7 @@ public class ScubeClusterRegistry implements ClusterRegistry {
      * @param topic  实际主题
      * @return 是否匹配
      */
-    static boolean topicMatches(String filter, String topic) {
+    static boolean matchFilter(String filter, String topic) {
         if (filter == null || topic == null) {
             return false;
         }
@@ -265,6 +335,10 @@ public class ScubeClusterRegistry implements ClusterRegistry {
             return;
         }
         topicNodes.computeIfAbsent(topicFilter, k -> ConcurrentHashMap.newKeySet()).add(nodeId);
+        String prefix = extractPrefix(topicFilter);
+        prefixIndex.computeIfAbsent(prefix, k -> ConcurrentHashMap.newKeySet()).add(topicFilter);
+        // 清除匹配缓存
+        matchCache.remove(extractPrefix(topicFilter));
         log.debug("topic route added: topic=[{}] -> node=[{}]", topicFilter, nodeId);
     }
 
@@ -283,6 +357,16 @@ public class ScubeClusterRegistry implements ClusterRegistry {
             v.remove(nodeId);
             return v.isEmpty() ? null : v;
         });
+        // 清理 prefixIndex：topicFilter 不再被任何节点订阅时移除
+        String prefix = extractPrefix(topicFilter);
+        Set<String> filters = prefixIndex.get(prefix);
+        if (filters != null) {
+            filters.remove(topicFilter);
+            if (filters.isEmpty()) {
+                prefixIndex.remove(prefix);
+            }
+        }
+        matchCache.remove(prefix);
         log.debug("topic route removed: topic=[{}] -> node=[{}]", topicFilter, nodeId);
     }
 
@@ -299,6 +383,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
             }
         });
         topicNodes.entrySet().removeIf(e -> e.getValue().isEmpty());
+        // 重建 prefixIndex（收集仍然有效的 topicFilter）
+        prefixIndex.clear();
+        topicNodes.keySet().forEach(filter ->
+                prefixIndex.computeIfAbsent(extractPrefix(filter), k -> ConcurrentHashMap.newKeySet()).add(filter));
+        matchCache.clear();
         if (count[0] > 0) {
             log.info("cleared {} topic routes for leaving node [{}]", count[0], nodeId);
         }
@@ -394,6 +483,8 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         return Mono.fromRunnable(() -> {
             sessionNodes.clear();
             topicNodes.clear();
+            prefixIndex.clear();
+            matchCache.clear();
             Optional.ofNullable(cluster).ifPresent(Cluster::shutdown);
         });
     }
@@ -418,7 +509,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         @Override
         public void onMessage(Message message) {
             log.debug("cluster accept message {} ", message);
-            messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
+            Sinks.EmitResult result = messageMany.tryEmitNext(message.data());
+            if (result == Sinks.EmitResult.FAIL_OVERFLOW) {
+                log.warn("cluster message sink overflow, dropping from {}", message.sender());
+                MetricsManagerHolder.get().recordOverflow("cluster-message");
+            }
         }
 
         /**
@@ -429,7 +524,11 @@ public class ScubeClusterRegistry implements ClusterRegistry {
         @Override
         public void onGossip(Message message) {
             log.debug("cluster accept gossip message {} ", message);
-            messageMany.emitNext(message.data(), new RetryNonSerializedEmitFailureHandler());
+            Sinks.EmitResult result = messageMany.tryEmitNext(message.data());
+            if (result == Sinks.EmitResult.FAIL_OVERFLOW) {
+                log.warn("cluster gossip sink overflow, dropping from {}", message.sender());
+                MetricsManagerHolder.get().recordOverflow("cluster-gossip");
+            }
         }
 
         /**

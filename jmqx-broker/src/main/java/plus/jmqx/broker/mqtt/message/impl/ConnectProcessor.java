@@ -8,6 +8,7 @@ import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.config.ConnectMode;
 import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
+import plus.jmqx.broker.util.TokenBucketRateLimiter;
 import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
@@ -47,6 +48,11 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     private static final List<MqttMessageType> MESSAGE_TYPES = new ArrayList<>();
 
     private static final int MILLI_SECOND_PERIOD = 1_000;
+
+    /**
+     * 连接速率限制器
+     */
+    private volatile TokenBucketRateLimiter rateLimiter;
 
     static {
         MESSAGE_TYPES.add(MqttMessageType.CONNECT);
@@ -119,6 +125,23 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             dispatchConnectionLost(session, context);
             badVersion(session, mqttVersion);
             return;
+        }
+        // 连接速率限制检查
+        Integer rateLimit = context.getConfiguration().getConnectionRateLimit();
+        if (rateLimit != null && rateLimit > 0) {
+            if (rateLimiter == null) {
+                synchronized (this) {
+                    if (rateLimiter == null) {
+                        rateLimiter = new TokenBucketRateLimiter(rateLimit);
+                    }
+                }
+            }
+            if (!rateLimiter.tryAcquire()) {
+                log.warn("connection rate limit ({}/s) exceeded for [{}]", rateLimit, clientId);
+                MetricsManagerHolder.get().recordDroppedMessage("rate_limit");
+                rejectedQuota(session, mqttVersion);
+                return;
+            }
         }
         context.getAuthExecutor().execute(clientId, username, password)
                 .thenAccept(passed -> {

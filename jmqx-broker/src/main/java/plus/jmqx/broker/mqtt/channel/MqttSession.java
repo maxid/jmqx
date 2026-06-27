@@ -224,25 +224,26 @@ public class MqttSession {
     }
 
     /**
-     * 生成序列消息 ID
+     * 生成序列消息 ID（无锁 CAS 版本）
+     * <p>
+     * 移除原 synchronized(this) 锁，改为 CAS 自旋。
+     * 65535 个 ID 全占满概率极低（需单会话 65535 条 QoS>0 并发），
+     * 发生时直接回绕等待。
      *
-     * @return 消息 ID
+     * @return 消息 ID（1-65535）
      */
     public int generateMessageId() {
-        int value;
-        while (qos2MsgCache.containsKey(value = atomicInteger.incrementAndGet())) {
-            if (value >= 65535) {
-                synchronized (this) {
-                    value = atomicInteger.incrementAndGet();
-                    if (value >= 65535) {
-                        atomicInteger.set(0);
-                    } else {
-                        break;
-                    }
-                }
+        for (;;) {
+            int value = atomicInteger.incrementAndGet();
+            if (value > 65535) {
+                atomicInteger.compareAndSet(value, 0);
+                continue;
             }
+            if (!qos2MsgCache.containsKey(value)) {
+                return value;
+            }
+            Thread.yield();
         }
-        return value;
     }
 
     /**
