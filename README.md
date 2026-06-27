@@ -45,7 +45,7 @@ SMQTT 作者开源了那么优秀的项目。
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.12</version>
+            <version>1.4.13</version>
         </dependency>
 ```
 
@@ -290,7 +290,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.12</version>
+            <version>1.4.13</version>
         </dependency>
 ```
 
