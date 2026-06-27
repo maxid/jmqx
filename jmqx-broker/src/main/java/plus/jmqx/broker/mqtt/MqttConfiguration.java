@@ -233,12 +233,12 @@ public class MqttConfiguration implements Configuration {
         /**
          * 集群故障检测器 Ping 超时（毫秒）
          */
-        private             Integer         pingTimeout;
+        private Integer pingTimeout;
 
         /**
          * 集群成员怀疑倍数
          */
-        private             Integer         suspicionMult;
+        private Integer suspicionMult;
 
         /**
          * 集群消息 Sink 缓冲区大小，默认 1024

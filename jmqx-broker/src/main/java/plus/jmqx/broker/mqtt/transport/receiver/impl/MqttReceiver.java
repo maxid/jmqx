@@ -42,7 +42,7 @@ public class MqttReceiver extends OptionHandler implements Receiver {
     @Override
     public Mono<DisposableServer> bind() {
         return Mono.deferContextual(view -> Mono.just(this.serv(view))
-                .flatMap(serv-> serv.bind().cast(DisposableServer.class)));
+                .flatMap(serv -> serv.bind().cast(DisposableServer.class)));
     }
 
     /**

@@ -273,3 +273,5 @@ dist
 .flattened-pom.xml
 .m2
 .vscode
+.claude
+

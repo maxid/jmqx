@@ -5,9 +5,9 @@ package plus.jmqx.broker.support;
  */
 public class StressResult {
 
-    public final long sent;
-    public final long startNanos;
-    public final long endNanos;
+    public final long    sent;
+    public final long    startNanos;
+    public final long    endNanos;
     public final boolean completed;
 
     public StressResult(long sent, long startNanos, long endNanos, boolean completed) {

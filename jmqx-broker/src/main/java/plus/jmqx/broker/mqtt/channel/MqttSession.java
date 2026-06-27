@@ -1,7 +1,13 @@
 package plus.jmqx.broker.mqtt.channel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -238,7 +244,7 @@ public class MqttSession {
      * @return 消息 ID（1-65535）；全占满时返回 -1
      */
     public int generateMessageId() {
-        for (;;) {
+        for (; ; ) {
             int value = atomicInteger.incrementAndGet();
             if (value > MAX_PACKET_ID) {
                 atomicInteger.compareAndSet(value, 0);

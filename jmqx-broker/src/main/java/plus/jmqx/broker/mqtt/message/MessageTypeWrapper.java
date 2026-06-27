@@ -1,7 +1,6 @@
 package plus.jmqx.broker.mqtt.message;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 
 /**
  * 消息类型抽象

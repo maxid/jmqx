@@ -7,7 +7,6 @@ import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
@@ -21,7 +20,11 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
-import plus.jmqx.broker.mqtt.message.dispatch.*;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
+import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
 import reactor.netty.tcp.TcpClient;
@@ -36,7 +39,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * MQTT Broker 测试用例
@@ -173,9 +178,9 @@ class BootstrapTest {
      * MQTT 设备抽象，持有连接、收件箱和 clientId
      */
     private static class MqttDevice {
-        final Connection connection;
+        final Connection                         connection;
         final ConcurrentLinkedQueue<MqttMessage> inbox;
-        final String clientId;
+        final String                             clientId;
 
         MqttDevice(Connection connection, ConcurrentLinkedQueue<MqttMessage> inbox, String clientId) {
             this.connection = connection;

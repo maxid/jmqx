@@ -34,22 +34,22 @@ import java.util.function.Predicate;
  */
 public class MqttStressClient {
 
-    private static final int DEFAULT_KEEP_ALIVE_SECONDS = 60;
-    private static final ConnectionProvider CLIENT_POOL = ConnectionProvider.builder("jmqx-stress-client")
+    private static final int                DEFAULT_KEEP_ALIVE_SECONDS = 60;
+    private static final ConnectionProvider CLIENT_POOL                = ConnectionProvider.builder("jmqx-stress-client")
             .maxConnections(20_000)
             .pendingAcquireMaxCount(-1)
             .pendingAcquireTimeout(Duration.ofMinutes(3))
             .build();
 
-    private final String clientId;
-    private final int port;
-    private final AtomicLong ackedCounter;
-    private final int keepAliveSeconds;
-    private Connection connection;
-    private volatile ScheduledFuture<?> pingFuture;
-    private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
-    private int packetId = 1;
-    private final AtomicLong localAcked = new AtomicLong();
+    private final    String                             clientId;
+    private final    int                                port;
+    private final    AtomicLong                         ackedCounter;
+    private final    int                                keepAliveSeconds;
+    private          Connection                         connection;
+    private volatile ScheduledFuture<?>                 pingFuture;
+    private final    ConcurrentLinkedQueue<MqttMessage> inbox      = new ConcurrentLinkedQueue<>();
+    private          int                                packetId   = 1;
+    private final    AtomicLong                         localAcked = new AtomicLong();
 
     public MqttStressClient(String clientId, int port, AtomicLong ackedCounter) {
         this(clientId, port, ackedCounter, DEFAULT_KEEP_ALIVE_SECONDS);

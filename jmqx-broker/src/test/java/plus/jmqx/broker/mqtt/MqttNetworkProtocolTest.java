@@ -2,6 +2,8 @@ package plus.jmqx.broker.mqtt;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
@@ -20,10 +22,8 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.resolver.NoopAddressResolverGroup;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import plus.jmqx.broker.Bootstrap;
@@ -42,11 +42,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
-import java.util.UUID;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -434,12 +434,12 @@ class MqttNetworkProtocolTest {
     }
 
     private static final class MqttClient {
-        private final String clientId;
-        private final int port;
-        private Connection connection;
-        private Flux<MqttMessage> inbound;
-        private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
-        private int packetId = 1;
+        private final String                             clientId;
+        private final int                                port;
+        private       Connection                         connection;
+        private       Flux<MqttMessage>                  inbound;
+        private final ConcurrentLinkedQueue<MqttMessage> inbox    = new ConcurrentLinkedQueue<>();
+        private       int                                packetId = 1;
 
         /**
          * 构造测试客户端
@@ -894,13 +894,13 @@ class MqttNetworkProtocolTest {
          * @return CONNECT 消息
          */
         private static MqttConnectMessage connectMessageWithWill(MqttVersion version,
-                                                                String clientId,
-                                                                boolean cleanSession,
-                                                                int keepAliveSeconds,
-                                                                String willTopic,
-                                                                String willPayload,
-                                                                MqttQoS willQos,
-                                                                boolean willRetain) {
+                                                                 String clientId,
+                                                                 boolean cleanSession,
+                                                                 int keepAliveSeconds,
+                                                                 String willTopic,
+                                                                 String willPayload,
+                                                                 MqttQoS willQos,
+                                                                 boolean willRetain) {
             MqttConnectVariableHeader header = new MqttConnectVariableHeader(
                     version.protocolName(),
                     version.protocolLevel(),
