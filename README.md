@@ -29,6 +29,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 10. 重要：修复 PUBREL 流程不当使用 MessageUtils.wrapPublishMessage 产生 Netty ByteBuf 泄漏（2026-4-18)
 11. 增强：支持通过 clientId 主动向指定设备下发消息（在设备订阅同一个主题情况下），不经过主题路由，走完整分发管线（含 ACL 检查），集群模式自动扩散（2026-6-24）
 12. 测试：同一 JVM 内可通过 namespace + node 组合键启动多个集群节点，支持集成测试验证集群间消息路由（2026-6-25）
+13. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`（2026-6-27）
 ## 使用示例
 
 - 单元测试方式启动：单节点
@@ -116,48 +117,95 @@ class BootstrapTest {
 14:13:53.906 [jmqx-event-loop-select-nio-5] INFO plus.jmqx.broker.mqtt.transport.impl.MqttTransport - mqtt-wss broker start success host 0:0:0:0:0:0:0:0 port 8884
 ```
 
-- 单元测试方式启动：单节点压测
+## 压力测试
 
-启动测试用例控制台输出
+集成测试默认不运行，需加 `-Djmqx.integration.tests=true`。压测类已从 `BootstrapTest` 拆出，分为**连接压力测试**（海量长连接）与**消息压力测试**（高吞吐 PUBLISH）。
+
+### 连接压力测试（MassiveConnectionTest）
+
+验证 Broker 在大量 MQTT 长连接下的稳定性：连接建立、会话计数、保活、关闭后无泄漏。客户端使用 `cleanSession=true`，定时发送 `PINGREQ` 保活，关闭时发送 `DISCONNECT`。
+
+| 系统属性 | 默认值 | 说明 |
+|---|---|---|
+| `jmqx.test.targetConnections` | `10000` | 单节点目标连接数 |
+| `jmqx.test.targetConnectionsPerNode` | `5000` | 集群每节点目标连接数 |
+| `jmqx.test.connectConcurrency` | `100`（单节点）/ `50`（集群） | 每批并发建连数 |
+| `jmqx.test.batchIntervalMs` | `10` | 批次间隔（毫秒） |
+| `jmqx.test.holdSeconds` | `60`（单节点）/ `30`（集群） | 保持连接时长（秒），`0` 表示不保持 |
+| `jmqx.test.port` | `0` | MQTT 端口，`0` 表示自动分配空闲端口 |
+| `jmqx.test.maxConnections` | `0` | 连接上限，`0` 表示不限制（用于验证准入机制） |
+| `jmqx.test.connectTimeoutSeconds` | `30` | 单次建连超时（秒） |
+| `jmqx.test.keepAliveSeconds` | `60` | 客户端 keepalive（秒） |
+
+**单节点大量连接**
 
 ```shell
-mvn jmqx-broker -Dtest=BootstrapTest#testBrokerStress test -Djmqx.integration.tests=true -Djmqx.stress.durationSeconds=600 -Djmqx.stress.threads=200 -Djmqx.stress.reportIntervalSeconds=5
+mvn test -pl jmqx-broker \
+  -Djmqx.integration.tests=true \
+  -Dtest=MassiveConnectionTest#testMassiveConnectionsSingleNode \
+  -Djmqx.test.targetConnections=5000 \
+  -Djmqx.test.connectConcurrency=50
 ```
 
+**集群双节点大量连接**（`jmqx-cluster` 模块，node-1 端口 1883，node-2 端口 2883）
+
 ```shell
-[INFO] Scanning for projects...
-[WARNING] 
-[WARNING] Some problems were encountered while building the effective model for plus.jmqx.iot:jmqx-spring-boot:jar:1.4.7
-[INFO] 
-[INFO] --- surefire:3.2.5:test (default-test) @ jmqx-broker ---
-[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
-[INFO] 
-[INFO] -------------------------------------------------------
-[INFO]  T E S T S
-[INFO] -------------------------------------------------------
-[INFO] Running plus.jmqx.broker.BootstrapTest
-09:26:13.026 [jmqx-event-loop-select-nio-2] INFO plus.jmqx.broker.mqtt.transport.impl.MqttTransport - mqtt broker start success host 0:0:0:0:0:0:0:0 port 1883
-09:26:13.066 [jmqx-event-loop-nio-3] DEBUG plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher - 【CONNECT】MqttSession{address='/127.0.0.1:60561', clientId='stress-preflight', status=INIT, keepalive=0, username='null'}
-09:26:13.148 [jmqx-event-loop-nio-3] DEBUG plus.jmqx.broker.mqtt.message.impl.ConnectProcessor - 【jmqx-event-loop-nio-3】【CLOSE】【MqttSession{address='/127.0.0.1:60561', clientId='stress-preflight', status=ONLINE, keepalive=60, username='null'}】
-09:26:13.157 [jmqx-event-loop-nio-4] DEBUG plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher - 【CONNECT】MqttSession{address='/127.0.0.1:60563', clientId='stress-0', status=INIT, keepalive=0, username='null'}
-...
-09:26:15.466 [jmqx-event-loop-nio-9] DEBUG plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher - 【CONNECT】MqttSession{address='/127.0.0.1:60758', clientId='stress-50', status=INIT, keepalive=0, username='null'}
-09:26:15.466 [jmqx-event-loop-nio-11] DEBUG plus.jmqx.broker.mqtt.message.impl.MqttMessageDispatcher - 【CONNECT】MqttSession{address='/127.0.0.1:60760', clientId='stress-70', status=INIT, keepalive=0, username='null'}
-09:26:18.032 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=4120065, acked=234784, dispatchReceived=234788, intervalThroughput=46922 msg/s, elapsed=5.0s
-...
-09:35:18.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=70591987, acked=66619226, dispatchReceived=66619291, intervalThroughput=125540 msg/s, elapsed=545.0s
-09:35:23.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=71191335, acked=67231091, dispatchReceived=67231221, intervalThroughput=122376 msg/s, elapsed=550.0s
-09:35:28.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=71805220, acked=67850122, dispatchReceived=67850124, intervalThroughput=123802 msg/s, elapsed=555.0s
-09:35:33.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=72427787, acked=68464647, dispatchReceived=68465219, intervalThroughput=122904 msg/s, elapsed=560.0s
-09:35:38.030 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=73039349, acked=69072866, dispatchReceived=69073971, intervalThroughput=121733 msg/s, elapsed=565.0s
-09:35:43.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=73627827, acked=69682624, dispatchReceived=69682628, intervalThroughput=121864 msg/s, elapsed=570.0s
-09:35:48.029 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=74267974, acked=70293494, dispatchReceived=70293503, intervalThroughput=122281 msg/s, elapsed=575.0s
-09:35:53.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=74869108, acked=70903753, dispatchReceived=70903795, intervalThroughput=121943 msg/s, elapsed=580.0s
-09:35:58.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=75466366, acked=71513454, dispatchReceived=71513466, intervalThroughput=121945 msg/s, elapsed=585.0s
-09:36:03.034 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=76088777, acked=72119708, dispatchReceived=72119715, intervalThroughput=121251 msg/s, elapsed=590.0s
-09:36:08.030 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=76702519, acked=72728965, dispatchReceived=72729000, intervalThroughput=121936 msg/s, elapsed=595.0s
-09:36:13.032 [pool-7-thread-1] INFO plus.jmqx.broker.BootstrapTest - broker stress progress: threads=200, published=77284245, acked=73329836, dispatchReceived=73329837, intervalThroughput=120130 msg/s, elapsed=600.0s
+mvn test -pl jmqx-cluster \
+  -Djmqx.integration.tests=true \
+  -Dtest=MassiveConnectionTest#testMassiveConnectionsCluster \
+  -Djmqx.test.targetConnectionsPerNode=5000 \
+  -Djmqx.test.connectConcurrency=50
 ```
+
+验证项包括：`SessionRegistry.counts()` 与成功连接数一致、保持连接期间无 OOM、全部断开后会话归零、同 `clientId` 可重连（无泄漏）。
+
+### 消息压力测试（BrokerStressTest / ClusterStressTest）
+
+多客户端循环发布 QoS1 消息，统计 `published`、`acked`、`dispatchReceived` 及区间吞吐。启动前执行预检发布，确认 PUBACK 与分发器回调均正常。
+
+| 系统属性 | 默认值 | 说明 |
+|---|---|---|
+| `jmqx.stress.port` | `1883` | node-1 MQTT 端口（集群 node-2 为 `port + 1000`） |
+| `jmqx.stress.threads` | `4` | 压测客户端数（集群均分两节点） |
+| `jmqx.stress.durationSeconds` | `600` | 每客户端持续发布时长（秒） |
+| `jmqx.stress.payloadBytes` | `64` | 消息负载大小（字节） |
+| `jmqx.stress.flushEvery` | `256` | 每 N 条消息 flush 一次 |
+| `jmqx.stress.inFlightLimit` | `20000` | 单客户端飞行窗口上限 |
+| `jmqx.stress.timeoutSeconds` | `720` | 整体超时（秒） |
+| `jmqx.stress.reportIntervalSeconds` | `10` | 进度日志间隔（秒） |
+| `jmqx.stress.connectLimit` | `50` | 集群压测建连并发上限（信号量） |
+
+**单节点消息吞吐**
+
+```shell
+mvn test -pl jmqx-broker \
+  -Djmqx.integration.tests=true \
+  -Dtest=BrokerStressTest \
+  -Djmqx.stress.durationSeconds=600 \
+  -Djmqx.stress.threads=200 \
+  -Djmqx.stress.reportIntervalSeconds=5
+```
+
+**集群消息吞吐**（两节点 MQTT 端口分别为 `jmqx.stress.port` 与 `port + 1000`，集群通信端口 7771/7772）
+
+```shell
+mvn test -pl jmqx-cluster \
+  -Djmqx.integration.tests=true \
+  -Dtest=ClusterStressTest \
+  -Djmqx.stress.durationSeconds=600 \
+  -Djmqx.stress.threads=200 \
+  -Djmqx.stress.reportIntervalSeconds=5
+```
+
+运行中周期性输出进度，结束时汇总吞吐，例如：
+
+```shell
+broker stress progress: threads=200, published=4120065, acked=234784, dispatchReceived=234788, intervalThroughput=46922 msg/s, elapsed=5.0s
+...
+broker stress result: threads=200, durationSeconds=600, payloadBytes=64, acked=73329836, dispatchReceived=73329837, time=600.000s, throughput=122130 msg/s, completed=true
+```
+
+> 压测公共代码位于各模块 `src/test/java/plus/jmqx/broker/support/`（`StressTestSupport`、`MqttStressClient`、`MqttKeepaliveClient` 等）。broker 与 cluster 模块各自维护一份，互不依赖 test-jar。
 
 - 单元测试方式启动：本机集群
 
