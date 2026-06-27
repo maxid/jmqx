@@ -4,6 +4,7 @@ import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
 import plus.jmqx.broker.acl.AclManager;
+import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.channel.SessionStatus;
@@ -69,7 +70,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     public void process(MessageWrapper<MqttPublishMessage> wrapper, MqttSession session, ContextView view) {
         ReceiveContext<?> context = view.get(ReceiveContext.class);
         try {
-            // MetricManagerHolder.metricManager.getMetricRegistry().getMetricCounter(CounterType.PUBLISH_EVENT).increment();
+            MetricsManagerHolder.get().incrementPublishedMessages();
             MqttPublishMessage message = wrapper.getMessage();
             MqttPublishVariableHeader header = message.variableHeader();
 
@@ -118,7 +119,9 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
                     session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false);
                     break;
                 case EXACTLY_ONCE:
-                    session.cacheQos2Msg(header.packetId(), MessageUtils.wrapPublishMessage(message, qos, 0));
+                    if (!session.cacheQos2Msg(header.packetId(), MessageUtils.wrapPublishMessage(message, qos, 0))) {
+                        return;
+                    }
                     session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false);
                     return;
                 default:

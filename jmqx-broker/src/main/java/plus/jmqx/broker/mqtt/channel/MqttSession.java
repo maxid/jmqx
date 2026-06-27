@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -74,6 +73,12 @@ public class MqttSession {
     @JsonIgnore
     private transient Map<Integer, MqttPublishMessage> qos2MsgCache;
 
+    /**
+     * QoS2 飞行消息上限（0=不限制）
+     */
+    @JsonIgnore
+    private int maxInflightQos2 = 0;
+
     @JsonIgnore
     private Map<MqttMessageType, Map<Integer, Disposable>> replyMqttMessageMap;
 
@@ -110,7 +115,7 @@ public class MqttSession {
      */
     public static MqttSession init(Connection connection, TimeAckManager timeAckManager) {
         MqttSession session = new MqttSession();
-        session.setTopics(new CopyOnWriteArraySet<>());
+        session.setTopics(ConcurrentHashMap.newKeySet());
         session.setAtomicInteger(new AtomicInteger(0));
         session.setReplyMqttMessageMap(new ConcurrentHashMap<>());
         session.setMqttMessageSink(new MqttMessageSink());
@@ -123,13 +128,30 @@ public class MqttSession {
     }
 
     /**
+     * 设置 QoS2 飞行消息上限
+     *
+     * @param maxInflightQos2 上限，0=不限制
+     */
+    public void setMaxInflightQos2(int maxInflightQos2) {
+        this.maxInflightQos2 = maxInflightQos2;
+    }
+
+    /**
      * 缓存 QoS 2 消息
      *
      * @param messageId      消息 ID
      * @param publishMessage 发布消息
+     * @return true 缓存成功，false 缓存已满拒绝
      */
-    public void cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
+    public boolean cacheQos2Msg(int messageId, MqttPublishMessage publishMessage) {
+        if (maxInflightQos2 > 0 && qos2MsgCache.size() >= maxInflightQos2) {
+            log.warn("QoS2 inflight limit reached for [{}], max={}, dropping msgId={}",
+                    clientId, maxInflightQos2, messageId);
+            MessageUtils.safeRelease(publishMessage);
+            return false;
+        }
         qos2MsgCache.put(messageId, publishMessage);
+        return true;
     }
 
     /**

@@ -20,9 +20,50 @@ public class DefaultSessionRegistry implements SessionRegistry {
     private final Map<String, MqttSession> sessions = new ConcurrentHashMap<>();
 
     /**
+     * 最大连接数限制，0=不限制
+     */
+    private volatile int maxConnections = 0;
+
+    /**
      * 创建默认会话注册中心
      */
     public DefaultSessionRegistry() {
+    }
+
+    /**
+     * 设置最大连接数
+     *
+     * @param maxConnections 最大连接数（0=不限制）
+     */
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
+
+    /**
+     * 判断是否还有连接容量
+     *
+     * @return true 允许连接，false 已满
+     */
+    public boolean hasCapacity() {
+        return maxConnections <= 0 || sessions.size() < maxConnections;
+    }
+
+    /**
+     * 获取当前连接数
+     *
+     * @return 当前连接数
+     */
+    public int currentCount() {
+        return sessions.size();
+    }
+
+    /**
+     * 获取最大连接数
+     *
+     * @return 最大连接数
+     */
+    public int getMaxConnections() {
+        return maxConnections;
     }
 
     /**

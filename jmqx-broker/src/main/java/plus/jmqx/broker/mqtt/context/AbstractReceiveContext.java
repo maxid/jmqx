@@ -14,6 +14,7 @@ import plus.jmqx.broker.cluster.ClusterRegistry;
 import plus.jmqx.broker.cluster.impl.DefaultClusterRegistry;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.spi.DynamicLoader;
+import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.CacheTrafficHandlerLoader;
 import plus.jmqx.broker.mqtt.channel.traffic.impl.LazyTrafficHandlerLoader;
@@ -216,7 +217,14 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 会话注册中心
      */
     private SessionRegistry sessionRegistry() {
-        return Optional.ofNullable(SessionRegistry.INSTANCE).orElseGet(DefaultSessionRegistry::new);
+        DefaultSessionRegistry registry = (DefaultSessionRegistry) Optional.ofNullable(SessionRegistry.INSTANCE)
+                .orElseGet(DefaultSessionRegistry::new);
+        // 配置最大连接数
+        if (configuration instanceof MqttConfiguration mqttConfig
+                && mqttConfig.getMaxConnections() != null && mqttConfig.getMaxConnections() > 0) {
+            registry.setMaxConnections(mqttConfig.getMaxConnections());
+        }
+        return registry;
     }
 
     /**
@@ -234,7 +242,20 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      * @return 消息注册中心
      */
     private MessageRegistry messageRegistry() {
-        return Optional.ofNullable(MessageRegistry.INSTANCE).orElseGet(DefaultMessageRegistry::new);
+        DefaultMessageRegistry registry = (DefaultMessageRegistry) Optional.ofNullable(MessageRegistry.INSTANCE)
+                .orElseGet(DefaultMessageRegistry::new);
+        if (configuration instanceof MqttConfiguration mqttConfig) {
+            if (mqttConfig.getMaxOfflineQueueSize() != null && mqttConfig.getMaxOfflineQueueSize() > 0) {
+                registry.setMaxOfflineQueueSize(mqttConfig.getMaxOfflineQueueSize());
+            }
+            if (mqttConfig.getMaxTotalOfflineMessages() != null && mqttConfig.getMaxTotalOfflineMessages() > 0) {
+                registry.setMaxTotalOfflineMessages(mqttConfig.getMaxTotalOfflineMessages());
+            }
+            if (mqttConfig.getMaxRetainMessageCount() != null && mqttConfig.getMaxRetainMessageCount() > 0) {
+                registry.setMaxRetainMessageCount(mqttConfig.getMaxRetainMessageCount());
+            }
+        }
+        return registry;
     }
 
     /**
