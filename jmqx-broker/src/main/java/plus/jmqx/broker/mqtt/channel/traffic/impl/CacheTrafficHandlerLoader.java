@@ -11,7 +11,7 @@ import plus.jmqx.broker.mqtt.channel.traffic.TrafficHandlerLoader;
  * @since 2025/4/10 17:49
  */
 @AllArgsConstructor
-public class CacheTrafficHandlerLoader  implements TrafficHandlerLoader {
+public class CacheTrafficHandlerLoader implements TrafficHandlerLoader {
 
     private final AbstractTrafficShapingHandler trafficShapingHandler;
 

@@ -16,8 +16,8 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.resolver.NoopAddressResolverGroup;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import plus.jmqx.broker.Bootstrap;
@@ -37,8 +37,8 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -200,13 +200,13 @@ class MqttLoadBenchmarkTest {
     }
 
     private static final class MqttTestClient {
-        private final String clientId;
-        private final int port;
-        private Connection connection;
-        private Flux<MqttMessage> inbound;
-        private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
-        private int packetId = 1;
-        private volatile Runnable publishHook;
+        private final    String                             clientId;
+        private final    int                                port;
+        private          Connection                         connection;
+        private          Flux<MqttMessage>                  inbound;
+        private final    ConcurrentLinkedQueue<MqttMessage> inbox    = new ConcurrentLinkedQueue<>();
+        private          int                                packetId = 1;
+        private volatile Runnable                           publishHook;
 
         /**
          * 构造测试客户端

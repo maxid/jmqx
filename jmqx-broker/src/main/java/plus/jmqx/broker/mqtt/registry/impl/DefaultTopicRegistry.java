@@ -3,9 +3,9 @@ package plus.jmqx.broker.mqtt.registry.impl;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.mqtt.topic.TopicFilter;
-import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.impl.FixedTopicFilter;
 import plus.jmqx.broker.mqtt.topic.impl.TreeTopicFilter;
 
@@ -25,19 +25,19 @@ public class DefaultTopicRegistry implements TopicRegistry {
     /**
      * 单级匹配
      */
-    private static final String SINGLE_SYMBOL = "+";
+    private static final String      SINGLE_SYMBOL = "+";
     /**
      * 多级匹配
      */
-    private static final String MULTI_SYMBOL = "#";
+    private static final String      MULTI_SYMBOL  = "#";
     /**
      * 固定主题过滤器
      */
-    private final TopicFilter fixedTopicFilter;
+    private final        TopicFilter fixedTopicFilter;
     /**
      * 多级主题过滤器
      */
-    private final TopicFilter treeTopicFilter;
+    private final        TopicFilter treeTopicFilter;
 
     /**
      * 创建默认主题注册中心

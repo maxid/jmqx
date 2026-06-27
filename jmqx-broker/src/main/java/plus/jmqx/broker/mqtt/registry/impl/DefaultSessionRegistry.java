@@ -1,8 +1,8 @@
 package plus.jmqx.broker.mqtt.registry.impl;
 
-import plus.jmqx.broker.mqtt.registry.SessionRegistry;
-import plus.jmqx.broker.mqtt.channel.SessionStatus;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.channel.SessionStatus;
+import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 
 import java.util.Collection;
 import java.util.Map;

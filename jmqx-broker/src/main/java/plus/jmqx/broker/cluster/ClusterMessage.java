@@ -42,7 +42,8 @@ public class ClusterMessage {
     /**
      * 构造空集群消息
      */
-    public ClusterMessage(){}
+    public ClusterMessage() {
+    }
 
     /**
      * 构造集群发布消息
@@ -65,7 +66,7 @@ public class ClusterMessage {
     /**
      * 构造集群消息
      *
-     * @param message 发布消息
+     * @param message      发布消息
      * @param clusterEvent 集群事件
      */
     public ClusterMessage(Object message, ClusterEvent clusterEvent) {

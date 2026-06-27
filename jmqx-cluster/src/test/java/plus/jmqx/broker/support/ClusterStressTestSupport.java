@@ -141,10 +141,10 @@ public final class ClusterStressTestSupport {
     }
 
     private static void connectClientsInBatches(List<StressClientTask> tasks,
-                                                  List<MqttStressClient> allClients,
-                                                  AtomicLong acked,
-                                                  int connectConcurrency,
-                                                  int connectTimeoutSeconds)
+                                                List<MqttStressClient> allClients,
+                                                AtomicLong acked,
+                                                int connectConcurrency,
+                                                int connectTimeoutSeconds)
             throws InterruptedException {
         ExecutorService connectExecutor = Executors.newFixedThreadPool(connectConcurrency);
         int totalBatches = (tasks.size() + connectConcurrency - 1) / connectConcurrency;
@@ -192,9 +192,9 @@ public final class ClusterStressTestSupport {
     }
 
     private static final class StressClientTask {
-        private final String clientId;
-        private final int port;
-        private MqttStressClient client;
+        private final String           clientId;
+        private final int              port;
+        private       MqttStressClient client;
 
         private StressClientTask(String clientId, int port) {
             this.clientId = clientId;

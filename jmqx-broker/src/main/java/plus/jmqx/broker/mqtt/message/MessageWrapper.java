@@ -1,7 +1,10 @@
 package plus.jmqx.broker.mqtt.message;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 
@@ -20,23 +23,23 @@ public class MessageWrapper<T extends MqttMessage> {
     /**
      * MQTT 消息
      */
-    private final T           message;
+    private final T                 message;
     /**
      * 消息时间
      */
-    private final long        timestamp;
+    private final long              timestamp;
     /**
      * 是否集群消息
      */
-    private final Boolean     clustered;
+    private final Boolean           clustered;
     /**
      * 定向投递目标设备 clientId（非空=定向投递，null=广播/主题路由）
      */
-    private       String      clientId;
+    private       String            clientId;
     /**
      * MQTT 会话
      */
-    private       MqttSession    session;
+    private       MqttSession       session;
     /**
      * 接收上下文（用于发布消息时携带，以便 processWrapper 优先使用）
      */

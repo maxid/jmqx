@@ -13,8 +13,8 @@ public class TokenBucketRateLimiter {
 
     private final long capacity;
     private final long tokensPerSecond;
-    private long tokens;
-    private long lastRefillNanos;
+    private       long tokens;
+    private       long lastRefillNanos;
 
     /**
      * 构造令牌桶

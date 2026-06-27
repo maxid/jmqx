@@ -1,9 +1,9 @@
 package plus.jmqx.broker.mqtt.registry.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.message.RetainMessage;
 import plus.jmqx.broker.mqtt.message.SessionMessage;
+import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.util.TopicRegexUtils;
 
 import java.util.ArrayList;
@@ -28,8 +28,8 @@ public class DefaultMessageRegistry implements MessageRegistry {
 
     private final Map<String, Queue<SessionMessage>> sessionMessages = new ConcurrentHashMap<>();
 
-    private final Map<String, RetainMessage> retainMessages = new ConcurrentHashMap<>();
-    private final Map<String, Pattern> retainPatternCache = new ConcurrentHashMap<>();
+    private final Map<String, RetainMessage> retainMessages     = new ConcurrentHashMap<>();
+    private final Map<String, Pattern>       retainPatternCache = new ConcurrentHashMap<>();
 
     /**
      * 总离线消息计数器
@@ -38,9 +38,9 @@ public class DefaultMessageRegistry implements MessageRegistry {
 
     // ========== 可配置上限（0 = 不限制） ==========
 
-    private volatile int maxOfflineQueueSize = 0;
+    private volatile int  maxOfflineQueueSize     = 0;
     private volatile long maxTotalOfflineMessages = 0L;
-    private volatile long maxRetainMessageCount = 0L;
+    private volatile long maxRetainMessageCount   = 0L;
 
     /**
      * 构造消息注册中心

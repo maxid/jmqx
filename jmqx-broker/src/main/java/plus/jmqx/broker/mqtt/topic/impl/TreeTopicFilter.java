@@ -26,11 +26,11 @@ public class TreeTopicFilter implements TopicFilter {
 
     private final TreeNode rootTreeNode = new TreeNode("root");
 
-    private final LongAdder subscribeNumber = new LongAdder();
-    private static final int CACHE_LIMIT = 2048;
-    private static final int BUCKET_LIMIT = 256;
-    private static final int MAX_BUCKETS = 64;
-    private final Map<String, Map<String, List<SubscribeTopic>>> bucketCaches = new ConcurrentHashMap<>();
+    private final        LongAdder                                      subscribeNumber = new LongAdder();
+    private static final int                                            CACHE_LIMIT     = 2048;
+    private static final int                                            BUCKET_LIMIT    = 256;
+    private static final int                                            MAX_BUCKETS     = 64;
+    private final        Map<String, Map<String, List<SubscribeTopic>>> bucketCaches    = new ConcurrentHashMap<>();
 
     /**
      * 根据主题获取订阅集合（带缓存）

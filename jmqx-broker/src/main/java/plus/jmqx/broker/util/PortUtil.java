@@ -14,7 +14,7 @@ import java.util.Objects;
  */
 public class PortUtil {
 
-    private final static String ANY_ADDRESS             = "0.0.0.0";
+    private final static String ANY_ADDRESS = "0.0.0.0";
 
     /**
      * 工具类禁止实例化

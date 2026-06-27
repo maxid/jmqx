@@ -1,12 +1,40 @@
 package plus.jmqx.broker.mqtt.message;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectPayload;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttSubscribePayload;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
+import io.netty.handler.codec.mqtt.MqttVersion;
 
 import java.util.List;
 import java.util.Map;
 
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.*;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSUPPORTED_PROTOCOL_VERSION;
 
 /**
  * MQTT 消息构建器
@@ -32,12 +60,12 @@ public class MqttMessageBuilder {
     /**
      * 创建 PUBLISH 消息（带 MqttProperties）
      *
-     * @param isDup     是否重复分发
-     * @param qoS       MQTT 服务质量等级
-     * @param isRetain  是否保留消息
-     * @param messageId 消息 ID
-     * @param topic     主题
-     * @param message   消息体
+     * @param isDup      是否重复分发
+     * @param qoS        MQTT 服务质量等级
+     * @param isRetain   是否保留消息
+     * @param messageId  消息 ID
+     * @param topic      主题
+     * @param message    消息体
      * @param properties MQTT 属性
      * @return PUBLISH 消息
      */
@@ -51,12 +79,12 @@ public class MqttMessageBuilder {
     /**
      * 创建 PUBLISH 消息（带用户属性，不保留）
      *
-     * @param isDup              是否重复分发
-     * @param qoS                MQTT 服务质量等级
-     * @param messageId          消息 ID
-     * @param topic              主题
-     * @param message            消息体
-     * @param userPropertiesMap  用户属性映射
+     * @param isDup             是否重复分发
+     * @param qoS               MQTT 服务质量等级
+     * @param messageId         消息 ID
+     * @param topic             主题
+     * @param message           消息体
+     * @param userPropertiesMap 用户属性映射
      * @return PUBLISH 消息
      */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, int messageId, String topic, ByteBuf message, Map<String, String> userPropertiesMap) {
@@ -69,13 +97,13 @@ public class MqttMessageBuilder {
     /**
      * 创建 PUBLISH 消息（带用户属性和保留标志）
      *
-     * @param isDup              是否重复分发
-     * @param qoS                MQTT 服务质量等级
-     * @param isRetain           是否保留消息
-     * @param messageId          消息 ID
-     * @param topic              主题
-     * @param message            消息体
-     * @param userPropertiesMap  用户属性映射
+     * @param isDup             是否重复分发
+     * @param qoS               MQTT 服务质量等级
+     * @param isRetain          是否保留消息
+     * @param messageId         消息 ID
+     * @param topic             主题
+     * @param message           消息体
+     * @param userPropertiesMap 用户属性映射
      * @return PUBLISH 消息
      */
     public static MqttPublishMessage publishMessage(boolean isDup, MqttQoS qoS, boolean isRetain, int messageId, String topic, ByteBuf message, Map<String, String> userPropertiesMap) {
@@ -295,16 +323,16 @@ public class MqttMessageBuilder {
     /**
      * 创建 CONNECT 消息
      *
-     * @param clientId   客户端 ID
-     * @param willTopic  遗嘱主题
+     * @param clientId    客户端 ID
+     * @param willTopic   遗嘱主题
      * @param willMessage 遗嘱消息
-     * @param username   用户名
-     * @param password   密码
-     * @param isUsername 是否包含用户名
-     * @param isPassword 是否包含密码
-     * @param isWill     是否包含遗嘱
-     * @param willQos    遗嘱消息 QoS
-     * @param heart      心跳间隔（秒）
+     * @param username    用户名
+     * @param password    密码
+     * @param isUsername  是否包含用户名
+     * @param isPassword  是否包含密码
+     * @param isWill      是否包含遗嘱
+     * @param willQos     遗嘱消息 QoS
+     * @param heart       心跳间隔（秒）
      * @return CONNECT 消息
      */
     public static MqttConnectMessage connectMessage(String clientId, String willTopic, String willMessage, String username, String password, boolean isUsername, boolean isPassword, boolean isWill, int willQos, int heart) {

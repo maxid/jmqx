@@ -3,7 +3,11 @@ package plus.jmqx.example.broker.dispatch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import plus.jmqx.broker.mqtt.message.dispatch.*;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.ConnectionLostMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.DisconnectMessage;
+import plus.jmqx.broker.mqtt.message.dispatch.PlatformDispatcher;
+import plus.jmqx.broker.mqtt.message.dispatch.PublishMessage;
 import reactor.core.publisher.Mono;
 
 /**
