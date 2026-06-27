@@ -17,7 +17,7 @@ public final class IntegrationTestLogSupport {
         loggerContext.getLogger("root").setLevel(Level.INFO);
         loggerContext.getLogger("reactor.netty").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
-        loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.DEBUG);
+        loggerContext.getLogger("plus.jmqx.broker.mqtt.message.impl").setLevel(Level.INFO);
     }
 
     public static void setClusterStressLogContext() {

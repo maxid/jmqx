@@ -23,8 +23,10 @@ class BrokerStressTest {
         IntegrationTestLogSupport.setBrokerStressLogContext();
 
         StressConfig stress = StressTestSupport.loadStressConfig();
+        int mqttPort = StressTestSupport.resolvePort(stress.port);
+        stress.port = mqttPort;
         AtomicLong dispatchReceived = new AtomicLong();
-        MqttConfiguration config = StressTestSupport.brokerStressConfig(stress.port);
+        MqttConfiguration config = StressTestSupport.brokerStressConfig(mqttPort);
         Bootstrap bootstrap = new Bootstrap(config, StressTestSupport.countingDispatcher(dispatchReceived));
         bootstrap.start().block();
 
