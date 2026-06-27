@@ -173,12 +173,17 @@ mvn test -pl jmqx-cluster \
 | `jmqx.stress.inFlightLimit` | `20000` | 单客户端飞行窗口上限 |
 | `jmqx.stress.timeoutSeconds` | `720` | 整体超时（秒） |
 | `jmqx.stress.reportIntervalSeconds` | `10` | 进度日志间隔（秒） |
-| `jmqx.stress.connectLimit` | `50` | 集群压测建连并发上限（信号量） |
+| `jmqx.stress.connectConcurrency` | `50` | 集群压测逐批建连并发数 |
+| `jmqx.stress.connectTimeoutSeconds` | `30` | 单次建连超时（秒） |
+| `jmqx.stress.clusterPort1` | `7771` | 集群 node-1 通信端口 |
+| `jmqx.stress.clusterPort2` | `7772` | 集群 node-2 通信端口 |
+
+`jmqx.stress.port` 设为 `0` 时由 OS 自动分配 MQTT 端口；大于 `0` 时若端口被占用，测试启动前会解析为下一个可用端口，客户端与 Broker 使用同一端口，避免 `Connection refused`。
 
 **单节点消息吞吐**
 
 ```shell
-mvn test -pl jmqx-broker \
+MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-broker \
   -Djmqx.integration.tests=true \
   -Dtest=BrokerStressTest \
   -Djmqx.stress.durationSeconds=600 \
@@ -186,10 +191,39 @@ mvn test -pl jmqx-broker \
   -Djmqx.stress.reportIntervalSeconds=5
 ```
 
-**集群消息吞吐**（两节点 MQTT 端口分别为 `jmqx.stress.port` 与 `port + 1000`，集群通信端口 7771/7772）
+```shell
+23:10:06.667 [jmqx-event-loop-select-nio-2] INFO plus.jmqx.broker.mqtt.transport.impl.MqttTransport - mqtt broker start success host 0:0:0:0:0:0:0:0 port 1883
+23:10:11.683 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=4083809, acked=88144, dispatchReceived=90765, intervalThroughput=17612 msg/s, elapsed=5.0s
+23:10:16.673 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=4228594, acked=357965, dispatchReceived=367494, intervalThroughput=53962 msg/s, elapsed=10.0s
+23:10:21.673 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=4560826, acked=1062562, dispatchReceived=1065149, intervalThroughput=140927 msg/s, elapsed=15.0s
+23:10:26.680 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=5356186, acked=2012433, dispatchReceived=2028850, intervalThroughput=190019 msg/s, elapsed=20.0s
+23:10:31.672 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=6309925, acked=2638320, dispatchReceived=2697606, intervalThroughput=125224 msg/s, elapsed=25.0s
+...
+23:15:31.673 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=43563399, acked=39798091, dispatchReceived=39798153, intervalThroughput=121112 msg/s, elapsed=325.0s
+23:15:36.675 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=44166253, acked=40411317, dispatchReceived=40411366, intervalThroughput=122616 msg/s, elapsed=330.0s
+23:15:41.689 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=44730782, acked=40990637, dispatchReceived=40991666, intervalThroughput=115508 msg/s, elapsed=335.0s
+23:15:46.672 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=45343519, acked=41630082, dispatchReceived=41631308, intervalThroughput=128340 msg/s, elapsed=340.0s
+23:15:51.672 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=45971698, acked=42241166, dispatchReceived=42241476, intervalThroughput=122201 msg/s, elapsed=345.0s
+23:15:56.671 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=46599389, acked=42849953, dispatchReceived=42850681, intervalThroughput=121783 msg/s, elapsed=350.0s
+...
+23:19:46.669 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=74698566, acked=70890784, dispatchReceived=70896160, intervalThroughput=120882 msg/s, elapsed=580.0s
+23:19:51.671 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=75302586, acked=71509411, dispatchReceived=71509891, intervalThroughput=123654 msg/s, elapsed=585.0s
+23:19:56.668 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=75929092, acked=72117302, dispatchReceived=72118893, intervalThroughput=121661 msg/s, elapsed=590.0s
+23:20:01.670 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=76526968, acked=72729026, dispatchReceived=72729478, intervalThroughput=122311 msg/s, elapsed=595.0s
+23:20:06.566 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77171000, acked=73338254, dispatchReceived=73338656, intervalThroughput=121866 msg/s, elapsed=600.0s
+23:20:11.565 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315292, acked=73948782, dispatchReceived=73949079, intervalThroughput=122028 msg/s, elapsed=605.0s
+23:20:16.568 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315311, acked=74558271, dispatchReceived=74558752, intervalThroughput=121926 msg/s, elapsed=610.0s
+23:20:21.564 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315316, acked=75163976, dispatchReceived=75164019, intervalThroughput=121130 msg/s, elapsed=615.0s
+23:20:26.564 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315317, acked=75774907, dispatchReceived=75774990, intervalThroughput=122174 msg/s, elapsed=620.0s
+23:20:31.562 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315318, acked=76383066, dispatchReceived=76383843, intervalThroughput=121692 msg/s, elapsed=625.0s
+23:20:36.559 [pool-7-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - broker stress progress: threads=200, published=77315318, acked=76983958, dispatchReceived=76984485, intervalThroughput=120230 msg/s, elapsed=630.0s
+23:20:40.482 [main] INFO plus.jmqx.broker.support.StressTestSupport - broker stress result: threads=200, durationSeconds=600, payloadBytes=64, acked=77315319, dispatchReceived=77315319, time=633.912s, throughput=121965 msg/s, completed=true
+```
+
+**集群消息吞吐**（双节点，MQTT 端口分别为解析后的 `port` 与 `port + 1000`，集群通信端口默认 7771/7772，启动前同样会做可用端口解析）
 
 ```shell
-mvn test -pl jmqx-cluster \
+MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
   -Djmqx.integration.tests=true \
   -Dtest=ClusterStressTest \
   -Djmqx.stress.durationSeconds=600 \
@@ -197,12 +231,39 @@ mvn test -pl jmqx-cluster \
   -Djmqx.stress.reportIntervalSeconds=5
 ```
 
+**集群压测补充说明**
+
+- 客户端均分到两个节点（各 `threads / 2`），先逐批建连再并发发布；客户端使用共享连接池、`cleanSession` 与 keepalive，与 `MassiveConnectionTest` 的连接策略一致。
+- 日志中 `published` 通常先于 `acked` 增长，汇总 `throughput` 按整段耗时（含建连、发布、等待 PUBACK 收尾）计算；客户端较多时，前期 `intervalThroughput` 偏低、后期才接近稳态，对比吞吐建议参考进度日志后段的区间值。
+- 高并发场景可适当调低 `jmqx.stress.inFlightLimit`（如 `2000`）以缩短收尾等待，或增大 `jmqx.stress.timeoutSeconds`；本机资源有限时，`threads=200` 的汇总吞吐可能低于少量客户端压测，属正常现象。
+
 运行中周期性输出进度，结束时汇总吞吐，例如：
 
 ```shell
-broker stress progress: threads=200, published=4120065, acked=234784, dispatchReceived=234788, intervalThroughput=46922 msg/s, elapsed=5.0s
+22:50:21.418 [main] INFO plus.jmqx.broker.support.ClusterStressTestSupport - cluster stress: cluster formed, preflight start
+22:50:21.564 [main] INFO plus.jmqx.broker.support.ClusterStressTestSupport - cluster stress: 200/200 clients connected
+22:50:26.502 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=4021098, acked=21099, dispatchReceived=34376, intervalThroughput=4151 msg/s, elapsed=5.1s
+22:50:31.426 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=4050803, acked=54214, dispatchReceived=88392, intervalThroughput=6723 msg/s, elapsed=10.0s
+22:50:36.424 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=4083299, acked=94616, dispatchReceived=252368, intervalThroughput=8084 msg/s, elapsed=15.0s
+22:50:41.552 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=4179597, acked=209869, dispatchReceived=337719, intervalThroughput=23040 msg/s, elapsed=20.0s
+22:50:46.427 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=4344656, acked=352774, dispatchReceived=403143, intervalThroughput=28576 msg/s, elapsed=25.0s
 ...
-broker stress result: threads=200, durationSeconds=600, payloadBytes=64, acked=73329836, dispatchReceived=73329837, time=600.000s, throughput=122130 msg/s, completed=true
+22:55:51.425 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=32950221, acked=28950350, dispatchReceived=28956663, intervalThroughput=91707 msg/s, elapsed=330.0s
+22:55:56.425 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=33492692, acked=29492713, dispatchReceived=29493106, intervalThroughput=108475 msg/s, elapsed=335.0s
+22:56:01.422 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=33985945, acked=29986159, dispatchReceived=29992648, intervalThroughput=98736 msg/s, elapsed=340.0s
+22:56:06.431 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=34384157, acked=30385263, dispatchReceived=30397882, intervalThroughput=79759 msg/s, elapsed=345.0s
+22:56:11.425 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=34896376, acked=30896377, dispatchReceived=30897062, intervalThroughput=102257 msg/s, elapsed=350.0s
+...
+23:00:01.424 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=56905905, acked=52905941, dispatchReceived=52905955, intervalThroughput=107804 msg/s, elapsed=580.0s
+23:00:06.419 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=57391998, acked=53392203, dispatchReceived=53399152, intervalThroughput=97335 msg/s, elapsed=585.0s
+23:00:11.421 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=57857105, acked=53857106, dispatchReceived=53862080, intervalThroughput=92967 msg/s, elapsed=590.0s
+23:00:16.426 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58380810, acked=54380811, dispatchReceived=54381563, intervalThroughput=104666 msg/s, elapsed=595.0s
+23:00:21.424 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58877043, acked=54877108, dispatchReceived=54878850, intervalThroughput=99270 msg/s, elapsed=600.0s
+23:00:26.419 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58924045, acked=55670215, dispatchReceived=55772168, intervalThroughput=158759 msg/s, elapsed=605.0s
+23:00:31.422 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58924099, acked=56799078, dispatchReceived=56799165, intervalThroughput=225630 msg/s, elapsed=610.0s
+23:00:36.433 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58924106, acked=57674632, dispatchReceived=57697504, intervalThroughput=175093 msg/s, elapsed=615.0s
+23:00:41.424 [pool-9-thread-1] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress progress: threads=200, published=58924109, acked=58652701, dispatchReceived=58666181, intervalThroughput=195569 msg/s, elapsed=620.0s
+23:00:44.064 [main] INFO plus.jmqx.broker.support.StressTestSupport - cluster stress result: threads=200, durationSeconds=600, payloadBytes=64, acked=58924110, dispatchReceived=58924110, time=622.581s, throughput=94645 msg/s, completed=true
 ```
 
 > 压测公共代码位于各模块 `src/test/java/plus/jmqx/broker/support/`（`StressTestSupport`、`MqttStressClient`、`MqttKeepaliveClient` 等）。broker 与 cluster 模块各自维护一份，互不依赖 test-jar。

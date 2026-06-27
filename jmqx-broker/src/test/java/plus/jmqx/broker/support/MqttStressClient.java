@@ -2,6 +2,10 @@ package plus.jmqx.broker.support;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectPayload;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -10,57 +14,81 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.resolver.NoopAddressResolverGroup;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import reactor.netty.Connection;
+import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.tcp.TcpClient;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 /**
- * 高吞吐 MQTT 压测客户端：连接、QoS1 发布循环、飞行窗口与 PUBACK 跟踪。
+ * 高吞吐 MQTT 压测客户端：共享连接池、cleanSession、keepalive 保活、QoS1 发布循环。
  */
 public class MqttStressClient {
+
+    private static final int DEFAULT_KEEP_ALIVE_SECONDS = 60;
+    private static final ConnectionProvider CLIENT_POOL = ConnectionProvider.builder("jmqx-stress-client")
+            .maxConnections(20_000)
+            .pendingAcquireMaxCount(-1)
+            .pendingAcquireTimeout(Duration.ofMinutes(3))
+            .build();
 
     private final String clientId;
     private final int port;
     private final AtomicLong ackedCounter;
+    private final int keepAliveSeconds;
     private Connection connection;
+    private volatile ScheduledFuture<?> pingFuture;
     private final ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
     private int packetId = 1;
     private final AtomicLong localAcked = new AtomicLong();
 
     public MqttStressClient(String clientId, int port, AtomicLong ackedCounter) {
+        this(clientId, port, ackedCounter, DEFAULT_KEEP_ALIVE_SECONDS);
+    }
+
+    public MqttStressClient(String clientId, int port, AtomicLong ackedCounter, int keepAliveSeconds) {
         this.clientId = clientId;
         this.port = port;
         this.ackedCounter = ackedCounter;
+        this.keepAliveSeconds = keepAliveSeconds;
     }
 
     public void connect() {
-        this.connection = TcpClient.create()
+        connect(5);
+    }
+
+    public void connect(int timeoutSeconds) {
+        this.connection = TcpClient.create(CLIENT_POOL)
                 .resolver(NoopAddressResolverGroup.INSTANCE)
                 .remoteAddress(() -> new InetSocketAddress("127.0.0.1", port))
-                .connectNow(Duration.ofSeconds(5));
+                .connectNow(Duration.ofSeconds(timeoutSeconds));
         ensureMqttPipeline();
 
-        MqttMessage connect = MqttMessageBuilder.connectMessage(
-                clientId, "", "", "", "", false, false, false, 0, 60);
-        writeAndFlush(connect);
+        writeAndFlush(cleanSessionConnect(clientId, keepAliveSeconds));
         connection.inbound()
                 .receiveObject()
                 .ofType(MqttMessage.class)
                 .subscribe(this::onInbound);
         MqttConnAckMessage ack = (MqttConnAckMessage) awaitMessage(
                 msg -> msg instanceof MqttConnAckMessage,
-                Duration.ofSeconds(5));
+                Duration.ofSeconds(timeoutSeconds));
         if (ack == null) {
             throw new IllegalStateException("connect ack timeout for " + clientId);
         }
+        if (ack.variableHeader().connectReturnCode() != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+            throw new IllegalStateException("connect rejected for " + clientId + ": "
+                    + ack.variableHeader().connectReturnCode());
+        }
+        startKeepalive();
     }
 
     public long publishLoop(String topic, int payloadBytes, int durationSeconds,
@@ -161,8 +189,41 @@ public class MqttStressClient {
     }
 
     public void close() {
-        if (connection != null && !connection.isDisposed()) {
-            connection.disposeNow();
+        stopKeepalive();
+        if (connection == null || connection.isDisposed()) {
+            return;
+        }
+        try {
+            if (connection.channel().isActive()) {
+                writeAndFlush(new MqttMessage(new MqttFixedHeader(
+                        MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0)));
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (!connection.isDisposed()) {
+                connection.disposeNow();
+            }
+        }
+    }
+
+    private void startKeepalive() {
+        long intervalMs = Math.max(1000L, keepAliveSeconds * 1000L * 3 / 4);
+        pingFuture = connection.channel().eventLoop().scheduleAtFixedRate(() -> {
+            try {
+                if (connection != null && connection.channel().isActive()) {
+                    writeAndFlush(MqttMessageBuilder.pingMessage());
+                }
+            } catch (Exception ignored) {
+                stopKeepalive();
+            }
+        }, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+    }
+
+    private void stopKeepalive() {
+        ScheduledFuture<?> future = pingFuture;
+        if (future != null) {
+            future.cancel(false);
+            pingFuture = null;
         }
     }
 
@@ -246,12 +307,19 @@ public class MqttStressClient {
     }
 
     private void onInbound(MqttMessage message) {
-        if (message.fixedHeader().messageType() == MqttMessageType.PUBACK) {
-            ackedCounter.incrementAndGet();
-            localAcked.incrementAndGet();
-            return;
+        switch (message.fixedHeader().messageType()) {
+            case PUBACK:
+                ackedCounter.incrementAndGet();
+                localAcked.incrementAndGet();
+                return;
+            case PINGRESP:
+                return;
+            case PINGREQ:
+                writeAndFlush(MqttMessageBuilder.pongMessage());
+                return;
+            default:
+                inbox.add(message);
         }
-        inbox.add(message);
     }
 
     private MqttMessage awaitMessage(Predicate<MqttMessage> predicate, Duration timeout) {
@@ -271,5 +339,17 @@ public class MqttStressClient {
             }
         }
         return null;
+    }
+
+    private static MqttConnectMessage cleanSessionConnect(String clientId, int keepAliveSeconds) {
+        MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
+                MqttVersion.MQTT_3_1_1.protocolName(),
+                MqttVersion.MQTT_3_1_1.protocolLevel(),
+                false, false, false, 0, false, true, keepAliveSeconds);
+        MqttConnectPayload payload = new MqttConnectPayload(
+                clientId, null, (byte[]) null, null, (byte[]) null);
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(
+                MqttMessageType.CONNECT, false, MqttQoS.AT_MOST_ONCE, false, 10);
+        return new MqttConnectMessage(fixedHeader, variableHeader, payload);
     }
 }

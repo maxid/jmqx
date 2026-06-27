@@ -23,8 +23,7 @@ public class ClusterStressTest {
 
         StressConfig stress = StressTestSupport.loadStressConfig();
         String namespace = "jmqx-cluster-stress-" + UUID.randomUUID().toString().split("-")[0];
-        String clusterUrls = "127.0.0.1:7771,127.0.0.1:7772";
 
-        ClusterStressTestSupport.runClusterStress(stress, namespace, clusterUrls);
+        ClusterStressTestSupport.runClusterStress(stress, namespace);
     }
 }
