@@ -33,15 +33,10 @@ SMQTT 作者开源了那么优秀的项目。
 11. 增强：支持通过 clientId 主动向指定设备下发消息（在设备订阅同一个主题情况下），不经过主题路由，走完整分发管线（含 ACL
     检查），集群模式自动扩散（2026-6-24）
 12. 测试：同一 JVM 内可通过 namespace + node 组合键启动多个集群节点，支持集成测试验证集群间消息路由（2026-6-25）
-13. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`（2026-6-27）
-14. 路由表在 topic 变更后不残留旧数据；消息 ID 分配有界可终止；连接计数严格跟随连接生命周期不会为负；
-    ClusterReceiver 零 ByteBuf 泄漏；集群注册中心高负载下稳定运行（2026-6-26~27）
-15. 鉴权阻塞与 IO 线程隔离互不影响；连接风暴不冲击集群间通道；消息分发使用有界队列防止 OOM（2026-6-27）
-16. 订阅感知路由：PUBLISH 仅转发给有订阅者的节点，避免集群内无效广播（2026-6-26）
-17. MqttConfiguration 支持 maxConnections 连接上限与连接准入拦截；MetricsManager 提供指标 SPI 可替换监控实现；
-    消息处理链内存安全加固（2026-6-27）
-18. 高负载下集群节点不再被误判离线；pingTimeout、suspicionMult 可按部署场景配置（2026-6-26）
-19. ClusterReceiver 移除不必要的线程切换，集群消息吞吐恢复至 20k msg/s（2026-6-26）
+13. 集群：增加订阅感知路由，只有设备订阅主题匹配才扩散 PUBLISH 事件消息到设备所在节点，大大提升集群性能（2026-6-26～2026-6-27）
+14. 优化：调整消息分发使用有界队列默认大小（2026-6-27） 
+15. 增强：增加 MetricsManager 提供指标 SPI 可替换监控实现（2026-6-27） 
+16. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`, 测试结果已更新见后文（2026-6-27）
 
 ## 使用示例
 
@@ -197,7 +192,7 @@ mvn test -pl jmqx-cluster \
 `jmqx.stress.port` 设为 `0` 时由 OS 自动分配 MQTT 端口；大于 `0` 时若端口被占用，测试启动前会解析为下一个可用端口，客户端与
 Broker 使用同一端口，避免 `Connection refused`。
 
-**单节点消息吞吐**
+**单节点消息吞吐（单台 m4 mini）**
 
 ```shell
 MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-broker \
@@ -237,7 +232,8 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-broker \
 23:20:40.482 [main] INFO plus.jmqx.broker.support.StressTestSupport - broker stress result: threads=200, durationSeconds=600, payloadBytes=64, acked=77315319, dispatchReceived=77315319, time=633.912s, throughput=121965 msg/s, completed=true
 ```
 
-**集群消息吞吐**（双节点，MQTT 端口分别为解析后的 `port` 与 `port + 1000`，集群通信端口默认 7771/7772，启动前同样会做可用端口解析）
+**集群消息吞吐 (单台 m4 mini)**
+> 双节点，MQTT 端口分别为解析后的 `port` 与 `port + 1000`，集群通信端口默认 7771/7772，启动前同样会做可用端口解析
 
 ```shell
 MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
