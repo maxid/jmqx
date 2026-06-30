@@ -2,6 +2,9 @@ package plus.jmqx.broker.support;
 
 /**
  * MQTT 消息压测结果
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 public class StressResult {
 
@@ -16,4 +19,5 @@ public class StressResult {
         this.endNanos = endNanos;
         this.completed = completed;
     }
+
 }

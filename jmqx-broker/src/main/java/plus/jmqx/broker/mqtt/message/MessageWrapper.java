@@ -40,9 +40,5 @@ public class MessageWrapper<T extends MqttMessage> {
      * MQTT 会话
      */
     private       MqttSession       session;
-    /**
-     * 接收上下文（用于发布消息时携带，以便 processWrapper 优先使用）
-     */
-    private       ReceiveContext<?> receiveContext;
 
 }

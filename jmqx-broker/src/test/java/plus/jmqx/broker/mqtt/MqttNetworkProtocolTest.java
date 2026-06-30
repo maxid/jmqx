@@ -54,6 +54,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * MQTT 3.x/5 网络连通性单元测试
  * 运行需显式启用：-Djmqx.network.tests=true
+ *
+ * @author maxid
+ * @since 2026/4/18
  */
 @EnabledIfSystemProperty(named = "jmqx.network.tests", matches = "true")
 class MqttNetworkProtocolTest {

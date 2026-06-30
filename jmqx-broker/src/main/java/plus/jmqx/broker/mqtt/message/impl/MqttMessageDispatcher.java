@@ -143,7 +143,6 @@ public class MqttMessageDispatcher implements MessageDispatcher {
             session = ClusterSession.wrapClientId(clientId);
             wrapper.setClientId(clientId);
         }
-        wrapper.setReceiveContext(context);
         // 走代理管线，确保 TailIntercept 执行集群扩散
         proxySelf.dispatch(session, wrapper, context);
     }
@@ -186,19 +185,10 @@ public class MqttMessageDispatcher implements MessageDispatcher {
                 return;
             }
         }
-        /*
-        ReceiveContext<?> context = wrapper.getReceiveContext();
-        if (context == null) {
-            context = contextHolder().getContext();
-        }
-        */
         ReceiveContext<?> context = contextHolder().getContext();
         if (context == null) {
             ReactorNetty.safeRelease(message.payload());
             return;
-        }
-        if (Objects.equals(context, wrapper.getReceiveContext())) {
-            log.info("-------------------------- context is same --------------------------");
         }
         try {
             processor.process(wrapper, wrapper.getSession(), Context.of(ReceiveContext.class, context));

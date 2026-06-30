@@ -13,6 +13,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.resolver.NoopAddressResolverGroup;
+import lombok.Getter;
 import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import reactor.netty.Connection;
 import reactor.netty.resources.ConnectionProvider;
@@ -26,8 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- * 海量连接压测用 MQTT 客户端：仅保持在线，不发布/订阅，但遵循正常 MQTT 行为
+ * 海量连接压测用 MQTT 客户端：仅保持在线，不发布/订阅，但遵循正常 MQTT 行为<br/>
  * （clean session、keepalive PINGREQ/PINGRESP、优雅 DISCONNECT）。
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 public class MqttKeepaliveClient {
 
@@ -37,9 +41,11 @@ public class MqttKeepaliveClient {
             .pendingAcquireTimeout(Duration.ofMinutes(3))
             .build();
 
-    private final    String                             clientId;
-    private final    int                                port;
-    private final    int                                keepAliveSeconds;
+    @Getter
+    private final String clientId;
+    @Getter
+    private final int    port;
+    private final int    keepAliveSeconds;
     private          Connection                         connection;
     private volatile ScheduledFuture<?>                 pingFuture;
     private final    ConcurrentLinkedQueue<MqttMessage> inbox = new ConcurrentLinkedQueue<>();
@@ -52,14 +58,6 @@ public class MqttKeepaliveClient {
         this.clientId = clientId;
         this.port = port;
         this.keepAliveSeconds = keepAliveSeconds;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public boolean isActive() {

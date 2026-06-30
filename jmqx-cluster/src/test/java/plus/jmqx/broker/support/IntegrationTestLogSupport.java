@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 集成测试日志级别配置
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 public final class IntegrationTestLogSupport {
 
@@ -26,4 +29,5 @@ public final class IntegrationTestLogSupport {
         loggerContext.getLogger("plus.jmqx.broker").setLevel(Level.INFO);
         loggerContext.getLogger("plus.jmqx.broker.cluster").setLevel(Level.INFO);
     }
+
 }
