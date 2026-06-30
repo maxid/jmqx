@@ -13,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * MQTT 3.x/5 协议兼容性单元测试
+ *
+ * @author maxid
+ * @since 2026/4/18
  */
 class MqttProtocolCompatibilityTest {
 

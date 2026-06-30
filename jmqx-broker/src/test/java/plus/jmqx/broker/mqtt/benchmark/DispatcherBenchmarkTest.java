@@ -31,6 +31,9 @@ import java.util.concurrent.locks.LockSupport;
 
 /**
  * 简易对比基准：Legacy vs Optimized dispatch pipeline
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 class DispatcherBenchmarkTest {
 
