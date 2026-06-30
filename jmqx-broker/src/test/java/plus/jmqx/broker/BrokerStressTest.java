@@ -13,6 +13,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Broker 消息吞吐压测
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 @Slf4j
 @EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")
@@ -37,4 +40,5 @@ class BrokerStressTest {
             bootstrap.shutdown();
         }
     }
+
 }

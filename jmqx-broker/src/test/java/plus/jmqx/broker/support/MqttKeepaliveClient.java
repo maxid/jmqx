@@ -26,8 +26,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- * 海量连接压测用 MQTT 客户端：仅保持在线，不发布/订阅，但遵循正常 MQTT 行为
+ * 海量连接压测用 MQTT 客户端：仅保持在线，不发布/订阅，但遵循正常 MQTT 行为<br/>
  * （clean session、keepalive PINGREQ/PINGRESP、优雅 DISCONNECT）。
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 public class MqttKeepaliveClient {
 
@@ -223,4 +226,5 @@ public class MqttKeepaliveClient {
             super(message);
         }
     }
+
 }

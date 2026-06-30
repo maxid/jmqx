@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>验证方式：客户端侧观测 CONNACK 状态 + 重连验证（同 clientId 重连成功即证明旧会话已清理）。</p>
  *
  * @author maxid
- * @since 2025/4/9 16:30
+ * @since 2025/6/27
  */
 @Slf4j
 @EnabledIfSystemProperty(named = "jmqx.integration.tests", matches = "true")

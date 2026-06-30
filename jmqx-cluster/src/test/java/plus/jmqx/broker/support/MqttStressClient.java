@@ -31,6 +31,9 @@ import java.util.function.Predicate;
 
 /**
  * 高吞吐 MQTT 压测客户端：共享连接池、cleanSession、keepalive 保活、QoS1 发布循环。
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 public class MqttStressClient {
 
@@ -352,4 +355,5 @@ public class MqttStressClient {
                 MqttMessageType.CONNECT, false, MqttQoS.AT_MOST_ONCE, false, 10);
         return new MqttConnectMessage(fixedHeader, variableHeader, payload);
     }
+
 }

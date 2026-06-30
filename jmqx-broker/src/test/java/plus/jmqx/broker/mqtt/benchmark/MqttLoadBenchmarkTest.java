@@ -47,6 +47,9 @@ import java.util.function.Predicate;
 
 /**
  * 真实连接压测：基于 TCP+MQTT 协议进行发布/订阅性能对比
+ *
+ * @author maxid
+ * @since 2026/4/18
  */
 @EnabledIfSystemProperty(named = "jmqx.benchmark.tests", matches = "true")
 class MqttLoadBenchmarkTest {

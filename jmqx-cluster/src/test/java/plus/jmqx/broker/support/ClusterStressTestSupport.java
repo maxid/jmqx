@@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 集群消息压测工具
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 @Slf4j
 public final class ClusterStressTestSupport {
@@ -201,4 +204,5 @@ public final class ClusterStressTestSupport {
             this.port = port;
         }
     }
+
 }

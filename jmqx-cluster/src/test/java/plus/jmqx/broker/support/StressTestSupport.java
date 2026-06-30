@@ -21,6 +21,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * MQTT 消息压测公共工具
+ *
+ * @author maxid
+ * @since 2026/6/27
  */
 @Slf4j
 public final class StressTestSupport {
