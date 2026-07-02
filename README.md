@@ -12,7 +12,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 | [jmqx-parent](jmqx-parent/README.md)                                     | Maven 父 POM，集中管理依赖版本与 Maven Central 发布 |
 | [jmqx-broker](jmqx-broker/README.md)                                     | 核心 MQTT Broker 库（必选）                         |
 | [jmqx-cluster](jmqx-cluster/README.md)                                   | 集群支持模块（可选，基于 ScaleCube）                |
-| [jmqx-client](jmqx-client/README.md)                                     | MQTT 客户端库（开发中）                             |
+| [jmqx-client](jmqx-client/README.md)                                     | MQTT 客户端库（v3.1.1 + v5.0，Reactor/Async/Blocking API） |
 | [jmqx-example/jmqx-spring-boot](jmqx-example/jmqx-spring-boot/README.md) | Spring Boot 集成示例                                |
 | [bench](bench/README.md)                                                 | 性能压测工具与对比脚本                              |
 

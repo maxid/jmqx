@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class MqttOutbox {
 
     private final AtomicInteger permits;
-    private final int maxPermits;
+    private volatile int maxPermits;
     private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<>();
 
     public MqttOutbox(int maxInflight) {
@@ -75,6 +75,16 @@ public final class MqttOutbox {
 
     public int waiting() {
         return waiters.size();
+    }
+
+    /**
+     * 根据 CONNACK Receive Maximum 调整出站 inflight 上限（MQTT 5）。
+     */
+    public void setMaxPermits(int newMax) {
+        if (newMax <= 0) {
+            return;
+        }
+        this.maxPermits = newMax;
     }
 
     private boolean tryAcquirePermit() {
