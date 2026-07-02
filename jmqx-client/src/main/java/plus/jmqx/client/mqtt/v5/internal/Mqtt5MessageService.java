@@ -41,7 +41,9 @@ import java.util.Map;
  */
 public class Mqtt5MessageService implements MqttMessageService {
 
-    /** Netty MQTT 5 协议版本常量 */
+    /**
+     * Netty MQTT 5 协议版本常量
+     */
     private static final io.netty.handler.codec.mqtt.MqttVersion NETTY_VERSION =
             io.netty.handler.codec.mqtt.MqttVersion.MQTT_5;
 

@@ -13,9 +13,13 @@ import plus.jmqx.client.mqtt.message.MqttConnAck;
 @Value
 public class Mqtt3ConnAck implements MqttConnAck {
 
-    /** 服务端是否已恢复之前的会话 */
+    /**
+     * 服务端是否已恢复之前的会话
+     */
     boolean                sessionPresent;
-    /** 连接返回码 */
+    /**
+     * 连接返回码
+     */
     Mqtt3ConnAckReturnCode returnCode;
 
     @Override

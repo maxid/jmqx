@@ -27,13 +27,21 @@ import java.util.function.Function;
 @Slf4j
 public final class MessageBuffer {
 
-    /** 缓存的消息队列 */
+    /**
+     * 缓存的消息队列
+     */
     private final Queue<BufferedPublish> queue        = new ConcurrentLinkedQueue<>();
-    /** 最大消息条数限制 */
+    /**
+     * 最大消息条数限制
+     */
     private final int                    maxSize;
-    /** 最大字节数限制 */
+    /**
+     * 最大字节数限制
+     */
     private final long                   maxBytes;
-    /** 当前已缓存字节数 */
+    /**
+     * 当前已缓存字节数
+     */
     private final AtomicLong             currentBytes = new AtomicLong(0);
 
     /**
@@ -99,7 +107,9 @@ public final class MessageBuffer {
         }
     }
 
-    /** 清空缓存 */
+    /**
+     * 清空缓存
+     */
     public void clear() {
         queue.clear();
         currentBytes.set(0);

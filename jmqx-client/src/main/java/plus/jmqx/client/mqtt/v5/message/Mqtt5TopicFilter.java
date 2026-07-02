@@ -14,9 +14,13 @@ import plus.jmqx.client.mqtt.message.QoS;
 @Builder
 public class Mqtt5TopicFilter implements MqttTopicFilter {
 
-    /** 主题过滤器表达式 */
+    /**
+     * 主题过滤器表达式
+     */
     String topicFilter;
-    /** 请求的 QoS 等级 */
+    /**
+     * 请求的 QoS 等级
+     */
     QoS    qos;
 
     @Override

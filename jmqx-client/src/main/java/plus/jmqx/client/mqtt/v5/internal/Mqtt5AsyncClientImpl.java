@@ -24,7 +24,9 @@ import java.util.function.Consumer;
  */
 public class Mqtt5AsyncClientImpl implements Mqtt5AsyncClient {
 
-    /** 被委托的 Reactor API 客户端 */
+    /**
+     * 被委托的 Reactor API 客户端
+     */
     private final Mqtt5RxClient rx;
 
     /**

@@ -21,15 +21,25 @@ import java.util.function.Supplier;
 @Slf4j
 public class MqttAutoReconnect implements MqttClientDisconnectedListener {
 
-    /** 初始重连延迟（毫秒） */
+    /**
+     * 初始重连延迟（毫秒）
+     */
     private final long              initialDelayMs;
-    /** 最大重连延迟（毫秒） */
+    /**
+     * 最大重连延迟（毫秒）
+     */
     private final long              maxDelayMs;
-    /** 返回 connect() Mono 的供应器 */
+    /**
+     * 返回 connect() Mono 的供应器
+     */
     private final Supplier<Mono<?>> connectCall;
-    /** 调度器（测试中使用 VirtualTimeScheduler，生产中使用 parallel） */
+    /**
+     * 调度器（测试中使用 VirtualTimeScheduler，生产中使用 parallel）
+     */
     private final Scheduler         scheduler;
-    /** 是否已停止重连 */
+    /**
+     * 是否已停止重连
+     */
     private final AtomicBoolean     stopped = new AtomicBoolean(false);
 
     /**
@@ -84,7 +94,9 @@ public class MqttAutoReconnect implements MqttClientDisconnectedListener {
         return (long) (base * jitter);
     }
 
-    /** 停止自动重连 */
+    /**
+     * 停止自动重连
+     */
     public void stop() {
         stopped.set(true);
     }

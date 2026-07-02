@@ -12,17 +12,29 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public class Mqtt3PublishBuilder {
 
-    /** 主题名 */
+    /**
+     * 主题名
+     */
     private String  topic;
-    /** 消息负载 */
+    /**
+     * 消息负载
+     */
     private byte[]  payload;
-    /** QoS 等级，默认为 AT_MOST_ONCE */
+    /**
+     * QoS 等级，默认为 AT_MOST_ONCE
+     */
     private QoS     qos      = QoS.AT_MOST_ONCE;
-    /** 保留标志，默认为 false */
+    /**
+     * 保留标志，默认为 false
+     */
     private boolean retain   = false;
-    /** 重复标志，默认为 false */
+    /**
+     * 重复标志，默认为 false
+     */
     private boolean dup      = false;
-    /** 报文标识符，默认为 0 */
+    /**
+     * 报文标识符，默认为 0
+     */
     private int     packetId = 0;
 
     /**

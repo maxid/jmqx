@@ -31,10 +31,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 public class Mqtt3BlockingClientImpl implements Mqtt3BlockingClient {
 
-    /** 默认阻塞超时时间：30 秒 */
+    /**
+     * 默认阻塞超时时间：30 秒
+     */
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
-    /** 被委托的 Reactive API 客户端 */
+    /**
+     * 被委托的 Reactive API 客户端
+     */
     private final Mqtt3RxClient rx;
 
     /**

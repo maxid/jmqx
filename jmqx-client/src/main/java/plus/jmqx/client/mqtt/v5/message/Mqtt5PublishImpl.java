@@ -10,19 +10,33 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public final class Mqtt5PublishImpl implements Mqtt5Publish {
 
-    /** 主题名 */
+    /**
+     * 主题名
+     */
     private final String                 topic;
-    /** 消息负载 */
+    /**
+     * 消息负载
+     */
     private final byte[]                 payload;
-    /** QoS 等级 */
+    /**
+     * QoS 等级
+     */
     private final QoS                    qos;
-    /** 保留标志 */
+    /**
+     * 保留标志
+     */
     private final boolean                retain;
-    /** DUP 标志 */
+    /**
+     * DUP 标志
+     */
     private final boolean                dup;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     private final int                    packetId;
-    /** MQTT 5 PUBLISH 属性 */
+    /**
+     * MQTT 5 PUBLISH 属性
+     */
     private final Mqtt5PublishProperties properties;
 
     /**

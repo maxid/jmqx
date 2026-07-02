@@ -25,7 +25,9 @@ import java.util.function.Consumer;
  */
 public class Mqtt3AsyncClientImpl implements Mqtt3AsyncClient {
 
-    /** 被委托的 Reactive API 客户端 */
+    /**
+     * 被委托的 Reactive API 客户端
+     */
     private final Mqtt3RxClient rx;
 
     /**
