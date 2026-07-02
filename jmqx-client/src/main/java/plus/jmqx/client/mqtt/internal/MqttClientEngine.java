@@ -44,25 +44,80 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public abstract class MqttClientEngine {
 
+    /**
+     * 客户端配置
+     */
     protected final MqttClientConfig                     config;
+    /**
+     * 消息编解码服务（v3/v5 适配）
+     */
     protected final MqttMessageService                   service;
+    /**
+     * packetId 生成器
+     */
     protected final PacketIdManager                      packetIdManager   = new PacketIdManager();
+    /**
+     * ACK 跟踪器
+     */
     protected final AckTracker                           ackTracker        = new AckTracker();
+    /**
+     * 订阅存储
+     */
     protected final SubscriptionStore                    subscriptionStore = new SubscriptionStore();
+    /**
+     * 入站投递枢纽
+     */
     protected final MqttInbox                            inbox;
+    /**
+     * 入站 QoS 状态机
+     */
     protected final InboundQos                           inboundQos        = new InboundQos();
+    /**
+     * 出站 inflight 限制器
+     */
     protected final MqttOutbox                           outbox;
+    /**
+     * 离线消息缓冲
+     */
     protected final MessageBuffer                        messageBuffer;
+    /**
+     * 传输工厂
+     */
     protected final TransportFactory                     transportFactory  = new TransportFactory();
+    /**
+     * 已连接监听器列表
+     */
     protected final List<MqttClientConnectedListener>    connectedListeners;
+    /**
+     * 已断开监听器列表
+     */
     protected final List<MqttClientDisconnectedListener> disconnectedListeners;
+    /**
+     * 自动重连
+     */
     protected final MqttAutoReconnect                    autoReconnect;
 
+    /**
+     * 客户端当前状态
+     */
     protected final    AtomicReference<MqttClientState> state =
             new AtomicReference<>(MqttClientState.DISCONNECTED);
+    /**
+     * reactor-netty 连接
+     */
     protected volatile Connection                       connection;
+    /**
+     * MQTT 业务处理器
+     */
     protected volatile MqttClientHandler                handler;
 
+    /**
+     * 构造版本无关的 MQTT 客户端引擎。
+     *
+     * @param config                客户端配置
+     * @param connectedListeners    已连接监听器列表
+     * @param disconnectedListeners 已断开监听器列表
+     */
     protected MqttClientEngine(MqttClientConfig config,
                                List<MqttClientConnectedListener> connectedListeners,
                                List<MqttClientDisconnectedListener> disconnectedListeners) {
@@ -79,14 +134,46 @@ public abstract class MqttClientEngine {
                 reactor.core.scheduler.Schedulers.parallel()) : null;
     }
 
+    /**
+     * 创建消息编解码服务（v3/v5 分别实现）。
+     *
+     * @param cfg 客户端配置
+     * @return 消息编解码服务实例
+     */
     protected abstract MqttMessageService createService(MqttClientConfig cfg);
 
+    /**
+     * 构建重新订阅请求。
+     *
+     * @param filters  主题过滤器列表
+     * @param packetId 分配的 packetId
+     * @return 订阅消息
+     */
     protected abstract MqttSubscribe buildResubscribe(List<MqttTopicFilter> filters, int packetId);
 
+    /**
+     * 复制订阅消息并设置指定的 packetId。
+     *
+     * @param subscribe 原始订阅消息
+     * @param packetId  新的 packetId
+     * @return 复制后的订阅消息
+     */
     protected abstract MqttSubscribe copySubscribeWithPacketId(MqttSubscribe subscribe, int packetId);
 
+    /**
+     * 复制取消订阅消息并设置指定的 packetId。
+     *
+     * @param unsubscribe 原始取消订阅消息
+     * @param packetId    新的 packetId
+     * @return 复制后的取消订阅消息
+     */
     protected abstract MqttUnsubscribe copyUnsubscribeWithPacketId(MqttUnsubscribe unsubscribe, int packetId);
 
+    /**
+     * 执行引擎连接。
+     *
+     * @return 连接成功时发出 CONNACK 的 Mono
+     */
     protected Mono<MqttConnAck> engineConnect() {
         return Mono.defer(() -> {
             if (!state.compareAndSet(MqttClientState.DISCONNECTED, MqttClientState.CONNECTING)) {
@@ -122,6 +209,12 @@ public abstract class MqttClientEngine {
         });
     }
 
+    /**
+     * 执行订阅。
+     *
+     * @param subscribe 订阅消息
+     * @return 订阅确认 Mono
+     */
     public Mono<MqttSubAck> engineSubscribe(MqttSubscribe subscribe) {
         return Mono.defer(() -> {
             if (state.get() != MqttClientState.CONNECTED) {
@@ -138,6 +231,12 @@ public abstract class MqttClientEngine {
         });
     }
 
+    /**
+     * 获取订阅匹配的发布流。
+     *
+     * @param subscribe 订阅消息（含主题过滤器）
+     * @return 匹配主题的发布 Flux
+     */
     public Flux<MqttPublish> engineSubscribePublishes(MqttSubscribe subscribe) {
         return inbox.globalFlux()
                 .filter(d -> matchesAny(subscribe, d.getTopic()))
@@ -145,6 +244,12 @@ public abstract class MqttClientEngine {
                 .map(this::toPublishView);
     }
 
+    /**
+     * 获取全局发布流（按过滤器类型订阅）。
+     *
+     * @param filter 全局发布过滤器
+     * @return 匹配的发布 Flux
+     */
     public Flux<MqttPublish> enginePublishes(MqttGlobalPublishFilter filter) {
         return inbox.globalFlux()
                 .doOnNext(MqttInbox.Deliverable::consume)
@@ -152,10 +257,22 @@ public abstract class MqttClientEngine {
                 .map(this::toPublishView);
     }
 
+    /**
+     * 执行发布。
+     *
+     * @param publish 发布消息
+     * @return 发布结果 Mono
+     */
     public Mono<MqttPublishResult> enginePublish(MqttPublish publish) {
         return doPublish(publish);
     }
 
+    /**
+     * 执行实际发布逻辑（含 QoS 处理和离线缓冲）。
+     *
+     * @param publish 发布消息
+     * @return 发布结果 Mono
+     */
     protected Mono<MqttPublishResult> doPublish(MqttPublish publish) {
         return Mono.defer(() -> {
             if (state.get() == MqttClientState.CONNECTED) {
@@ -184,6 +301,12 @@ public abstract class MqttClientEngine {
         });
     }
 
+    /**
+     * 执行取消订阅。
+     *
+     * @param unsubscribe 取消订阅消息
+     * @return 完成 Mono
+     */
     public Mono<Void> engineUnsubscribe(MqttUnsubscribe unsubscribe) {
         return Mono.defer(() -> {
             if (state.get() != MqttClientState.CONNECTED) {
@@ -201,6 +324,11 @@ public abstract class MqttClientEngine {
         });
     }
 
+    /**
+     * 执行断开连接。
+     *
+     * @return 断开完成 Mono
+     */
     public Mono<Void> engineDisconnect() {
         return Mono.defer(() -> {
             if (autoReconnect != null) {
@@ -219,10 +347,20 @@ public abstract class MqttClientEngine {
         });
     }
 
+    /**
+     * 获取客户端当前状态。
+     *
+     * @return 客户端状态枚举
+     */
     public MqttClientState getState() {
         return state.get();
     }
 
+    /**
+     * CONNACK 接收后的处理（如 MQTT 5 Receive Maximum 处理）。
+     *
+     * @param ack 连接确认消息
+     */
     protected void afterConnAck(MqttConnAck ack) {
         if (ack instanceof Mqtt5ConnAck a5) {
             int receiveMax = a5.getProperties().getReceiveMaximum();
@@ -232,6 +370,9 @@ public abstract class MqttClientEngine {
         }
     }
 
+    /**
+     * 重连后重新订阅之前的所有主题。
+     */
     protected void resubscribe() {
         var filters = subscriptionStore.snapshotFilters();
         if (filters.isEmpty()) {
@@ -242,6 +383,11 @@ public abstract class MqttClientEngine {
         connection.outbound().sendObject(Mono.just(service.encodeSubscribe(sub))).then().subscribe();
     }
 
+    /**
+     * 传输错误处理。
+     *
+     * @param err 传输异常
+     */
     protected void onTransportError(Throwable err) {
         log.warn("Transport error: {}", err.toString());
         state.set(MqttClientState.DISCONNECTED);
@@ -257,6 +403,11 @@ public abstract class MqttClientEngine {
         }
     }
 
+    /**
+     * 通知所有已连接监听器。
+     *
+     * @param sessionPresent 是否存在之前会话
+     */
     protected void notifyConnected(boolean sessionPresent) {
         MqttClientConnectedContext ctx = new MqttClientConnectedContext(config, sessionPresent);
         for (var l : connectedListeners) {
@@ -264,6 +415,12 @@ public abstract class MqttClientEngine {
         }
     }
 
+    /**
+     * 将 Deliverable 转换为 MqttPublish 视图。
+     *
+     * @param d 入站投递元素
+     * @return 发布消息视图
+     */
     protected MqttPublish toPublishView(MqttInbox.Deliverable d) {
         return new DeliverablePublishView(d);
     }
@@ -295,8 +452,16 @@ public abstract class MqttClientEngine {
      * 保留 ack() 回调的入站 PUBLISH 视图。
      */
     protected static final class DeliverablePublishView implements MqttPublish {
+        /**
+         * 代理的入站投递元素
+         */
         private final MqttInbox.Deliverable d;
 
+        /**
+         * 构造 DeliverablePublishView。
+         *
+         * @param d 入站投递元素
+         */
         DeliverablePublishView(MqttInbox.Deliverable d) {
             this.d = d;
         }
@@ -336,6 +501,11 @@ public abstract class MqttClientEngine {
             d.ack();
         }
 
+        /**
+         * 获取原始入站投递元素。
+         *
+         * @return 原始 Deliverable
+         */
         public MqttInbox.Deliverable deliverable() {
             return d;
         }

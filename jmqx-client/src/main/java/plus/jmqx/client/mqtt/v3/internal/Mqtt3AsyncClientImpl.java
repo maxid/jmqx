@@ -17,16 +17,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * {@link Mqtt3AsyncClient} 的 CompletableFuture 实现，委托给 {@link Mqtt3RxClient}。
+ * {@link Mqtt3AsyncClient} 的 CompletableFuture 实现。
  *
- * <p>Reactor 的 {@code Mono.toFuture()} / {@code Flux} 订阅负责线程切换与背压传递。
+ * <p>所有操作委托给 {@link Mqtt3RxClient}，通过 Reactor 的 {@code Mono.toFuture()} 转换。
  *
  * @author maxid
  */
 public class Mqtt3AsyncClientImpl implements Mqtt3AsyncClient {
 
+    /** 被委托的 Reactive API 客户端 */
     private final Mqtt3RxClient rx;
 
+    /**
+     * 构造异步客户端实现。
+     *
+     * @param rx 被委托的 Reactive 客户端
+     */
     public Mqtt3AsyncClientImpl(Mqtt3RxClient rx) {
         this.rx = rx;
     }
@@ -38,7 +44,7 @@ public class Mqtt3AsyncClientImpl implements Mqtt3AsyncClient {
 
     @Override
     public CompletableFuture<Mqtt3SubAck> subscribe(Mqtt3Subscribe subscribe, Consumer<Mqtt3Publish> callback) {
-        // 先订阅 publish 流（回调），再发送 SUBSCRIBE；两者共享同一订阅。
+        // 先订阅 publish 流（注册回调），再发送 SUBSCRIBE 报文；两者共享同一底层订阅。
         rx.subscribePublishes(subscribe).doOnNext(callback).subscribe();
         return rx.subscribe(subscribe).toFuture();
     }

@@ -12,8 +12,17 @@ import plus.jmqx.client.mqtt.message.MqttConnAck;
 @Value
 public class Mqtt5ConnAck implements MqttConnAck {
 
+    /**
+     * 会话是否已存在
+     */
     boolean                sessionPresent;
+    /**
+     * 连接响应码
+     */
     byte                   reasonCode;
+    /**
+     * CONNACK 属性
+     */
     Mqtt5ConnAckProperties properties;
 
     @Override

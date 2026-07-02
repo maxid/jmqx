@@ -10,12 +10,33 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public class Mqtt5PublishBuilder {
 
+    /**
+     * 主题名
+     */
     private String                 topic;
+    /**
+     * 消息负载
+     */
     private byte[]                 payload;
+    /**
+     * QoS 等级
+     */
     private QoS                    qos        = QoS.AT_MOST_ONCE;
+    /**
+     * 保留标志
+     */
     private boolean                retain;
+    /**
+     * DUP 标志
+     */
     private boolean                dup;
+    /**
+     * 报文标识符
+     */
     private int                    packetId;
+    /**
+     * MQTT 5 PUBLISH 属性
+     */
     private Mqtt5PublishProperties properties = Mqtt5PublishProperties.builder().build();
 
     /**

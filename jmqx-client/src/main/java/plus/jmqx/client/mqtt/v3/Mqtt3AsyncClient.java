@@ -18,12 +18,14 @@ import java.util.function.Consumer;
 public interface Mqtt3AsyncClient extends Mqtt3Client {
 
     /**
+     * 连接 broker。
+     *
      * @return 连接完成后携带 CONNACK 的 Future
      */
     CompletableFuture<Mqtt3ConnAck> connect();
 
     /**
-     * 订阅，并为每条匹配的 publish 调用 callback。
+     * 订阅主题，并为每条匹配的入站 publish 调用回调。
      *
      * @param subscribe 订阅消息
      * @param callback  入站 publish 回调
@@ -32,18 +34,24 @@ public interface Mqtt3AsyncClient extends Mqtt3Client {
     CompletableFuture<Mqtt3SubAck> subscribe(Mqtt3Subscribe subscribe, Consumer<Mqtt3Publish> callback);
 
     /**
+     * 发布一条 PUBLISH 报文。
+     *
      * @param publish 待发布的消息
      * @return 携带发布结果的 Future
      */
     CompletableFuture<Mqtt3PublishResult> publish(Mqtt3Publish publish);
 
     /**
+     * 取消订阅。
+     *
      * @param unsubscribe 取消订阅消息
      * @return 完成 Future
      */
     CompletableFuture<Void> unsubscribe(Mqtt3Unsubscribe unsubscribe);
 
     /**
+     * 断开连接。
+     *
      * @return 断开连接完成 Future
      */
     CompletableFuture<Void> disconnect();

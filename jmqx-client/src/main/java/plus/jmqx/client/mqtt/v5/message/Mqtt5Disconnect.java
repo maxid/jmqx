@@ -12,6 +12,9 @@ import lombok.Value;
 @Builder
 public class Mqtt5Disconnect {
 
+    /**
+     * 断开连接原因码
+     */
     byte reasonCode;
 
 }

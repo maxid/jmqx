@@ -1,6 +1,6 @@
 # jmqx-client MQTT 客户端实现计划
 
-> **For agentic workers:** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 来按任务逐步实现本计划。步骤使用复选框（`- [ ]`）语法进行跟踪。
+> **For agentic workers:** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 来按任务逐步实现本计划。步骤使用复选框（`- [x]`）语法进行跟踪。
 
 **目标：** 基于 reactor-netty 构建高性能异步 MQTT 客户端库（v3.1.1 + v5.0），提供 CompletableFuture/Reactor/Blocking API，支持双向 backpressure（背压）、自动重连和离线缓存。
 
@@ -100,7 +100,7 @@ jmqx-client/src/test/java/plus/jmqx/client/mqtt/
 
 `reactor-netty` 已经传递拉取了 reactor-core + netty-codec-mqtt 已经存在。我们添加 `reactor-test`（用于 `StepVerifier`/`VirtualTimeScheduler`），并确保 `netty-handler`/`netty-transport`（用于 `EmbeddedChannel`）可用 —— reactor-netty 已经传递依赖它们，因此在 test scope 下可解析。同时添加一个小的测试资源标记。
 
-- [ ] **步骤 1：更新 jmqx-client/pom.xml**
+- [x] **步骤 1：更新 jmqx-client/pom.xml**
 
 将 `<dependencies>` 块替换为：
 
@@ -146,12 +146,12 @@ jmqx-client/src/test/java/plus/jmqx/client/mqtt/
     </dependencies>
 ```
 
-- [ ] **步骤 2：验证构建编译通过（依赖可解析）**
+- [x] **步骤 2：验证构建编译通过（依赖可解析）**
 
 运行：`mvn -pl jmqx-client -am dependency:resolve -q`
 预期：BUILD SUCCESS，无未解析依赖。
 
-- [ ] **步骤 3：提交**
+- [x] **步骤 3：提交**
 
 ```bash
 git add jmqx-client/pom.xml
@@ -171,7 +171,7 @@ git commit -m "chore(client): add reactor-test + logback test deps, scope lombok
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/message/MqttTopicFilter.java`
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/message/MqttMessageBuilder.java`
 
-- [ ] **步骤 1：编写 QoS 测试**
+- [x] **步骤 1：编写 QoS 测试**
 
 创建 `jmqx-client/src/test/java/plus/jmqx/client/mqtt/message/QoSTest.java`：
 
@@ -205,12 +205,12 @@ class QoSTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败（无类）**
+- [x] **步骤 2：运行测试 —— 失败（无类）**
 
 运行：`mvn -pl jmqx-client test -Dtest=QoSTest -q`
 预期：编译失败（QoS 未定义）。
 
-- [ ] **步骤 3：创建版本无关的类型**
+- [x] **步骤 3：创建版本无关的类型**
 
 `MqttVersion.java`：
 ```java
@@ -345,12 +345,12 @@ public final class MqttMessageBuilder {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=QoSTest -q`
 预期：BUILD SUCCESS，QoSTest 通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/MqttVersion.java \
@@ -368,7 +368,7 @@ git commit -m "feat(client): add version-agnostic enums and base message interfa
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/util/TopicMatcher.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/util/TopicMatcherTest.java`
 
-- [ ] **步骤 1：编写失败测试**
+- [x] **步骤 1：编写失败测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal.util;
@@ -414,12 +414,12 @@ class TopicMatcherTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=TopicMatcherTest -q`
 预期：FAIL（TopicMatcher 未定义）。
 
-- [ ] **步骤 3：实现 TopicMatcher**
+- [x] **步骤 3：实现 TopicMatcher**
 
 ```java
 package plus.jmqx.client.mqtt.internal.util;
@@ -454,12 +454,12 @@ public final class TopicMatcher {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=TopicMatcherTest -q`
 预期：BUILD SUCCESS，所有 TopicMatcherTest 通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/util/TopicMatcher.java \
@@ -475,7 +475,7 @@ git commit -m "feat(client): add TopicMatcher for +/# wildcard matching"
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/util/PacketIdManager.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/util/PacketIdManagerTest.java`
 
-- [ ] **步骤 1：编写失败测试**
+- [x] **步骤 1：编写失败测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal.util;
@@ -540,12 +540,12 @@ class PacketIdManagerTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=PacketIdManagerTest -q`
 预期：FAIL（类未定义）。
 
-- [ ] **步骤 3：实现 PacketIdManager**
+- [x] **步骤 3：实现 PacketIdManager**
 
 ```java
 package plus.jmqx.client.mqtt.internal.util;
@@ -572,12 +572,12 @@ public final class PacketIdManager {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=PacketIdManagerTest -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/util/PacketIdManager.java \
@@ -596,7 +596,7 @@ git commit -m "feat(client): add single PacketIdManager (1..65535, wraparound, t
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/lifecycle/MqttClientDisconnectedListener.java`
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/lifecycle/MqttClientReconnector.java`
 
-- [ ] **步骤 1：创建上下文与监听器**
+- [x] **步骤 1：创建上下文与监听器**
 
 `MqttClientConnectedContext.java`：
 ```java
@@ -710,12 +710,12 @@ public final class MqttClientReconnector {
 }
 ```
 
-- [ ] **步骤 2：验证编译**
+- [x] **步骤 2：验证编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 3：提交**
+- [x] **步骤 3：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/lifecycle/
@@ -729,7 +729,7 @@ git commit -m "feat(client): add lifecycle listeners, contexts, and reconnector"
 **文件：**
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/MqttClientConfig.java`
 
-- [ ] **步骤 1：创建 MqttClientConfig**
+- [x] **步骤 1：创建 MqttClientConfig**
 
 ```java
 package plus.jmqx.client.mqtt;
@@ -793,7 +793,7 @@ public class MqttClientConfig {
 }
 ```
 
-- [ ] **步骤 2：编译（在 Task 13 的 transport 配置存在之前会失败 —— 现在先创建桩以解除阻塞）**
+- [x] **步骤 2：编译（在 Task 13 的 transport 配置存在之前会失败 —— 现在先创建桩以解除阻塞）**
 
 创建 `jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/MqttSslConfig.java`：
 ```java
@@ -833,12 +833,12 @@ public class MqttWebSocketConfig {
 }
 ```
 
-- [ ] **步骤 3：编译**
+- [x] **步骤 3：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/MqttClientConfig.java \
@@ -859,7 +859,7 @@ git commit -m "feat(client): add MqttClientConfig + SSL/WebSocket config stubs"
   - `Mqtt3Unsubscribe.java`
   - `Mqtt3PubAck.java`, `Mqtt3PubRec.java`, `Mqtt3PubRel.java`, `Mqtt3PubComp.java`, `Mqtt3Disconnect.java`
 
-- [ ] **步骤 1：创建不可变的 Mqtt3Publish + impl**
+- [x] **步骤 1：创建不可变的 Mqtt3Publish + impl**
 
 `v3/message/Mqtt3Publish.java`：
 ```java
@@ -952,7 +952,7 @@ public final class Mqtt3PublishImpl implements Mqtt3Publish {
 }
 ```
 
-- [ ] **步骤 2：创建其余 v3 消息**
+- [x] **步骤 2：创建其余 v3 消息**
 
 `v3/message/Mqtt3Connect.java`：
 ```java
@@ -1103,12 +1103,12 @@ public final class Mqtt3Disconnect {
 }
 ```
 
-- [ ] **步骤 3：编译**
+- [x] **步骤 3：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/v3/message/
@@ -1126,7 +1126,7 @@ git commit -m "feat(client): add immutable MQTT 3.1.1 message types"
 
 codec 使用 `netty-codec-mqtt`（`MqttEncoder`/`MqttDecoder`/`MqttMessageBuilders`）处理线路格式；`Mqtt3MessageService` 在业务消息类型与 Netty 类型之间转换。使用运行真实 encoder/decoder 的 `EmbeddedChannel` 进行往返保真度测试。
 
-- [ ] **步骤 1：创建 MqttMessageService 接口**
+- [x] **步骤 1：创建 MqttMessageService 接口**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -1168,7 +1168,7 @@ public interface MqttMessageService {
 }
 ```
 
-- [ ] **步骤 2：编写失败的 codec 往返测试**
+- [x] **步骤 2：编写失败的 codec 往返测试**
 
 ```java
 package plus.jmqx.client.mqtt.v3.internal;
@@ -1264,12 +1264,12 @@ class Mqtt3MessageServiceTest {
 }
 ```
 
-- [ ] **步骤 3：运行测试 —— 失败（Mqtt3MessageService 未定义）**
+- [x] **步骤 3：运行测试 —— 失败（Mqtt3MessageService 未定义）**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt3MessageServiceTest -q`
 预期：编译失败。
 
-- [ ] **步骤 4：实现 Mqtt3MessageService**
+- [x] **步骤 4：实现 Mqtt3MessageService**
 
 ```java
 package plus.jmqx.client.mqtt.v3.internal;
@@ -1449,7 +1449,7 @@ public class Mqtt3MessageService implements MqttMessageService {
 }
 ```
 
-- [ ] **步骤 5：添加所引用的缺失的版本无关消息接口**
+- [x] **步骤 5：添加所引用的缺失的版本无关消息接口**
 
 `MqttMessageService` 接口引用了来自 `plus.jmqx.client.mqtt.message` 的 `MqttConnAck`/`MqttSubscribe`/`MqttSubAck`/`MqttUnsubscribe`。v3 实现（`Mqtt3ConnAck` 等）位于 `v3.message`。我们需要版本无关的接口，使 service 与版本无关。创建：
 
@@ -1538,12 +1538,12 @@ public class Mqtt3ConnAck implements MqttConnAck {
 }
 ```
 
-- [ ] **步骤 6：运行测试 —— 通过**
+- [x] **步骤 6：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt3MessageServiceTest -q`
 预期：BUILD SUCCESS，4 个测试通过。
 
-- [ ] **步骤 7：提交**
+- [x] **步骤 7：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/MqttMessageService.java \
@@ -1566,7 +1566,7 @@ git commit -m "feat(client): add MqttMessageService adapter + Mqtt3MessageServic
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/AckTracker.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/AckTrackerTest.java`
 
-- [ ] **步骤 1：创建 PendingOutbound**
+- [x] **步骤 1：创建 PendingOutbound**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -1605,7 +1605,7 @@ public record MqttPublishResultImpl(MqttPublish publish, Throwable error) implem
 }
 ```
 
-- [ ] **步骤 2：编写失败的 AckTracker 测试**
+- [x] **步骤 2：编写失败的 AckTracker 测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -1675,12 +1675,12 @@ class AckTrackerTest {
 }
 ```
 
-- [ ] **步骤 3：运行测试 —— 失败**
+- [x] **步骤 3：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=AckTrackerTest -q`
 预期：编译失败（AckTracker 未定义）。
 
-- [ ] **步骤 4：实现 AckTracker**
+- [x] **步骤 4：实现 AckTracker**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -1741,12 +1741,12 @@ public final class AckTracker {
 }
 ```
 
-- [ ] **步骤 5：运行测试 —— 通过**
+- [x] **步骤 5：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=AckTrackerTest -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/PendingOutbound.java \
@@ -1765,7 +1765,7 @@ git commit -m "feat(client): add AckTracker for outbound QoS1/2 ACK tracking (TD
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/buffer/MessageBuffer.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/buffer/MessageBufferTest.java`
 
-- [ ] **步骤 1：编写失败测试**
+- [x] **步骤 1：编写失败测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal.buffer;
@@ -1836,12 +1836,12 @@ class MessageBufferTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=MessageBufferTest -q`
 预期：编译失败。
 
-- [ ] **步骤 3：实现 MessageBuffer + 异常**
+- [x] **步骤 3：实现 MessageBuffer + 异常**
 
 `buffer/MessageBufferFullException.java`：
 ```java
@@ -1937,12 +1937,12 @@ public final class MessageBuffer {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=MessageBufferTest -q`
 预期：BUILD SUCCESS，4 个测试通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/buffer/ \
@@ -1957,7 +1957,7 @@ git commit -m "feat(client): add MessageBuffer with flush-re-registers-ACK seman
 **文件：**
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/SubscriptionStore.java`
 
-- [ ] **步骤 1：实现 SubscriptionStore**
+- [x] **步骤 1：实现 SubscriptionStore**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2019,12 +2019,12 @@ public final class SubscriptionStore {
 }
 ```
 
-- [ ] **步骤 2：编译**
+- [x] **步骤 2：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 3：提交**
+- [x] **步骤 3：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/SubscriptionStore.java
@@ -2039,7 +2039,7 @@ git commit -m "feat(client): add SubscriptionStore for topic routing + reconnect
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/MqttOutbox.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/MqttOutboxBackpressureTest.java`
 
-- [ ] **步骤 1：编写失败测试**
+- [x] **步骤 1：编写失败测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2094,12 +2094,12 @@ class MqttOutboxBackpressureTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttOutboxBackpressureTest -q`
 预期：编译失败。
 
-- [ ] **步骤 3：实现 MqttOutbox**
+- [x] **步骤 3：实现 MqttOutbox**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2173,12 +2173,12 @@ public final class MqttOutbox {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttOutboxBackpressureTest -q`
 预期：BUILD SUCCESS，2 个测试通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/MqttOutbox.java \
@@ -2194,7 +2194,7 @@ git commit -m "feat(client): add MqttOutbox inflight semaphore backpressure (TDD
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/TransportFactory.java`
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/NettyUtil.java`
 
-- [ ] **步骤 1：创建 NettyUtil**
+- [x] **步骤 1：创建 NettyUtil**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2211,7 +2211,7 @@ public final class NettyUtil {
 }
 ```
 
-- [ ] **步骤 2：实现 TransportFactory**
+- [x] **步骤 2：实现 TransportFactory**
 
 ```java
 package plus.jmqx.client.mqtt.internal.transport;
@@ -2291,11 +2291,11 @@ public final class TransportFactory {
 
 注意：`Mono` 导入 —— 在顶部添加 `import reactor.core.publisher.Mono;`。
 
-- [ ] **步骤 3：编译（会失败 —— MqttClientHandler 尚未创建；在 Task 14 中创建）**
+- [x] **步骤 3：编译（会失败 —— MqttClientHandler 尚未创建；在 Task 14 中创建）**
 
 本任务与 Task 14 相互依赖。为解除阻塞，先在 Task 14 中创建最小化的 `MqttClientHandler` 骨架，然后在此编译。继续 Task 14 后返回。
 
-- [ ] **步骤 4：提交（在 Task 14 解除编译阻塞后）**
+- [x] **步骤 4：提交（在 Task 14 解除编译阻塞后）**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/TransportFactory.java \
@@ -2312,7 +2312,7 @@ git commit -m "feat(client): add TransportFactory (reactor-netty TCP/TLS/WS/WSS)
 
 这是安装在 pipeline（Task 13）中的单一 Netty 处理器。它将所有逻辑委托给普通 Java 对象（`MqttMessageService`、`AckTracker`、`MqttInbox`、`InboundQos`）。该处理器由 `DefaultMqttClient`（Task 15）构造，持有对这些协作对象的引用。
 
-- [ ] **步骤 1：创建 MqttClientHandler**
+- [x] **步骤 1：创建 MqttClientHandler**
 
 ```java
 package plus.jmqx.client.mqtt.internal.handler;
@@ -2411,7 +2411,7 @@ public class MqttClientHandler extends ChannelDuplexHandler {
 }
 ```
 
-- [ ] **步骤 2：创建最小化的 InboundQos + MqttInbox 桩（完整实现在 Task 16-17）**
+- [x] **步骤 2：创建最小化的 InboundQos + MqttInbox 桩（完整实现在 Task 16-17）**
 
 `internal/InboundQos.java`：
 ```java
@@ -2450,12 +2450,12 @@ public final class MqttInbox {
 }
 ```
 
-- [ ] **步骤 3：编译**
+- [x] **步骤 3：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS（Task 13 的 TransportFactory 现在也可编译）。
 
-- [ ] **步骤 4：提交（覆盖 Task 13 + 14）**
+- [x] **步骤 4：提交（覆盖 Task 13 + 14）**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/handler/MqttClientHandler.java \
@@ -2474,7 +2474,7 @@ git commit -m "feat(client): add MqttClientHandler + TransportFactory + InboundQ
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/reconnect/MqttAutoReconnect.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/reconnect/MqttAutoReconnectTest.java`
 
-- [ ] **步骤 1：编写失败测试（使用 VirtualTimeScheduler 控制退避时序）**
+- [x] **步骤 1：编写失败测试（使用 VirtualTimeScheduler 控制退避时序）**
 
 ```java
 package plus.jmqx.client.mqtt.internal.reconnect;
@@ -2534,12 +2534,12 @@ class MqttAutoReconnectTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttAutoReconnectTest -q`
 预期：编译失败。
 
-- [ ] **步骤 3：实现 MqttAutoReconnect**
+- [x] **步骤 3：实现 MqttAutoReconnect**
 
 ```java
 package plus.jmqx.client.mqtt.internal.reconnect;
@@ -2609,12 +2609,12 @@ public class MqttAutoReconnect implements MqttClientDisconnectedListener {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttAutoReconnectTest -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/reconnect/MqttAutoReconnect.java \
@@ -2631,7 +2631,7 @@ git commit -m "feat(client): add MqttAutoReconnect with reactor-async backoff (T
 
 用完整实现替换 Task 14 中的桩。关键变更：ACK 作为 `Runnable` 回调交付给 `MqttInbox`，仅在下游消费者处理消息时才调用。
 
-- [ ] **步骤 1：用完整实现替换 InboundQos**
+- [x] **步骤 1：用完整实现替换 InboundQos**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2699,12 +2699,12 @@ public final class InboundQos {
 case PUBREL -> inboundQos.onInboundPubRel(ctx, mqtt, service);
 ```
 
-- [ ] **步骤 2：编译**
+- [x] **步骤 2：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 3：提交**
+- [x] **步骤 3：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/InboundQos.java \
@@ -2720,7 +2720,7 @@ git commit -m "feat(client): full InboundQos with backpressure-gated ACK (PUBACK
 - 修改：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/MqttInbox.java`
 - 测试：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/internal/MqttInboxBackpressureTest.java`
 
-- [ ] **步骤 1：编写失败测试**
+- [x] **步骤 1：编写失败测试**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2775,12 +2775,12 @@ class MqttInboxBackpressureTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttInboxBackpressureTest -q`
 预期：编译失败（MqttInbox 没有 globalFlux/deliver-with-return）。
 
-- [ ] **步骤 3：用完整实现替换 MqttInbox 桩**
+- [x] **步骤 3：用完整实现替换 MqttInbox 桩**
 
 ```java
 package plus.jmqx.client.mqtt.internal;
@@ -2850,12 +2850,12 @@ public final class MqttInbox {
 }
 ```
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=MqttInboxBackpressureTest -q`
 预期：BUILD SUCCESS，2 个测试通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/MqttInbox.java \
@@ -3579,7 +3579,7 @@ git commit -m "test(client): add v3 integration test (connect/subscribe/publish/
 
 v5 = v3 加上 Properties 与 Reason Code。引擎复用；仅 `Mqtt5MessageService` 不同。
 
-- [ ] **步骤 1：创建 v5 Properties 类型**
+- [x] **步骤 1：创建 v5 Properties 类型**
 
 `Mqtt5PublishProperties.java`：
 ```java
@@ -3620,7 +3620,7 @@ public class Mqtt5ConnAckProperties {
 }
 ```
 
-- [ ] **步骤 2：创建 v5 消息（扩展 v3 模式，添加 reason code / properties）**
+- [x] **步骤 2：创建 v5 消息（扩展 v3 模式，添加 reason code / properties）**
 
 `Mqtt5Publish.java`：
 ```java
@@ -3730,12 +3730,12 @@ public class Mqtt5ConnAck implements MqttConnAck {
 
 `Mqtt5TopicFilter.java`, `Mqtt5Subscribe.java`, `Mqtt5SubAck.java`, `Mqtt5Unsubscribe.java`, `Mqtt5Disconnect.java`, `Mqtt5PubAck.java`, `Mqtt5PubRec.java`, `Mqtt5PubRel.java`, `Mqtt5PubComp.java` —— 与 v3 相同的 Lombok `@Value`/`@Builder` 模式（见 Task 7），其中 `Mqtt5Subscribe implements MqttSubscribe`，`Mqtt5SubAck implements MqttSubAck`，`Mqtt5Unsubscribe implements MqttUnsubscribe`。`Mqtt5SubAck` 额外携带 `List<Byte> reasonCodes`。`Mqtt5Disconnect`/`Mqtt5PubAck` 等携带一个 `byte reasonCode`。
 
-- [ ] **步骤 3：编译**
+- [x] **步骤 3：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/v5/message/
@@ -3752,7 +3752,7 @@ git commit -m "feat(client): add MQTT 5 message types + Properties"
 
 镜像 Task 8 但针对 v5：编码带 `MqttProperties`（Receive Maximum、Session Expiry、cleanStart）的 CONNECT，解码 CONNACK properties，处理 reason code。
 
-- [ ] **步骤 1：编写失败的往返测试（镜像 v3 测试，断言 Properties 存活）**
+- [x] **步骤 1：编写失败的往返测试（镜像 v3 测试，断言 Properties 存活）**
 
 ```java
 package plus.jmqx.client.mqtt.v5.internal;
@@ -3816,12 +3816,12 @@ class Mqtt5MessageServiceTest {
 }
 ```
 
-- [ ] **步骤 2：运行测试 —— 失败**
+- [x] **步骤 2：运行测试 —— 失败**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt5MessageServiceTest -q`
 预期：编译失败。
 
-- [ ] **步骤 3：实现 Mqtt5MessageService**
+- [x] **步骤 3：实现 Mqtt5MessageService**
 
 ```java
 package plus.jmqx.client.mqtt.v5.internal;
@@ -3992,12 +3992,12 @@ public class Mqtt5MessageService implements MqttMessageService {
 
 注意：`Mqtt5SubAck` 必须是 `@Value`，包含 `List<QoS> grantedQos; List<Byte> reasonCodes; int packetId;`，实现 `MqttSubAck`。netty 中 `MqttMessageBuilders.subscribe()` 的 `MqttSubscribe` builder 在 4.1.119 中接受 `properties(MqttProperties)` 重载 —— 如果不存在，则退回到手动构造 `MqttSubscribeMessage`，使用 `new MqttSubscribeVariableHeader(messageId, properties)`。
 
-- [ ] **步骤 4：运行测试 —— 通过**
+- [x] **步骤 4：运行测试 —— 通过**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt5MessageServiceTest -q`
 预期：BUILD SUCCESS，2 个测试通过。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/v5/internal/Mqtt5MessageService.java \
@@ -4024,14 +4024,14 @@ git commit -m "feat(client): add Mqtt5MessageService v5 protocol adapter (TDD ro
 
 引擎（`DefaultMqtt3Client`）设计为通过 `MqttMessageService` 与版本无关。`DefaultMqtt5Client` 不是复制整个引擎，而是扩展 v3 引擎并替换为 `Mqtt5MessageService`，返回 v5 消息类型。v3 引擎的 private 协作对象必须放宽为 `protected`，并且 `service` 字段需可覆盖。
 
-- [ ] **步骤 1：重构 DefaultMqtt3Client 以支持继承**
+- [x] **步骤 1：重构 DefaultMqtt3Client 以支持继承**
 
 在 `DefaultMqtt3Client.java` 中：
 - 将 `private final Mqtt3MessageService service` 改为 `protected MqttMessageService service`，并通过可覆盖的工厂方法 `protected MqttMessageService createService(Mqtt3ClientConfig config) { return new Mqtt3MessageService(); }` 在构造器中初始化。在构造器中调用 `this.service = createService(config)`。
 - 将 `ackTracker`、`subscriptionStore`、`inbox`、`inboundQos`、`outbox`、`messageBuffer`、`packetIdManager`、`transportFactory` 放宽为 `protected`。
 - 将 `doPublish`、`resubscribe`、`onTransportError`、`notifyConnected` 改为 `protected`。
 
-- [ ] **步骤 2：创建 v5 接口 + 配置 + builder**
+- [x] **步骤 2：创建 v5 接口 + 配置 + builder**
 
 `v5/Mqtt5ClientConfig.java`：
 ```java
@@ -4057,7 +4057,7 @@ public interface Mqtt5Client extends MqttClient {
 
 **重要 —— v5 必须重写返回流的方法**，因为继承的 v3 引擎的 `subscribePublishes()`/`publishes()` 返回 `Flux<Mqtt3Publish>`。在 `DefaultMqtt5Client` 中重写它们以返回 `Flux<Mqtt5Publish>`，方式是将 `inbox.subscriptionFlux()`/`globalFlux()` 通过 `Mqtt5Publish` 适配器包装器映射（与 `toMqtt3` 相同的模式，但产出 `Mqtt5Publish`，`ack()` 委托给 `Deliverable`）。同时将 `connect()` 返回类型重写为 `Mono<Mqtt5ConnAck>`（协变返回），并将 `publish`/`subscribe`/`unsubscribe`/`disconnect` 重写为 v5 消息类型 —— 全部委托给继承的引擎逻辑并转型，因为引擎内部通过 `MqttMessageService` 与版本无关。
 
-- [ ] **步骤 3：创建 DefaultMqtt5Client（扩展 v3 引擎）**
+- [x] **步骤 3：创建 DefaultMqtt5Client（扩展 v3 引擎）**
 
 ```java
 package plus.jmqx.client.mqtt.v5.internal;
@@ -4123,7 +4123,7 @@ public class DefaultMqtt5Client extends DefaultMqtt3Client implements Mqtt5RxCli
 }
 ```
 
-- [ ] **步骤 4：在顶层 builder 中接通 `useMqttVersion5()`**
+- [x] **步骤 4：在顶层 builder 中接通 `useMqttVersion5()`**
 
 ```java
 // MqttClientBuilder.java
@@ -4132,14 +4132,14 @@ public plus.jmqx.client.mqtt.v5.Mqtt5ClientBuilder useMqttVersion5() {
 }
 ```
 
-- [ ] **步骤 5：创建 v5 Async/Blocking 包装器**（镜像 Task 19 步骤 3，使用 `Mqtt5*` 类型）
+- [x] **步骤 5：创建 v5 Async/Blocking 包装器**（镜像 Task 19 步骤 3，使用 `Mqtt5*` 类型）
 
-- [ ] **步骤 6：编译**
+- [x] **步骤 6：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 7：提交**
+- [x] **步骤 7：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/v5/ \
@@ -4155,7 +4155,7 @@ git commit -m "feat(client): add v5 client (extends engine, Mqtt5MessageService)
 **文件：**
 - 创建：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/v5/Mqtt5ClientIT.java`
 
-- [ ] **步骤 1：编写 v5 IT（镜像 v3 IT，断言 v5 connect + publish + properties 存活）**
+- [x] **步骤 1：编写 v5 IT（镜像 v3 IT，断言 v5 connect + publish + properties 存活）**
 
 ```java
 package plus.jmqx.client.mqtt.v5;
@@ -4212,17 +4212,17 @@ class Mqtt5ClientIT {
 }
 ```
 
-- [ ] **步骤 2：运行 v5 IT（broker 必须在运行）**
+- [x] **步骤 2：运行 v5 IT（broker 必须在运行）**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt5ClientIT -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 3：运行完整 client 测试套件**
+- [x] **步骤 3：运行完整 client 测试套件**
 
 运行：`mvn -pl jmqx-client test -q`
 预期：BUILD SUCCESS —— 所有单元测试 + 两个 IT 通过。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/test/java/plus/jmqx/client/mqtt/v5/Mqtt5ClientIT.java
@@ -4236,7 +4236,7 @@ git commit -m "test(client): add v5 integration test; full suite green"
 **文件：**
 - 修改：`jmqx-client/README.md`
 
-- [ ] **步骤 1：用反映已交付 API 的使用文档替换 README**
+- [x] **步骤 1：用反映已交付 API 的使用文档替换 README**
 
 ```markdown
 # jmqx-client — Reactor-Netty MQTT Client
@@ -4280,7 +4280,7 @@ client.publish(Mqtt3Publish.builder().topic("sensor/temp").payload("21.5".getByt
 reactor-netty, netty-codec-mqtt, reactor-core, Lombok, SLF4J. Java 17+.
 ```
 
-- [ ] **步骤 2：提交**
+- [x] **步骤 2：提交**
 
 ```bash
 git add jmqx-client/README.md

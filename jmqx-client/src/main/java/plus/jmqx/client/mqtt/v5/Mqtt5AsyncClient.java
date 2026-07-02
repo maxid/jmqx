@@ -18,6 +18,8 @@ import java.util.function.Consumer;
 public interface Mqtt5AsyncClient extends Mqtt5Client {
 
     /**
+     * 连接 MQTT broker。
+     *
      * @return 连接完成后携带 CONNACK 的 Future
      */
     CompletableFuture<Mqtt5ConnAck> connect();
@@ -32,18 +34,24 @@ public interface Mqtt5AsyncClient extends Mqtt5Client {
     CompletableFuture<Mqtt5SubAck> subscribe(Mqtt5Subscribe subscribe, Consumer<Mqtt5Publish> callback);
 
     /**
+     * 发布一条 PUBLISH 消息。
+     *
      * @param publish 待发布的消息
      * @return 携带发布结果的 Future
      */
     CompletableFuture<Mqtt5PublishResult> publish(Mqtt5Publish publish);
 
     /**
+     * 向 broker 发送 UNSUBSCRIBE。
+     *
      * @param unsubscribe 取消订阅消息
      * @return 完成 Future
      */
     CompletableFuture<Void> unsubscribe(Mqtt5Unsubscribe unsubscribe);
 
     /**
+     * 发送 DISCONNECT 并关闭传输连接。
+     *
      * @return 断开连接完成 Future
      */
     CompletableFuture<Void> disconnect();

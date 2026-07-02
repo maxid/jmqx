@@ -12,6 +12,11 @@ import plus.jmqx.client.mqtt.MqttClient;
  */
 public interface Mqtt5Client extends MqttClient {
 
+    /**
+     * 获取 MQTT 5.0 客户端配置。
+     *
+     * @return 客户端配置
+     */
     @Override
     Mqtt5ClientConfig getConfig();
 

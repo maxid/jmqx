@@ -5,20 +5,31 @@ import plus.jmqx.client.mqtt.message.QoS;
 /**
  * {@link Mqtt3Publish} 的可变 builder。
  *
+ * <p>使用 builder 模式构建不可变的 {@link Mqtt3Publish} 实例。
+ *
  * @author maxid
  * @since 1.4.14
  */
 public class Mqtt3PublishBuilder {
 
+    /** 主题名 */
     private String  topic;
+    /** 消息负载 */
     private byte[]  payload;
+    /** QoS 等级，默认为 AT_MOST_ONCE */
     private QoS     qos      = QoS.AT_MOST_ONCE;
+    /** 保留标志，默认为 false */
     private boolean retain   = false;
+    /** 重复标志，默认为 false */
     private boolean dup      = false;
+    /** 报文标识符，默认为 0 */
     private int     packetId = 0;
 
     /**
-     * @param topic 主题名。 @return this builder
+     * 设置主题名。
+     *
+     * @param topic 主题名
+     * @return this builder
      */
     public Mqtt3PublishBuilder topic(String topic) {
         this.topic = topic;
@@ -26,7 +37,10 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
-     * @param payload 消息负载。 @return this builder
+     * 设置消息负载。
+     *
+     * @param payload 消息负载字节数组
+     * @return this builder
      */
     public Mqtt3PublishBuilder payload(byte[] payload) {
         this.payload = payload;
@@ -34,7 +48,10 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
-     * @param qos QoS 等级。 @return this builder
+     * 设置 QoS 等级。
+     *
+     * @param qos QoS 等级
+     * @return this builder
      */
     public Mqtt3PublishBuilder qos(QoS qos) {
         this.qos = qos;
@@ -42,7 +59,10 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
-     * @param retain 保留标志。 @return this builder
+     * 设置保留标志。
+     *
+     * @param retain 保留标志
+     * @return this builder
      */
     public Mqtt3PublishBuilder retain(boolean retain) {
         this.retain = retain;
@@ -50,7 +70,10 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
-     * @param dup DUP 标志。 @return this builder
+     * 设置重复标志。
+     *
+     * @param dup DUP 标志
+     * @return this builder
      */
     public Mqtt3PublishBuilder dup(boolean dup) {
         this.dup = dup;
@@ -58,7 +81,10 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
-     * @param packetId 报文标识符。 @return this builder
+     * 设置报文标识符。
+     *
+     * @param packetId 报文标识符
+     * @return this builder
      */
     public Mqtt3PublishBuilder packetId(int packetId) {
         this.packetId = packetId;
@@ -66,6 +92,8 @@ public class Mqtt3PublishBuilder {
     }
 
     /**
+     * 构建不可变的 {@link Mqtt3Publish} 实例。
+     *
      * @return 不可变的 {@link Mqtt3Publish} 实例
      */
     public Mqtt3Publish build() {

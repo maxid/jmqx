@@ -16,28 +16,38 @@ import plus.jmqx.client.mqtt.v5.message.Mqtt5Unsubscribe;
 public interface Mqtt5BlockingClient extends Mqtt5Client {
 
     /**
+     * 连接 MQTT broker。
+     *
      * @return CONNACK
      */
     Mqtt5ConnAck connect();
 
     /**
+     * 向 broker 发送 SUBSCRIBE。
+     *
      * @param subscribe 订阅消息
      * @return SUBACK
      */
     Mqtt5SubAck subscribe(Mqtt5Subscribe subscribe);
 
     /**
+     * 获取阻塞式入站 publish 接收句柄。
+     *
      * @param filter 入站消息过滤器
      * @return 可阻塞接收的 publish 句柄
      */
     Mqtt5Publishes publishes(MqttGlobalPublishFilter filter);
 
     /**
+     * 发布一条 PUBLISH 消息。
+     *
      * @param publish 待发布的消息
      */
     void publish(Mqtt5Publish publish);
 
     /**
+     * 向 broker 发送 UNSUBSCRIBE。
+     *
      * @param unsubscribe 取消订阅消息
      */
     void unsubscribe(Mqtt5Unsubscribe unsubscribe);

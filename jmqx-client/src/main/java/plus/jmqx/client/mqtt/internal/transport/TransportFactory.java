@@ -28,6 +28,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public final class TransportFactory {
 
+    /**
+     * 根据配置创建连接。
+     *
+     * @param config 客户端配置（决定 TCP/TLS/WS/WSS）
+     * @return 连接 Mono
+     */
     @SuppressWarnings("unchecked")
     public Mono<Connection> connect(MqttClientConfig config) {
         Mono<? extends Connection> mono = switch (config.getTransportType()) {

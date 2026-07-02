@@ -11,6 +11,8 @@ import plus.jmqx.client.mqtt.message.MqttPublish;
 public interface Mqtt5Publish extends MqttPublish {
 
     /**
+     * 获取 MQTT 5 PUBLISH 属性。
+     *
      * @return MQTT 5 PUBLISH 属性
      */
     Mqtt5PublishProperties getProperties();
@@ -23,6 +25,8 @@ public interface Mqtt5Publish extends MqttPublish {
     }
 
     /**
+     * 创建新的 {@link Mqtt5PublishBuilder}。
+     *
      * @return 新的 {@link Mqtt5PublishBuilder}
      */
     static Mqtt5PublishBuilder builder() {
@@ -30,6 +34,8 @@ public interface Mqtt5Publish extends MqttPublish {
     }
 
     /**
+     * 返回基于当前值的 builder 副本。
+     *
      * @return 基于当前值的 builder 副本
      */
     Mqtt5PublishBuilder toBuilder();
