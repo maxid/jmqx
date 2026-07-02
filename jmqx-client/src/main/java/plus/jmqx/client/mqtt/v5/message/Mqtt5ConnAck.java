@@ -7,12 +7,13 @@ import plus.jmqx.client.mqtt.message.MqttConnAck;
  * MQTT 5.0 CONNACK。
  *
  * @author maxid
+ * @since 1.4.14
  */
 @Value
 public class Mqtt5ConnAck implements MqttConnAck {
 
-    boolean sessionPresent;
-    byte reasonCode;
+    boolean                sessionPresent;
+    byte                   reasonCode;
     Mqtt5ConnAckProperties properties;
 
     @Override
@@ -20,7 +21,11 @@ public class Mqtt5ConnAck implements MqttConnAck {
         return sessionPresent;
     }
 
+    /**
+     * @return 连接是否被 broker 接受（reason code == 0）
+     */
     public boolean isAccepted() {
         return reasonCode == 0;
     }
+
 }

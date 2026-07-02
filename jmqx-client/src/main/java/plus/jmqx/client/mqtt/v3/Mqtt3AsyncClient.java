@@ -13,24 +13,44 @@ import java.util.function.Consumer;
  * MQTT 3 客户端的异步 API（CompletableFuture + 回调）。
  *
  * @author maxid
+ * @since 1.4.14
  */
 public interface Mqtt3AsyncClient extends Mqtt3Client {
 
+    /**
+     * @return 连接完成后携带 CONNACK 的 Future
+     */
     CompletableFuture<Mqtt3ConnAck> connect();
 
     /**
      * 订阅，并为每条匹配的 publish 调用 callback。
+     *
+     * @param subscribe 订阅消息
+     * @param callback  入站 publish 回调
+     * @return 携带 SUBACK 的 Future
      */
     CompletableFuture<Mqtt3SubAck> subscribe(Mqtt3Subscribe subscribe, Consumer<Mqtt3Publish> callback);
 
+    /**
+     * @param publish 待发布的消息
+     * @return 携带发布结果的 Future
+     */
     CompletableFuture<Mqtt3PublishResult> publish(Mqtt3Publish publish);
 
+    /**
+     * @param unsubscribe 取消订阅消息
+     * @return 完成 Future
+     */
     CompletableFuture<Void> unsubscribe(Mqtt3Unsubscribe unsubscribe);
 
+    /**
+     * @return 断开连接完成 Future
+     */
     CompletableFuture<Void> disconnect();
 
     @Override
     default Mqtt3AsyncClient toAsync() {
         return this;
     }
+
 }

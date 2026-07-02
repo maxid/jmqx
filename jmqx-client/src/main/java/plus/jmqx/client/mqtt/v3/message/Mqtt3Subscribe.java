@@ -16,5 +16,6 @@ import java.util.List;
 public class Mqtt3Subscribe implements MqttSubscribe {
 
     List<Mqtt3TopicFilter> topicFilters;
-    int packetId;
+    int                    packetId;
+
 }

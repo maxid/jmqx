@@ -32,16 +32,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class MqttClientHandler extends ChannelDuplexHandler {
 
-    private final MqttClientConfig config;
-    private final MqttMessageService service;
-    private final AckTracker ackTracker;
-    private final MqttInbox inbox;
-    private final InboundQos inboundQos;
+    private final MqttClientConfig       config;
+    private final MqttMessageService     service;
+    private final AckTracker             ackTracker;
+    private final MqttInbox              inbox;
+    private final InboundQos             inboundQos;
     private final Sinks.One<MqttConnAck> connAckSink;
 
     // 每个 packetId 的 SUBACK/UNSUBACK 完成槽
-    private final Map<Integer, Sinks.One<MqttSubAck>> pendingSubAcks = new ConcurrentHashMap<>();
-    private final Map<Integer, Sinks.Empty<Void>> pendingUnsubAcks = new ConcurrentHashMap<>();
+    private final Map<Integer, Sinks.One<MqttSubAck>> pendingSubAcks   = new ConcurrentHashMap<>();
+    private final Map<Integer, Sinks.Empty<Void>>     pendingUnsubAcks = new ConcurrentHashMap<>();
 
     public MqttClientHandler(MqttClientConfig config,
                              MqttMessageService service,
@@ -129,4 +129,5 @@ public class MqttClientHandler extends ChannelDuplexHandler {
         log.error("Channel exception", cause);
         ctx.close();
     }
+
 }

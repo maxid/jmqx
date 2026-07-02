@@ -13,4 +13,5 @@ import lombok.Value;
 public class Mqtt5Disconnect {
 
     byte reasonCode;
+
 }

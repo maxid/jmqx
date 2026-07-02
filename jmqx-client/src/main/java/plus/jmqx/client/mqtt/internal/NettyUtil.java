@@ -16,4 +16,5 @@ public final class NettyUtil {
     public static ByteBuf wrap(byte[] bytes) {
         return bytes == null ? Unpooled.EMPTY_BUFFER : Unpooled.wrappedBuffer(bytes);
     }
+
 }

@@ -22,8 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class MqttInbox {
 
     private final Sinks.Many<Deliverable> sink;
-    private final int bufferSize;
-    private final AtomicInteger pending = new AtomicInteger(0);
+    private final int                     bufferSize;
+    private final AtomicInteger           pending = new AtomicInteger(0);
 
     public MqttInbox(int bufferSize) {
         this.bufferSize = bufferSize <= 0 ? Integer.MAX_VALUE : bufferSize;
@@ -55,12 +55,16 @@ public final class MqttInbox {
         return true;
     }
 
-    /** 全局入站流（用于 publishes(ALL/SUBSCRIBED/UNSOLICITED)）。返回 Deliverable 以便 ack() 可达。 */
+    /**
+     * 全局入站流（用于 publishes(ALL/SUBSCRIBED/UNSOLICITED)）。返回 Deliverable 以便 ack() 可达。
+     */
     public Flux<Deliverable> globalFlux() {
         return sink.asFlux();
     }
 
-    /** 订阅专属流。 */
+    /**
+     * 订阅专属流。
+     */
     public Flux<Deliverable> subscriptionFlux() {
         return globalFlux();
     }
@@ -73,10 +77,10 @@ public final class MqttInbox {
      */
     public static final class Deliverable implements MqttPublish {
 
-        private final MqttPublish delegate;
-        private final Runnable ack;
-        private final Runnable onConsume;
-        private final AtomicBoolean acked = new AtomicBoolean();
+        private final MqttPublish   delegate;
+        private final Runnable      ack;
+        private final Runnable      onConsume;
+        private final AtomicBoolean acked    = new AtomicBoolean();
         private final AtomicBoolean consumed = new AtomicBoolean();
 
         Deliverable(MqttPublish delegate, Runnable ack, Runnable onConsume) {
@@ -131,4 +135,5 @@ public final class MqttInbox {
             return delegate.getPacketId();
         }
     }
+
 }

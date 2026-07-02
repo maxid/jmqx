@@ -16,8 +16,8 @@ import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.internal.MqttMessageService;
 import plus.jmqx.client.mqtt.message.MqttConnAck;
 import plus.jmqx.client.mqtt.message.MqttPublish;
-import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttSubAck;
+import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttUnsubscribe;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3ConnAck;
@@ -196,4 +196,5 @@ public class Mqtt3MessageService implements MqttMessageService {
         Mqtt3ConnAckReturnCode code = ((Mqtt3ConnAck) ack).getReturnCode();
         return new RuntimeException("MQTT connection refused: " + code);
     }
+
 }

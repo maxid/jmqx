@@ -16,10 +16,11 @@ import java.util.Map;
 public class Mqtt5PublishProperties {
 
     Integer messageExpiryInterval;
-    String responseTopic;
-    byte[] correlationData;
+    String  responseTopic;
+    byte[]  correlationData;
     @Builder.Default
     Map<String, String> userProperties = Collections.emptyMap();
     Integer topicAlias;
-    String contentType;
+    String  contentType;
+
 }

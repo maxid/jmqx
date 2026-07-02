@@ -12,7 +12,8 @@ import lombok.Data;
 @Builder
 public class MqttWebSocketConfig {
 
-    private String path = "/mqtt";
+    private String path        = "/mqtt";
     private String subprotocol = "mqtt";
     private String query;
+
 }

@@ -1,6 +1,7 @@
 # jmqx-client — Reactor-Netty MQTT Client
 
-基于 reactor-netty + netty-codec-mqtt 的高性能异步 MQTT 客户端，对标 [HiveMQ MQTT Client](https://github.com/hivemq/hivemq-mqtt-client) API 风格。
+基于 reactor-netty + netty-codec-mqtt 的高性能异步 MQTT
+客户端，对标 [HiveMQ MQTT Client](https://github.com/hivemq/hivemq-mqtt-client) API 风格。
 
 ## 特性
 
@@ -23,54 +24,104 @@ import plus.jmqx.client.mqtt.v3.message.Mqtt3Subscribe;
 import java.time.Duration;
 
 Mqtt3RxClient client = MqttClient.builder().useMqttVersion3()
-    .serverHost("localhost").serverPort(1883)
-    .identifier("my-client")
-    .automaticReconnect()
-    .buildRx();
+        .serverHost("localhost").serverPort(1883)
+        .identifier("my-client")
+        .automaticReconnect()
+        .buildRx();
 
-client.connect().block(Duration.ofSeconds(5));
+client.
 
-client.subscribePublishes(Mqtt3Subscribe.builder()
-        .topicFilters(List.of(
-            Mqtt3TopicFilter.builder().topicFilter("sensor/#").qos(QoS.AT_LEAST_ONCE).build()))
-        .build())
-    .doOnNext(p -> System.out.println(p.getTopic() + ": " + new String(p.getPayloadAsBytes())))
-    .subscribe();
+connect().
 
-client.publish(Mqtt3Publish.builder()
-        .topic("sensor/temp").payload("21.5".getBytes()).qos(QoS.AT_LEAST_ONCE).build())
-    .block();
+block(Duration.ofSeconds(5));
+
+        client.
+
+subscribePublishes(Mqtt3Subscribe.builder()
+        .
+
+topicFilters(List.of(
+        Mqtt3TopicFilter.builder().
+
+topicFilter("sensor/#").
+
+qos(QoS.AT_LEAST_ONCE).
+
+build()))
+        .
+
+build())
+        .
+
+doOnNext(p ->System.out.
+
+println(p.getTopic() +": "+new
+
+String(p.getPayloadAsBytes())))
+        .
+
+subscribe();
+
+client.
+
+publish(Mqtt3Publish.builder()
+        .
+
+topic("sensor/temp").
+
+payload("21.5".getBytes()).
+
+qos(QoS.AT_LEAST_ONCE).
+
+build())
+        .
+
+block();
 ```
 
 ## 快速开始（MQTT 5.0）
 
 ```java
 Mqtt5RxClient client = MqttClient.builder().useMqttVersion5()
-    .serverHost("localhost").serverPort(1883)
-    .identifier("v5-client")
-    .cleanStart(true)
-    .sessionExpiryInterval(3600)
-    .receiveMaximum(100)
-    .automaticReconnect()
-    .buildRx();
+        .serverHost("localhost").serverPort(1883)
+        .identifier("v5-client")
+        .cleanStart(true)
+        .sessionExpiryInterval(3600)
+        .receiveMaximum(100)
+        .automaticReconnect()
+        .buildRx();
 
-client.connect().block(Duration.ofSeconds(5));
+client.
+
+connect().
+
+block(Duration.ofSeconds(5));
 ```
 
 ## API 视图
 
-| 协议 | Reactor | Async | Blocking |
-|------|---------|-------|----------|
+| 协议 | Reactor         | Async              | Blocking              |
+|----|-----------------|--------------------|-----------------------|
 | v3 | `Mqtt3RxClient` | `Mqtt3AsyncClient` | `Mqtt3BlockingClient` |
 | v5 | `Mqtt5RxClient` | `Mqtt5AsyncClient` | `Mqtt5BlockingClient` |
 
 构建方式：
 
 ```java
-MqttClient.builder().useMqttVersion3()  // 或 useMqttVersion5()
-    .serverHost("localhost").serverPort(1883)
-    .identifier("id")
-    .buildRx();    // 或 buildAsync() / buildBlocking()
+MqttClient.builder().
+
+useMqttVersion3()  // 或 useMqttVersion5()
+    .
+
+serverHost("localhost").
+
+serverPort(1883)
+    .
+
+identifier("id")
+    .
+
+buildRx();    // 或 buildAsync() / buildBlocking()
 ```
 
 ## 测试

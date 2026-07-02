@@ -16,26 +16,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>内部以 {@link BlockingQueue} 缓冲入站消息，{@link #receive()} 阻塞等待下一条。
  *
  * @author maxid
+ * @since 1.4.14
  */
 public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
 
     /**
      * 阻塞接收下一条 publish。
+     *
+     * @return 下一条入站 publish
+     * @throws InterruptedException 等待被中断
      */
     Mqtt3Publish receive() throws InterruptedException;
 
     /**
      * 阻塞接收下一条 publish，超时返回空。
+     *
+     * @param timeout 最大等待时间
+     * @return 入站 publish，超时则为空
      */
     Optional<Mqtt3Publish> receive(Duration timeout);
 
     /**
      * 立即返回已排队的 publish，无则空。
+     *
+     * @return 已排队的 publish，无则空
      */
     default Optional<Mqtt3Publish> receiveNow() {
         return receive(Duration.ZERO);
     }
 
+    /**
+     * 关闭句柄并释放底层订阅资源。
+     */
     @Override
     void close();
 
@@ -60,7 +72,11 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
     }
 
     /**
-     * 默认实现：基于 {@link LinkedBlockingQueue}。
+     * 基于 {@link LinkedBlockingQueue} 的默认实现。
+     *
+     * @param queue   入站消息队列
+     * @param onClose 关闭时执行的清理回调
+     * @return publish 接收句柄
      */
     static Mqtt3Publishes fromQueue(BlockingQueue<Mqtt3Publish> queue, Runnable onClose) {
         AtomicBoolean closed = new AtomicBoolean();
@@ -89,4 +105,5 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
             }
         };
     }
+
 }

@@ -11,9 +11,9 @@ import reactor.core.publisher.Sinks;
  */
 public final class PendingOutbound {
 
-    private final MqttPublish publish;
+    private final MqttPublish                  publish;
     private final Sinks.One<MqttPublishResult> resultSink;
-    private final long sentNanos;
+    private final long                         sentNanos;
 
     public PendingOutbound(MqttPublish publish, Sinks.One<MqttPublishResult> resultSink) {
         this.publish = publish;
@@ -32,4 +32,5 @@ public final class PendingOutbound {
     public long getSentNanos() {
         return sentNanos;
     }
+
 }

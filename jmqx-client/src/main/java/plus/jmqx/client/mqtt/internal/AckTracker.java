@@ -20,7 +20,9 @@ public final class AckTracker {
         pending.put(packetId, po);
     }
 
-    /** QoS1 PUBACK 或 QoS2 PUBCOMP —— 最终完成。 */
+    /**
+     * QoS1 PUBACK 或 QoS2 PUBCOMP —— 最终完成。
+     */
     public void complete(int packetId, MqttPublishResult result) {
         PendingOutbound po = pending.remove(packetId);
         if (po != null) {
@@ -28,12 +30,16 @@ public final class AckTracker {
         }
     }
 
-    /** QoS2 PUBREC 已接收 —— 保持 pending（等待 PUBCOMP）；调用方发送 PUBREL。 */
+    /**
+     * QoS2 PUBREC 已接收 —— 保持 pending（等待 PUBCOMP）；调用方发送 PUBREL。
+     */
     public void markReceived(int packetId) {
         // map 条目无状态变化；它保留至 PUBCOMP
     }
 
-    /** 传输断开或错误 —— 以给定原因失败该 pending。 */
+    /**
+     * 传输断开或错误 —— 以给定原因失败该 pending。
+     */
     public void fail(int packetId, Throwable error) {
         PendingOutbound po = pending.remove(packetId);
         if (po != null) {
@@ -53,7 +59,9 @@ public final class AckTracker {
         return pending.size();
     }
 
-    /** 失败所有 pending 条目（用于禁用重连的硬断开）。 */
+    /**
+     * 失败所有 pending 条目（用于禁用重连的硬断开）。
+     */
     public void failAll(Throwable error) {
         for (var entry : pending.entrySet()) {
             entry.getValue().getResultSink().tryEmitValue(
@@ -61,4 +69,5 @@ public final class AckTracker {
         }
         pending.clear();
     }
+
 }

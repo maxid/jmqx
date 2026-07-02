@@ -7,8 +7,8 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.message.MqttConnAck;
 import plus.jmqx.client.mqtt.message.MqttPublish;
-import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttSubAck;
+import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttUnsubscribe;
 
 /**
@@ -20,7 +20,9 @@ import plus.jmqx.client.mqtt.message.MqttUnsubscribe;
  */
 public interface MqttMessageService {
 
-    /** 编码 CONNECT。config 提供 clientId/keepAlive/auth/will。 */
+    /**
+     * 编码 CONNECT。config 提供 clientId/keepAlive/auth/will。
+     */
     MqttMessage encodeConnect(MqttClientConfig config);
 
     MqttMessage encodePublish(MqttPublish publish, int packetId, boolean dup);
@@ -52,4 +54,5 @@ public interface MqttMessageService {
     boolean isConnectionAccepted(MqttConnAck ack);
 
     RuntimeException connectionRefusedException(MqttConnAck ack);
+
 }

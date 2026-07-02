@@ -7,9 +7,16 @@ package plus.jmqx.client.mqtt.lifecycle;
  * 以影响后续重连行为（是否重连、延迟、是否重新订阅）。
  *
  * @author maxid
+ * @since 1.4.14
  */
 @FunctionalInterface
 public interface MqttClientDisconnectedListener {
 
+    /**
+     * 连接断开后回调。
+     *
+     * @param context 断开上下文（含 {@link MqttClientReconnector}）
+     */
     void onDisconnected(MqttClientDisconnectedContext context);
+
 }

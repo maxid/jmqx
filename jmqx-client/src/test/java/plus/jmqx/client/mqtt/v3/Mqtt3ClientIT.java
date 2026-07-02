@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class Mqtt3ClientIT {
 
-    private static final Logger log = LoggerFactory.getLogger(Mqtt3ClientIT.class);
+    private static final Logger   log     = LoggerFactory.getLogger(Mqtt3ClientIT.class);
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
     private Mqtt3RxClient client;

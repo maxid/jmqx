@@ -74,11 +74,6 @@ public class Mqtt3AsyncClientImpl implements Mqtt3AsyncClient {
     }
 
     @Override
-    public Mqtt3AsyncClient toAsync() {
-        return this;
-    }
-
-    @Override
     public Mqtt3RxClient toRx() {
         return rx;
     }
@@ -87,4 +82,5 @@ public class Mqtt3AsyncClientImpl implements Mqtt3AsyncClient {
     public Mqtt3BlockingClient toBlock() {
         return rx.toBlock();
     }
+
 }

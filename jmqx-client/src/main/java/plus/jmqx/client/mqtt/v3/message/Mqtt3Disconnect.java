@@ -11,4 +11,5 @@ public final class Mqtt3Disconnect {
     }
 
     public static final Mqtt3Disconnect INSTANCE = new Mqtt3Disconnect();
+
 }
