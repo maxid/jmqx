@@ -8,6 +8,9 @@ package plus.jmqx.client.mqtt.message;
  */
 public final class MqttMessageBuilder {
 
+    /**
+     * 工具类，禁止实例化
+     */
     private MqttMessageBuilder() {
     }
 

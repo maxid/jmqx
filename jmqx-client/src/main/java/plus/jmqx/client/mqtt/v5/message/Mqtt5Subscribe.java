@@ -15,7 +15,9 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Mqtt5Subscribe implements MqttSubscribe {
 
+    /** 主题过滤器列表 */
     List<Mqtt5TopicFilter> topicFilters;
+    /** 报文标识符 */
     int                    packetId;
 
 }

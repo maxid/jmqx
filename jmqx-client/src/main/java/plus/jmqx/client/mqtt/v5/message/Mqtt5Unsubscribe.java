@@ -15,7 +15,9 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Mqtt5Unsubscribe implements MqttUnsubscribe {
 
+    /** 要取消订阅的主题过滤器列表 */
     List<String> topicFilters;
+    /** 报文标识符 */
     int          packetId;
 
 }

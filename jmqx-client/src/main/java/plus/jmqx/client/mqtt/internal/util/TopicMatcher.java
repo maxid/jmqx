@@ -9,9 +9,19 @@ package plus.jmqx.client.mqtt.internal.util;
  */
 public final class TopicMatcher {
 
+    /**
+     * 工具类禁止实例化
+     */
     private TopicMatcher() {
     }
 
+    /**
+     * 判断主题是否匹配过滤器。
+     *
+     * @param filter MQTT 主题过滤器（支持 '+' 和 '#' 通配符）
+     * @param topic  实际主题
+     * @return 若匹配返回 true，否则返回 false
+     */
     public static boolean matches(String filter, String topic) {
         if (filter == null || topic == null) {
             return false;

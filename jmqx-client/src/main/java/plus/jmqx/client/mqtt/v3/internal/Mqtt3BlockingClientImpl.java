@@ -20,20 +20,28 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * {@link Mqtt3BlockingClient} 的同步实现，委托给 {@link Mqtt3RxClient}。
+ * {@link Mqtt3BlockingClient} 的同步实现。
  *
- * <p>每个操作以 30s 超时阻塞等待。{@link #publishes(MqttGlobalPublishFilter)} 返回
- * 基于 {@link LinkedBlockingQueue} 的 {@link Mqtt3Publishes}，将入站流桥接到阻塞迭代。
+ * <p>所有操作委托给 {@link Mqtt3RxClient}，以 30 秒超时阻塞等待结果。
+ * {@link #publishes(MqttGlobalPublishFilter)} 返回基于 {@link LinkedBlockingQueue}
+ * 的 {@link Mqtt3Publishes}，将入站流桥接到阻塞迭代。
  *
  * @author maxid
  */
 @Slf4j
 public class Mqtt3BlockingClientImpl implements Mqtt3BlockingClient {
 
+    /** 默认阻塞超时时间：30 秒 */
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
+    /** 被委托的 Reactive API 客户端 */
     private final Mqtt3RxClient rx;
 
+    /**
+     * 构造阻塞客户端实现。
+     *
+     * @param rx 被委托的 Reactive 客户端
+     */
     public Mqtt3BlockingClientImpl(Mqtt3RxClient rx) {
         this.rx = rx;
     }
@@ -59,7 +67,7 @@ public class Mqtt3BlockingClientImpl implements Mqtt3BlockingClient {
     public void publish(Mqtt3Publish publish) {
         var result = rx.publish(publish).block(TIMEOUT);
         if (result != null && result.getError() != null) {
-            throw new RuntimeException("PUBLISH failed", result.getError());
+            throw new RuntimeException("PUBLISH 失败", result.getError());
         }
     }
 

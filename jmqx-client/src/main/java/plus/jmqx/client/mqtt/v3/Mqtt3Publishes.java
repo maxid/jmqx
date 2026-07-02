@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 阻塞式入站 publish 接收句柄。
+ * MQTT 3 入站 publish 的阻塞接收句柄。
  *
  * <p>内部以 {@link BlockingQueue} 缓冲入站消息，{@link #receive()} 阻塞等待下一条。
  *
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
 
     /**
-     * 阻塞接收下一条 publish。
+     * 阻塞接收下一条入站 publish，直到有消息到达。
      *
      * @return 下一条入站 publish
      * @throws InterruptedException 等待被中断
@@ -29,7 +29,7 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
     Mqtt3Publish receive() throws InterruptedException;
 
     /**
-     * 阻塞接收下一条 publish，超时返回空。
+     * 阻塞接收下一条入站 publish，超时则返回空。
      *
      * @param timeout 最大等待时间
      * @return 入站 publish，超时则为空
@@ -37,7 +37,7 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
     Optional<Mqtt3Publish> receive(Duration timeout);
 
     /**
-     * 立即返回已排队的 publish，无则空。
+     * 立即返回已排队但尚未消费的 publish，无消息则返回空。
      *
      * @return 已排队的 publish，无则空
      */
@@ -72,7 +72,7 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
     }
 
     /**
-     * 基于 {@link LinkedBlockingQueue} 的默认实现。
+     * 基于 {@link LinkedBlockingQueue} 创建默认的 {@link Mqtt3Publishes} 实现。
      *
      * @param queue   入站消息队列
      * @param onClose 关闭时执行的清理回调

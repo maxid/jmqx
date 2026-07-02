@@ -37,34 +37,116 @@ public class MqttClientConfig {
          * WebSocket over TLS。
          */
         WSS
+
     }
 
+    /**
+     * broker 主机名
+     */
     private String              serverHost              = "localhost";
+    /**
+     * broker 端口
+     */
     private int                 serverPort              = 1883;
+    /**
+     * 客户端标识符
+     */
     private String              clientId;
+    /**
+     * Keep Alive 间隔（秒）
+     */
     private int                 keepAliveSeconds        = 60;
+    /**
+     * MQTT 协议版本
+     */
     private MqttVersion         version;
+    /**
+     * 套接字连接超时（毫秒）
+     */
     private int                 socketConnectTimeoutMs  = 10_000;
+    /**
+     * MQTT CONNECT 握手超时（毫秒）
+     */
     private int                 mqttConnectTimeoutMs    = 60_000;
+    /**
+     * 传输层类型
+     */
     private TransportType       transportType           = TransportType.TCP;
+    /**
+     * TLS 配置
+     */
     private MqttSslConfig       sslConfig;
+    /**
+     * WebSocket 配置
+     */
     private MqttWebSocketConfig webSocketConfig;
+    /**
+     * Netty 事件循环线程数
+     */
     private int                 nettyThreads            = Math.max(Runtime.getRuntime().availableProcessors(), 2);
+    /**
+     * 外部共享的事件循环资源
+     */
     private LoopResources       loopResources;
+    /**
+     * cleanSession（v3）/ cleanStart（v5）标志
+     */
     private boolean             cleanSession            = true;
+    /**
+     * 会话过期时间（秒，仅 v5）
+     */
     private long                sessionExpiryInterval   = 0;
+    /**
+     * Receive Maximum（v5）
+     */
     private int                 receiveMaximum          = 65535;
+    /**
+     * 认证用户名
+     */
     private String              username;
+    /**
+     * 认证密码
+     */
     private byte[]              password;
+    /**
+     * 遗嘱消息
+     */
     private MqttPublish         willPublish;
+    /**
+     * 是否启用自动重连
+     */
     private boolean             automaticReconnect      = false;
+    /**
+     * 重连初始延迟（毫秒）
+     */
     private long                reconnectInitialDelayMs = 1000;
+    /**
+     * 重连最大延迟（毫秒）
+     */
     private long                reconnectMaxDelayMs     = 120_000;
+    /**
+     * 最大重连次数
+     */
     private int                 maxReconnectAttempts    = Integer.MAX_VALUE;
+    /**
+     * 断线缓存最大消息条数
+     */
     private int                 messageBufferMaxSize    = 1000;
+    /**
+     * 断线缓存最大字节数
+     */
     private long                messageBufferMaxBytes   = 64L * 1024 * 1024;
+    /**
+     * 断开时是否清空离线缓存
+     */
     private boolean             clearBufferOnDisconnect = false;
+    /**
+     * 出站 inflight QoS1/2 消息上限
+     */
     private int                 maxInflightMessages     = 64;
+    /**
+     * 入站消息背压缓冲区大小
+     */
     private int                 inboxBufferSize         = 1024;
 
     /**
