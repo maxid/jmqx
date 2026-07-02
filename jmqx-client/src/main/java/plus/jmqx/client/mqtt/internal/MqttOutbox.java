@@ -19,11 +19,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public final class MqttOutbox {
 
-    /** 当前可用许可数 */
+    /**
+     * 当前可用许可数
+     */
     private final    AtomicInteger permits;
-    /** 最大许可数上限 */
+    /**
+     * 最大许可数上限
+     */
     private volatile int           maxPermits;
-    /** 等待队列（FIFO） */
+    /**
+     * 等待队列（FIFO）
+     */
     private final    Queue<Waiter> waiters = new ConcurrentLinkedQueue<>();
 
     /**

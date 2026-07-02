@@ -16,9 +16,13 @@ import java.util.List;
 @Value
 public class Mqtt3SubAck implements MqttSubAck {
 
-    /** 服务端授予的 QoS 等级列表 */
+    /**
+     * 服务端授予的 QoS 等级列表
+     */
     List<QoS> grantedQos;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     int       packetId;
 
 }

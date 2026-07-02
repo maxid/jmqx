@@ -38,7 +38,9 @@ import java.util.List;
  */
 public class Mqtt3MessageService implements MqttMessageService {
 
-    /** Netty MQTT 3.1.1 协议版本常量 */
+    /**
+     * Netty MQTT 3.1.1 协议版本常量
+     */
     private static final io.netty.handler.codec.mqtt.MqttVersion NETTY_VERSION =
             io.netty.handler.codec.mqtt.MqttVersion.MQTT_3_1_1;
 

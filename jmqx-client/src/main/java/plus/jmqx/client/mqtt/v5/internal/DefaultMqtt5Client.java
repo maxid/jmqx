@@ -41,9 +41,9 @@ public class DefaultMqtt5Client extends MqttClientEngine implements Mqtt5RxClien
     /**
      * 构造 MQTT 5.0 客户端引擎实例。
      *
-     * @param config                 客户端配置
-     * @param connectedListeners     连接成功监听器列表
-     * @param disconnectedListeners  断开连接监听器列表
+     * @param config                客户端配置
+     * @param connectedListeners    连接成功监听器列表
+     * @param disconnectedListeners 断开连接监听器列表
      */
     public DefaultMqtt5Client(Mqtt5ClientConfig config,
                               List<MqttClientConnectedListener> connectedListeners,
@@ -253,7 +253,9 @@ public class DefaultMqtt5Client extends MqttClientEngine implements Mqtt5RxClien
      * Mqtt5Publish 委托实现，包装 {@link MqttInbox.Deliverable}。
      */
     private static final class Mqtt5PublishDelegate implements Mqtt5Publish {
-        /** 底层可投递对象 */
+        /**
+         * 底层可投递对象
+         */
         private final MqttInbox.Deliverable d;
 
         Mqtt5PublishDelegate(MqttInbox.Deliverable d) {
@@ -312,7 +314,9 @@ public class DefaultMqtt5Client extends MqttClientEngine implements Mqtt5RxClien
      * Mqtt5PublishResult 委托实现，包装通用发布结果。
      */
     private static final class Mqtt5PublishResultDelegate implements Mqtt5PublishResult {
-        /** 底层发布结果 */
+        /**
+         * 底层发布结果
+         */
         private final plus.jmqx.client.mqtt.message.MqttPublishResult result;
 
         Mqtt5PublishResultDelegate(plus.jmqx.client.mqtt.message.MqttPublishResult result) {

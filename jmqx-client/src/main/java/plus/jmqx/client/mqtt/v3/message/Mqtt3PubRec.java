@@ -12,7 +12,9 @@ import lombok.Value;
 @Value
 public class Mqtt3PubRec {
 
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     int packetId;
 
 }
