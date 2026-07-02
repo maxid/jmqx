@@ -6,7 +6,7 @@
 
 ## 1. 概述
 
-jmqx-client 是一个基于 Netty NIO 的高性能异步 MQTT 客户端库，对标 HiveMQ MQTT Client。提供 CompletableFuture、Reactor、Blocking 三种 API 视图，支持 MQTT 3.1/3.1.1（后续扩展 MQTT 5），内置自动重连、背压、断线缓存等企业级特性。
+jmqx-client 是一个基于 Netty NIO 的高性能异步 MQTT 客户端库，对标 HiveMQ MQTT Client。从第一版开始就按 MQTT 版本区分 `v3` 和 `v5` 子包，确保后续扩展 MQTT 5 时无需破坏性重构。提供 CompletableFuture、Reactor、Blocking 三种 API 视图，内置自动重连、背压、断线缓存等企业级特性。
 
 ### 设计目标
 
@@ -52,74 +52,93 @@ jmqx-client 是一个基于 Netty NIO 的高性能异步 MQTT 客户端库，对
 └──────────────────────────────────────────────────────┘
 ```
 
-### 2.2 核心接口
+### 2.2 版本化 API
+
+按 MQTT 版本划分接口，顶部 `MqttClient` 提供版本选择入口：
 
 ```java
-// === 主入口 ===
-public interface MqttClient {
-    MqttClientConfig getConfig();
+// === 版本无关的入口 ===
+public interface MqttClient<C extends MqttClientConfig> {
+    C getConfig();
     MqttClientState getState();
-    MqttAsyncClient toAsync();
-    MqttRxClient toRx();
-    MqttBlockingClient toBlock();
+    MqttVersion getVersion();           // MQTT_3_1_1 或 MQTT_5
 
     static MqttClientBuilder builder();
 }
 
+// === MQTT 3.1.1 客户端接口 ===
+public interface Mqtt3Client extends MqttClient<Mqtt3ClientConfig> {
+    Mqtt3AsyncClient toAsync();
+    Mqtt3RxClient toRx();
+    Mqtt3BlockingClient toBlock();
+}
+
+// === MQTT 5 客户端接口（预留，第一版无实现）===
+public interface Mqtt5Client extends MqttClient<Mqtt5ClientConfig> {
+    Mqtt5AsyncClient toAsync();
+    Mqtt5RxClient toRx();
+    Mqtt5BlockingClient toBlock();
+}
+
 // === Async API (CompletableFuture) ===
-public interface MqttAsyncClient extends MqttClient {
-    CompletableFuture<MqttConnAck> connect();
-    CompletableFuture<MqttSubAck> subscribe(MqttSubscribe sub, Consumer<MqttPublish> callback);
-    CompletableFuture<MqttPublishResult> publish(MqttPublish publish);
-    CompletableFuture<Void> unsubscribe(MqttUnsubscribe unsub);
+public interface Mqtt3AsyncClient extends Mqtt3Client {
+    CompletableFuture<Mqtt3ConnAck> connect();
+    CompletableFuture<Mqtt3SubAck> subscribe(Mqtt3Subscribe sub, Consumer<Mqtt3Publish> callback);
+    CompletableFuture<Mqtt3PublishResult> publish(Mqtt3Publish publish);
+    CompletableFuture<Void> unsubscribe(Mqtt3Unsubscribe unsub);
     CompletableFuture<Void> disconnect();
 }
 
 // === Reactive API (Reactor) ===
-public interface MqttRxClient extends MqttClient {
-    Mono<MqttConnAck> connect();
-    Mono<MqttSubAck> subscribe(MqttSubscribe sub);
-    Flux<MqttPublish> subscribePublishes(MqttSubscribe sub);
-    Flux<MqttPublish> publishes(MqttGlobalPublishFilter filter);
-    Mono<MqttPublishResult> publish(MqttPublish publish);
-    Mono<Void> unsubscribe(MqttUnsubscribe unsub);
+public interface Mqtt3RxClient extends Mqtt3Client {
+    Mono<Mqtt3ConnAck> connect();
+    Mono<Mqtt3SubAck> subscribe(Mqtt3Subscribe sub);
+    Flux<Mqtt3Publish> subscribePublishes(Mqtt3Subscribe sub);
+    Flux<Mqtt3Publish> publishes(MqttGlobalPublishFilter filter);
+    Mono<Mqtt3PublishResult> publish(Mqtt3Publish publish);
+    Mono<Void> unsubscribe(Mqtt3Unsubscribe unsub);
     Mono<Void> disconnect();
 }
 
 // === Blocking API ===
-public interface MqttBlockingClient extends MqttClient {
-    MqttConnAck connect();
-    MqttSubAck subscribe(MqttSubscribe sub);
-    MqttPublishes publishes(MqttGlobalPublishFilter filter);
-    void publish(MqttPublish publish);
-    void unsubscribe(MqttUnsubscribe unsub);
+public interface Mqtt3BlockingClient extends Mqtt3Client {
+    Mqtt3ConnAck connect();
+    Mqtt3SubAck subscribe(Mqtt3Subscribe sub);
+    Mqtt3Publishes publishes(MqttGlobalPublishFilter filter);
+    void publish(Mqtt3Publish publish);
+    void unsubscribe(Mqtt3Unsubscribe unsub);
     void disconnect();
 }
-```
 
 ### 2.3 Builder API
 
+在构建器入口选择 MQTT 版本：
+
 ```java
-MqttClient client = MqttClient.builder()
+// 方式一：通过 builder 入口选择版本
+Mqtt3Client client = MqttClient.builder()
+    .useMqttVersion3()                          // ← 选择 MQTT 3.1.1
+        .serverHost("localhost")
+        .serverPort(1883)
+        .identifier("my-client")
+        .automaticReconnect()
+            .initialDelay(1, TimeUnit.SECONDS)
+            .maxDelay(120, TimeUnit.SECONDS)
+            .apply()
+        .willPublish()
+            .topic("last/will")
+            .payload(b"offline")
+            .qos(QoS.AT_LEAST_ONCE)
+            .apply()
+        .addConnectedListener(event -> log.info("connected"))
+        .addDisconnectedListener(event -> log.warn("disconnected"))
+        .buildAsync();  // 或 buildRx() / buildBlocking()
+
+// 方式二：直接使用 Mqtt3Client.builder()
+Mqtt3Client client2 = Mqtt3Client.builder()
     .serverHost("localhost")
     .serverPort(1883)
-    .identifier("my-client")
-    .sslWithDefaultConfig()
-    .webSocketConfig(cfg -> cfg.serverPath("/mqtt"))
-    .automaticReconnect()
-        .initialDelay(1, TimeUnit.SECONDS)
-        .maxDelay(120, TimeUnit.SECONDS)
-        .backToNormalDelay(30, TimeUnit.SECONDS)
-        .apply()
-    .willPublish()
-        .topic("last/will")
-        .payload(b"offline")
-        .qos(QoS.AT_LEAST_ONCE)
-        .retain(true)
-        .apply()
-    .addConnectedListener(event -> log.info("connected"))
-    .addDisconnectedListener(event -> log.warn("disconnected: {}", event.getCause()))
-    .buildAsync();  // 或 buildRx() / buildBlocking() / build()
+    .buildRx();
 ```
 
 ## 3. 状态机
@@ -313,45 +332,70 @@ public class MqttClientConfig {
 
 ## 10. 消息模型
 
+消息类型按版本分包放置。第一版仅实现 MQTT 3.1.1：
+
 ```java
-// 核心消息类型
-public enum MqttVersion { MQTT_3_1, MQTT_3_1_1 }
+// === 版本无关（plus.jmqx.client.mqtt）===
+public enum MqttVersion { MQTT_3_1, MQTT_3_1_1, MQTT_5 }
 public enum QoS { AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE }
 
+// === MQTT 3.1.1 消息（plus.jmqx.client.mqtt.v3.message）===
+
 // 发布消息
-public class MqttPublish {
+public class Mqtt3Publish {
     String topic;
     byte[] payload;
     QoS qos;
     boolean retain;
-    int packetId;  // 服务端自动分配
+    int packetId;
+}
+
+// CONNECT 消息
+public class Mqtt3Connect {
+    String clientId;
+    boolean cleanSession;
+    int keepAliveSeconds;
+    String username;
+    byte[] password;
+    Mqtt3Publish willPublish;
 }
 
 // 订阅
-public class MqttSubscribe {
-    List<MqttTopicFilter> topicFilters;
+public class Mqtt3Subscribe {
+    List<Mqtt3TopicFilter> topicFilters;
+    int packetId;
 }
 
-// 消息过滤器
-public class MqttTopicFilter {
-    String topicFilter;   // 支持 + 和 #
+// 主题过滤器
+public class Mqtt3TopicFilter {
+    String topicFilter;
     QoS qos;
 }
 
-// 确认结果
-public interface MqttConnAck {
-    boolean sessionPresent();
+// 取消订阅
+public class Mqtt3Unsubscribe {
+    List<String> topicFilters;
+    int packetId;
+}
+
+// 确认结果（位于 plus.jmqx.client.mqtt.v3.message.*）
+
+public class Mqtt3ConnAck {
+    boolean sessionPresent;
     MqttVersion version();
 }
 
-public interface MqttSubAck {
-    List<QoS> grantedQos();
+public class Mqtt3SubAck {
+    List<QoS> grantedQos;
 }
 
-public interface MqttPublishResult {
-    MqttPublish getPublish();
-    Throwable getError();  // null 表示成功
+public interface Mqtt3PublishResult {
+    Mqtt3Publish getPublish();
+    Throwable getError();
 }
+
+// === MQTT 5 预留包（plus.jmqx.client.mqtt.v5.message）===
+// Mqtt5Connect, Mqtt5Publish, Mqtt5Subscribe 等（第一版仅声明包结构）
 ```
 
 ## 11. 文件结构
@@ -362,71 +406,99 @@ jmqx-client/src/main/java/plus/jmqx/client/
 │   ├── CheckReturnValue.java
 │   └── Immutable.java
 ├── mqtt/
-│   ├── MqttClient.java            # 主接口
-│   ├── MqttClientBuilder.java      # 构建器
-│   ├── MqttClientConfig.java       # 配置
-│   ├── MqttClientState.java        # 状态枚举
-│   ├── MqttVersion.java            # MQTT 版本
-│   ├── MqttAsyncClient.java        # Future API
-│   ├── MqttRxClient.java           # Reactor API
-│   ├── MqttBlockingClient.java     # Blocking API
-│   ├── MqttGlobalPublishFilter.java# 入站过滤器
-│   ├── MqttPublishResult.java      # 发布结果
-│   ├── MqttWebSocketConfig.java
-│   ├── MqttSslConfig.java
-│   ├── MqttAutoReconnectConfig.java
+│   ├── MqttClient.java                # 主入口接口
+│   ├── MqttClientBuilder.java         # 构建器（.useMqttVersion3() / .useMqttVersion5()）
+│   ├── MqttClientConfig.java          # 版本无关配置基类
+│   ├── MqttClientState.java           # 状态枚举
+│   ├── MqttVersion.java               # 版本枚举
+│   ├── MqttGlobalPublishFilter.java   # 入站过滤器
 │   │
-│   ├── message/
-│   │   ├── MqttConnect.java        # CONNECT 消息
-│   │   ├── MqttConnAck.java        # CONNACK
-│   │   ├── MqttPublish.java        # PUBLISH 消息
-│   │   ├── MqttSubscribe.java      # SUBSCRIBE
-│   │   ├── MqttSubAck.java         # SUBACK
-│   │   ├── MqttUnsubscribe.java    # UNSUBSCRIBE
-│   │   ├── MqttDisconnect.java     # DISCONNECT
-│   │   └── MqttTopicFilter.java    # 主题过滤器
+│   ├── v3/                            # ===== MQTT 3.1/3.1.1 =====
+│   │   ├── Mqtt3Client.java           # MQTT 3.x 客户端接口
+│   │   ├── Mqtt3ClientConfig.java     # MQTT 3.x 配置
+│   │   ├── Mqtt3ClientBuilder.java    # MQTT 3.x 构建器
+│   │   ├── Mqtt3AsyncClient.java      # Future API
+│   │   ├── Mqtt3RxClient.java         # Reactor API
+│   │   ├── Mqtt3BlockingClient.java   # Blocking API
+│   │   ├── Mqtt3PublishResult.java    # 发布结果
+│   │   │
+│   │   ├── message/                   # MQTT 3.x 消息
+│   │   │   ├── Mqtt3Connect.java
+│   │   │   ├── Mqtt3ConnAck.java
+│   │   │   ├── Mqtt3Publish.java
+│   │   │   ├── Mqtt3PubAck.java
+│   │   │   ├── Mqtt3PubRec.java
+│   │   │   ├── Mqtt3PubRel.java
+│   │   │   ├── Mqtt3PubComp.java
+│   │   │   ├── Mqtt3Subscribe.java
+│   │   │   ├── Mqtt3SubAck.java
+│   │   │   ├── Mqtt3Unsubscribe.java
+│   │   │   └── Mqtt3TopicFilter.java
+│   │   │
+│   │   └── internal/                  # MQTT 3.x 内部实现
+│   │       ├── DefaultMqtt3Client.java
+│   │       ├── Mqtt3AsyncClientImpl.java
+│   │       ├── Mqtt3RxClientImpl.java
+│   │       ├── Mqtt3BlockingClientImpl.java
+│   │       ├── config/
+│   │       │   └── Mqtt3ClientConfigImpl.java
+│   │       ├── handler/
+│   │       │   ├── Mqtt3ChannelInitializer.java
+│   │       │   ├── Mqtt3ConnectHandler.java
+│   │       │   ├── Mqtt3DisconnectHandler.java
+│   │       │   ├── Mqtt3SubscriptionHandler.java
+│   │       │   ├── Mqtt3IncomingQosHandler.java
+│   │       │   └── Mqtt3OutgoingQosHandler.java
+│   │       └── codec/
+│   │           ├── Mqtt3MessageEncoder.java
+│   │           └── Mqtt3MessageDecoder.java
 │   │
-│   ├── lifecycle/
+│   ├── v5/                            # ===== MQTT 5（预留）=====
+│   │   ├── Mqtt5Client.java           # 接口占位
+│   │   ├── Mqtt5AsyncClient.java
+│   │   ├── Mqtt5RxClient.java
+│   │   ├── Mqtt5BlockingClient.java
+│   │   │
+│   │   └── message/                   # MQTT 5 消息占位
+│   │       ├── Mqtt5Connect.java
+│   │       ├── Mqtt5ConnAck.java
+│   │       ├── Mqtt5Publish.java
+│   │       └── Mqtt5Subscribe.java
+│   │
+│   ├── message/                       # 版本无关消息类型
+│   │   ├── MqttMessage.java           # 统一消息包装
+│   │   ├── QoS.java                   # QoS 枚举
+│   │   └── MqttTopicFilter.java       # 版本无关主题过滤器接口
+│   │
+│   ├── lifecycle/                     # 版本无关的生命周期
 │   │   ├── MqttClientConnectedListener.java
 │   │   ├── MqttClientDisconnectedListener.java
 │   │   ├── MqttClientConnectedContext.java
 │   │   ├── MqttClientDisconnectedContext.java
 │   │   └── MqttClientReconnector.java
 │   │
-│   └── internal/
-│       ├── DefaultMqttClient.java       # 核心实现
-│       ├── MqttClientImpl.java          # 引擎实现
-│       ├── MqttAsyncClientImpl.java     # Future 包装
-│       ├── MqttBlockingClientImpl.java  # 阻塞包装
-│       ├── config/
-│       │   └── MqttClientConfigImpl.java
-│       ├── handler/
-│       │   ├── MqttChannelInitializer.java
-│       │   ├── MqttConnectHandler.java
-│       │   ├── MqttDisconnectHandler.java
-│       │   ├── MqttSubscriptionHandler.java
-│       │   ├── MqttIncomingQosHandler.java
-│       │   └── MqttOutgoingQosHandler.java
+│   └── internal/                      # 版本无关内部实现
 │       ├── reconnect/
-│       │   ├── MqttAutoReconnect.java
-│       │   └── MqttReconnectorImpl.java
+│       │   └── MqttAutoReconnect.java
 │       ├── buffer/
 │       │   └── MessageBuffer.java
 │       └── util/
-│           └── PacketIdManager.java     # packetId 分配
+│           ├── PacketIdManager.java
+│           └── NettyUtil.java
 ```
 
 ## 12. 第一版范围
 
 ### 包含
-- MQTT 3.1.1（CONNECT/PUBLISH/SUBSCRIBE/UNSUBSCRIBE/DISCONNECT/PINGREQ）
+- MQTT 3.1.1 完整客户端（`plus.jmqx.client.mqtt.v3` 包，含 `message`、`internal/handler`、`internal/codec`）
+- MQTT 5 包结构预留（`plus.jmqx.client.mqtt.v5`，仅接口占位，无实现）
 - TCP 传输
 - QoS 0/1/2 完整实现
 - 三种 API（Async/Reactive/Blocking）
 - 自动重连（指数退避 + jitter）
 - 断线缓存
 - 线程模型（Netty EventLoop + 业务线程池）
-- Builder 链式 API
+- Builder 链式 API（`.useMqttVersion3()` / `.useMqttVersion5()`）
 - 连接/断开生命周期监听器
 
 ### 第二版（后续）
