@@ -76,10 +76,12 @@ public class MqttClientHandler extends ChannelDuplexHandler {
             super.channelRead(ctx, msg);
             return;
         }
+        log.warn("DIAG inbound type={}", type);
 
         switch (type) {
             case CONNACK -> {
                 var ack = service.decodeConnAck((MqttConnAckMessage) mqtt, config);
+                log.warn("DIAG CONNACK received: {}", type);
                 connAckSink.tryEmitValue(ack);
             }
             case PUBLISH -> inboundQos.onInboundPublish(ctx, (MqttPublishMessage) mqtt, service, inbox);

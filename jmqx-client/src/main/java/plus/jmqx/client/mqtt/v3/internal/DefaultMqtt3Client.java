@@ -127,11 +127,20 @@ public class DefaultMqtt3Client implements Mqtt3RxClient {
             // 每次连接新建 handler 与 connAck sink
             Sinks.One<MqttConnAck> ackSink = Sinks.one();
             MqttClientHandler h = new MqttClientHandler(config, service, ackTracker, inbox, inboundQos, ackSink);
-            return transportFactory.connect(config, c -> h)
+            return transportFactory.connect(config)
                     .flatMap(conn -> {
                         this.connection = conn;
                         this.handler = h;
-                        // 入站读取：reactor-netty 已通过 pipeline 自动分发到 handler，无需单独订阅 inbound
+                        // 显式挂载 MQTT pipeline（reactor-netty doOnConnected 在 newConnection 下
+                        // 不会在 connect Mono emit 前完成挂载，故在 resolved Connection 上显式安装）
+                        transportFactory.installPipeline(conn, h, config);
+                        // 订阅入站流以驱动 reactor-netty 读取 —— 否则 socket 不被拉取，CONNACK 永不到达。
+                        // MqttDecoder 已在 pipeline 中将 ByteBuf 解码为 MqttMessage，并由
+                        // MqttClientHandler.channelRead 分发；此处仅消费以触发背压拉取。
+                        conn.inbound().receiveObject()
+                                .cast(io.netty.handler.codec.mqtt.MqttMessage.class)
+                                .doOnError(this::onTransportError)
+                                .subscribe();
                         conn.onDispose().subscribe(v ->
                                 onTransportError(new RuntimeException("connection disposed")));
                         return conn.outbound().sendObject(Mono.just(service.encodeConnect(config))).then()
