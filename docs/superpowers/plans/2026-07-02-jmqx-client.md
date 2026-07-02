@@ -2876,7 +2876,7 @@ git commit -m "feat(client): full MqttInbox with request-gated backpressure (TDD
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/v3/Mqtt3PublishResult.java`
 - 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/v3/Mqtt3ClientConfig.java`
 
-- [ ] **步骤 1：创建 MqttClient（版本无关入口）**
+- [x] **步骤 1：创建 MqttClient（版本无关入口）**
 
 ```java
 package plus.jmqx.client.mqtt;
@@ -2890,7 +2890,7 @@ public interface MqttClient {
 }
 ```
 
-- [ ] **步骤 2：创建 v3 接口 + 配置**
+- [x] **步骤 2：创建 v3 接口 + 配置**
 
 `v3/Mqtt3ClientConfig.java`：
 ```java
@@ -3005,12 +3005,12 @@ public interface Mqtt3Publishes extends AutoCloseable, Iterable<Mqtt3Publish> {
 }
 ```
 
-- [ ] **步骤 3：编译**
+- [x] **步骤 3：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/MqttClient.java \
@@ -3037,7 +3037,7 @@ git commit -m "feat(client): add v3 client public API interfaces"
 
 这是最大的任务：引擎接线。它组合了 Task 8–17 的所有协作对象。此处不对其进行隔离单元测试（协作对象已测试）；由 Task 20 的集成测试进行端到端验证。
 
-- [ ] **步骤 1：创建 DefaultMqtt3Client**
+- [x] **步骤 1：创建 DefaultMqtt3Client**
 
 ```java
 package plus.jmqx.client.mqtt.v3.internal;
@@ -3292,7 +3292,7 @@ public class DefaultMqtt3Client implements Mqtt3RxClient {
 
 **注意 SUBACK：** 上面的 `subscribe()` 留下 `sink` 未完成，因为 `MqttClientHandler`（Task 14）没有将 SUBACK 路由到 per-pid sink。要完整接通 SUBACK 完成，需向 `MqttClientHandler` 添加 `Map<Integer, Sinks.One<Mqtt3SubAck>>` 和 `registerSubAck(pid, sink)` 方法；处理器的 SUBACK 分支完成该 sink。应用此补丁：
 
-- [ ] **步骤 2：修补 MqttClientHandler 以路由 SUBACK/UNSUBACK**
+- [x] **步骤 2：修补 MqttClientHandler 以路由 SUBACK/UNSUBACK**
 
 向 `MqttClientHandler` 添加字段 + 方法：
 ```java
@@ -3330,7 +3330,7 @@ handler.registerSubAck(pid, sink);
 - 在 `subscribe()` 中：`handler.registerSubAck(pid, sink);` 以及 `connection.outbound()...subscribe();` 然后 `return sink.asMono();`
 - 在 `unsubscribe()` 中：创建一个 sink，`handler.registerUnsubAck(pid, sink);` 并 `return sink.asMono();`
 
-- [ ] **步骤 3：创建 API 包装器**
+- [x] **步骤 3：创建 API 包装器**
 
 `v3/internal/Mqtt3AsyncClientImpl.java`：
 ```java
@@ -3400,7 +3400,7 @@ public class Mqtt3BlockingClientImpl implements Mqtt3BlockingClient {
 }
 ```
 
-- [ ] **步骤 4：创建 builder**
+- [x] **步骤 4：创建 builder**
 
 `v3/Mqtt3ClientBuilder.java`：
 ```java
@@ -3459,12 +3459,12 @@ public class MqttClientBuilder {
 }
 ```
 
-- [ ] **步骤 5：编译**
+- [x] **步骤 5：编译**
 
 运行：`mvn -pl jmqx-client compile -q`
 预期：BUILD SUCCESS。在继续之前修复任何 import/symbol 错误（例如 `Mqtt3SubAck` 包）。
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```bash
 git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/v3/internal/DefaultMqtt3Client.java \
@@ -3485,14 +3485,14 @@ git commit -m "feat(client): add DefaultMqtt3Client engine + Async/Blocking wrap
 
 这是 v3 客户端被证明端到端可用的时刻。需要 jmqx-broker 在 `localhost:1883` 上运行。标记为集成测试（IT 后缀），以便在需要时可通过 surefire 排除从默认 `mvn test` 运行中排除；对于 v1，我们将其作为 `test` 的一部分运行。
 
-- [ ] **步骤 1：启动 jmqx-broker（手动，在另一个终端）**
+- [x] **步骤 1：启动 jmqx-broker（手动，在另一个终端）**
 
 ```bash
 mvn -pl jmqx-broker spring-boot:run -q
 ```
 验证日志显示 MQTT 监听在 1883。
 
-- [ ] **步骤 2：编写集成测试**
+- [x] **步骤 2：编写集成测试**
 
 ```java
 package plus.jmqx.client.mqtt.v3;
@@ -3549,7 +3549,7 @@ class Mqtt3ClientIT {
 }
 ```
 
-- [ ] **步骤 3：运行 IT**
+- [x] **步骤 3：运行 IT**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt3ClientIT -q`
 预期：BUILD SUCCESS，测试通过（连接、订阅、发布、接收、断开）。
@@ -3559,7 +3559,7 @@ class Mqtt3ClientIT {
 - SUBACK 永不完成 → 验证 `handler.registerSubAck` 接线。
 - PUBLISH QoS1 永不完成 → 验证在 PUBACK 时调用了 `ackTracker.complete`。
 
-- [ ] **步骤 4：提交**
+- [x] **步骤 4：提交**
 
 ```bash
 git add jmqx-client/src/test/java/plus/jmqx/client/mqtt/v3/Mqtt3ClientIT.java

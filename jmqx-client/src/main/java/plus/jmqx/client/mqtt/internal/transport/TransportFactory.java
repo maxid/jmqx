@@ -13,12 +13,15 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.tcp.TcpClient;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
- * 选择 reactor-netty 传输（TCP/TLS/WS/WSS）并安装 MQTT pipeline。
+ * 选择 reactor-netty 传输（TCP/TLS/WS/WSS）。
  *
  * <p>{@code DefaultMqttClient} 与传输无关 —— 它只看到一个 {@link Connection}。
+ * MQTT 编解码 pipeline 通过 {@link #installPipeline} 在连接建立后显式挂载，
+ * 使用 reactor-netty {@code Connection.addHandlerFirst/addHandlerLast} API
+ * （与 jmqx-broker 的 {@code MqttReceiver} 同构），确保编码器在 reactor-netty
+ * 的 reactiveBridge 之前对出站消息生效。
  *
  * @author maxid
  */
@@ -26,18 +29,17 @@ import java.util.function.Function;
 public final class TransportFactory {
 
     @SuppressWarnings("unchecked")
-    public Mono<Connection> connect(MqttClientConfig config,
-                                     Function<MqttClientConfig, MqttClientHandler> handlerFactory) {
+    public Mono<Connection> connect(MqttClientConfig config) {
         Mono<? extends Connection> mono = switch (config.getTransportType()) {
-            case TCP -> tcpClient(config, handlerFactory).connect();
-            case TLS -> tcpClient(config, handlerFactory).secure().connect();
-            case WS -> httpClient(config, handlerFactory).websocket().uri(wsUri(config)).connect();
-            case WSS -> httpClient(config, handlerFactory).secure().websocket().uri(wsUri(config)).connect();
+            case TCP -> tcpClient(config).connect();
+            case TLS -> tcpClient(config).secure().connect();
+            case WS -> httpClient(config).websocket().uri(wsUri(config)).connect();
+            case WSS -> httpClient(config).secure().websocket().uri(wsUri(config)).connect();
         };
         return (Mono<Connection>) mono;
     }
 
-    private TcpClient tcpClient(MqttClientConfig c, Function<MqttClientConfig, MqttClientHandler> hf) {
+    private TcpClient tcpClient(MqttClientConfig c) {
         TcpClient client = TcpClient.newConnection()
                 .host(c.getServerHost())
                 .port(c.getServerPort())
@@ -46,27 +48,38 @@ public final class TransportFactory {
         if (c.getLoopResources() != null) {
             client = client.runOn(c.getLoopResources());
         }
-        return client.doOnConnected(conn -> installPipeline(conn, hf.apply(c), c));
+        return client;
     }
 
-    private HttpClient httpClient(MqttClientConfig c, Function<MqttClientConfig, MqttClientHandler> hf) {
+    private HttpClient httpClient(MqttClientConfig c) {
         HttpClient client = HttpClient.newConnection()
                 .host(c.getServerHost())
                 .port(c.getServerPort());
         if (c.getLoopResources() != null) {
             client = client.runOn(c.getLoopResources());
         }
-        return client.doOnConnected(conn -> installPipeline(conn, hf.apply(c), c));
+        return client;
     }
 
-    private void installPipeline(Connection conn, MqttClientHandler handler, MqttClientConfig c) {
-        int keepAlive = c.getKeepAliveSeconds();
-        conn.channel().pipeline()
-                .addFirst("mqttDecoder", new MqttDecoder(8 * 1024 * 1024))
-                .addAfter("mqttDecoder", "mqttEncoder", MqttEncoder.INSTANCE)
-                .addAfter("mqttEncoder", "idle",
+    /**
+     * 在已建立的 reactor-netty {@link Connection} 上安装 MQTT pipeline。
+     *
+     * <p>顺序（head→tail）：{@code idle → mqttDecoder → mqttEncoder → mqttClient → reactor handlers}。
+     * 出站（tail→head）：reactiveBridge → mqttClient（业务可写出 MqttMessage）
+     * → mqttEncoder（编码为 ByteBuf）→ mqttDecoder（透传）→ idle → head。
+     *
+     * @param conn    reactor-netty 连接
+     * @param handler MQTT 业务处理器
+     * @param config  客户端配置
+     */
+    public void installPipeline(Connection conn, MqttClientHandler handler, MqttClientConfig config) {
+        int keepAlive = config.getKeepAliveSeconds();
+        // 使用 Connection API 挂载（reactor-netty 会插入到 reactiveBridge 之前），与 broker 同构
+        conn.addHandlerFirst("mqttEncoder", MqttEncoder.INSTANCE)
+                .addHandlerFirst("mqttDecoder", new MqttDecoder(8 * 1024 * 1024))
+                .addHandlerFirst("idle",
                         new IdleStateHandler((long) (keepAlive * 1.5), keepAlive, 0, TimeUnit.SECONDS))
-                .addAfter("idle", "mqttClient", handler);
+                .addHandlerFirst("mqttClient", handler);
         log.debug("MQTT pipeline installed on {}", conn.channel());
     }
 
