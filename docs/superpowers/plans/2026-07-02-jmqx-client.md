@@ -4055,6 +4055,8 @@ public interface Mqtt5Client extends MqttClient {
 
 `v5/Mqtt5ClientBuilder.java` — mirror of `Mqtt3ClientBuilder` adding `.sessionExpiryInterval(long)`, `.receiveMaximum(int)`, `.cleanStart(boolean)`; `buildRx()` returns `new DefaultMqtt5Client(...)`.
 
+**Important — v5 must override the stream-returning methods** because the inherited v3 engine's `subscribePublishes()`/`publishes()` return `Flux<Mqtt3Publish>`. In `DefaultMqtt5Client` override them to return `Flux<Mqtt5Publish>` by mapping `inbox.subscriptionFlux()`/`globalFlux()` through an `Mqtt5Publish` adapter wrapper (same `toMqtt3` pattern but producing `Mqtt5Publish`, with `ack()` delegating to the `Deliverable`). Also override `connect()` return type to `Mono<Mqtt5ConnAck>` (covariant return) and `publish`/`subscribe`/`unsubscribe`/`disconnect` to v5 message types — all delegating to the inherited engine logic with a cast, since the engine internals are version-agnostic via `MqttMessageService`.
+
 - [ ] **Step 3: Create DefaultMqtt5Client (extends v3 engine)**
 
 ```java
