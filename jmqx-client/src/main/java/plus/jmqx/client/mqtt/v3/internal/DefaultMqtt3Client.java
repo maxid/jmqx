@@ -1,7 +1,6 @@
 package plus.jmqx.client.mqtt.v3.internal;
 
 import plus.jmqx.client.mqtt.MqttClientConfig;
-import plus.jmqx.client.mqtt.MqttClientState;
 import plus.jmqx.client.mqtt.MqttGlobalPublishFilter;
 import plus.jmqx.client.mqtt.MqttVersion;
 import plus.jmqx.client.mqtt.internal.MqttClientEngine;
@@ -39,8 +38,8 @@ import java.util.List;
 public class DefaultMqtt3Client extends MqttClientEngine implements Mqtt3RxClient {
 
     public DefaultMqtt3Client(Mqtt3ClientConfig config,
-                               List<MqttClientConnectedListener> connectedListeners,
-                               List<MqttClientDisconnectedListener> disconnectedListeners) {
+                              List<MqttClientConnectedListener> connectedListeners,
+                              List<MqttClientDisconnectedListener> disconnectedListeners) {
         super(config, connectedListeners, disconnectedListeners);
     }
 
@@ -213,4 +212,5 @@ public class DefaultMqtt3Client extends MqttClientEngine implements Mqtt3RxClien
             return result.getError();
         }
     }
+
 }

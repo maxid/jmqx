@@ -17,8 +17,8 @@ import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.internal.MqttMessageService;
 import plus.jmqx.client.mqtt.message.MqttConnAck;
 import plus.jmqx.client.mqtt.message.MqttPublish;
-import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttSubAck;
+import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttUnsubscribe;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5ConnAck;
@@ -28,7 +28,6 @@ import plus.jmqx.client.mqtt.v5.message.Mqtt5PublishImpl;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5PublishProperties;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5SubAck;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -344,4 +343,5 @@ public class Mqtt5MessageService implements MqttMessageService {
         }
         return userProps;
     }
+
 }

@@ -20,7 +20,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 public final class SubscriptionStore {
 
-    /** 一个订阅条目：原始过滤器 + 其投递 sink。 */
+    /**
+     * 一个订阅条目：原始过滤器 + 其投递 sink。
+     */
     public record Subscription(MqttTopicFilter filter, Sinks.Many<MqttPublish> sink) {
     }
 
@@ -32,12 +34,16 @@ public final class SubscriptionStore {
         return sub;
     }
 
-    /** 移除匹配任一给定过滤器字符串的订阅。 */
+    /**
+     * 移除匹配任一给定过滤器字符串的订阅。
+     */
     public void removeAll(Collection<String> filters) {
         subscriptions.removeIf(s -> filters.contains(s.filter().getTopicFilter()));
     }
 
-    /** 将入站 PUBLISH 路由到所有匹配的订阅 sink。 */
+    /**
+     * 将入站 PUBLISH 路由到所有匹配的订阅 sink。
+     */
     public void route(MqttPublish publish) {
         for (Subscription sub : subscriptions) {
             if (TopicMatcher.matches(sub.filter().getTopicFilter(), publish.getTopic())) {
@@ -46,7 +52,9 @@ public final class SubscriptionStore {
         }
     }
 
-    /** 订阅过滤器快照（用于重连重新订阅）。 */
+    /**
+     * 订阅过滤器快照（用于重连重新订阅）。
+     */
     public List<MqttTopicFilter> snapshotFilters() {
         return subscriptions.stream().map(Subscription::filter).toList();
     }
@@ -58,4 +66,5 @@ public final class SubscriptionStore {
     public void clear() {
         subscriptions.clear();
     }
+
 }

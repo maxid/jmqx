@@ -16,5 +16,6 @@ import java.util.List;
 public class Mqtt5Subscribe implements MqttSubscribe {
 
     List<Mqtt5TopicFilter> topicFilters;
-    int packetId;
+    int                    packetId;
+
 }

@@ -10,6 +10,7 @@ import lombok.Value;
 @Value
 public class Mqtt5PubRel {
 
-    int packetId;
+    int  packetId;
     byte reasonCode;
+
 }

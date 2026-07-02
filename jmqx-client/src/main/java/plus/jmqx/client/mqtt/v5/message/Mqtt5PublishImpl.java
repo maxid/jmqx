@@ -10,12 +10,12 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public final class Mqtt5PublishImpl implements Mqtt5Publish {
 
-    private final String topic;
-    private final byte[] payload;
-    private final QoS qos;
-    private final boolean retain;
-    private final boolean dup;
-    private final int packetId;
+    private final String                 topic;
+    private final byte[]                 payload;
+    private final QoS                    qos;
+    private final boolean                retain;
+    private final boolean                dup;
+    private final int                    packetId;
     private final Mqtt5PublishProperties properties;
 
     public Mqtt5PublishImpl(String topic, byte[] payload, QoS qos, boolean retain, boolean dup,
@@ -75,4 +75,5 @@ public final class Mqtt5PublishImpl implements Mqtt5Publish {
                 .packetId(packetId)
                 .properties(properties);
     }
+
 }

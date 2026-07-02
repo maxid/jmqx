@@ -10,4 +10,5 @@ public class MessageBufferFullException extends RuntimeException {
     public MessageBufferFullException() {
         super("Offline message buffer is full");
     }
+
 }

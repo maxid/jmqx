@@ -11,11 +11,12 @@ import plus.jmqx.client.mqtt.message.MqttConnAck;
 @Value
 public class Mqtt3ConnAck implements MqttConnAck {
 
-    boolean sessionPresent;
+    boolean                sessionPresent;
     Mqtt3ConnAckReturnCode returnCode;
 
     @Override
     public boolean isSessionPresent() {
         return sessionPresent;
     }
+
 }

@@ -27,10 +27,10 @@ import java.util.function.Function;
 @Slf4j
 public final class MessageBuffer {
 
-    private final Queue<BufferedPublish> queue = new ConcurrentLinkedQueue<>();
-    private final int maxSize;
-    private final long maxBytes;
-    private final AtomicLong currentBytes = new AtomicLong(0);
+    private final Queue<BufferedPublish> queue        = new ConcurrentLinkedQueue<>();
+    private final int                    maxSize;
+    private final long                   maxBytes;
+    private final AtomicLong             currentBytes = new AtomicLong(0);
 
     public MessageBuffer(int maxSize, long maxBytes) {
         this.maxSize = maxSize <= 0 ? Integer.MAX_VALUE : maxSize;
@@ -67,7 +67,9 @@ public final class MessageBuffer {
         });
     }
 
-    /** 失败所有缓存消息（禁用重连的断开时调用）。 */
+    /**
+     * 失败所有缓存消息（禁用重连的断开时调用）。
+     */
     public void failAll(Throwable error) {
         BufferedPublish bp;
         while ((bp = queue.poll()) != null) {
@@ -96,4 +98,5 @@ public final class MessageBuffer {
 
     private record BufferedPublish(MqttPublish publish, Sinks.One<MqttPublishResult> sink) {
     }
+
 }

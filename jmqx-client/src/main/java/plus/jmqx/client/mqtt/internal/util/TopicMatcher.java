@@ -40,4 +40,5 @@ public final class TopicMatcher {
         }
         return fi == f.length - 1 && "#".equals(f[fi]);
     }
+
 }

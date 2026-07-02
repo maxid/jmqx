@@ -18,8 +18,8 @@ import plus.jmqx.client.mqtt.lifecycle.MqttClientReconnector;
 import plus.jmqx.client.mqtt.message.MqttConnAck;
 import plus.jmqx.client.mqtt.message.MqttPublish;
 import plus.jmqx.client.mqtt.message.MqttPublishResult;
-import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttSubAck;
+import plus.jmqx.client.mqtt.message.MqttSubscribe;
 import plus.jmqx.client.mqtt.message.MqttTopicFilter;
 import plus.jmqx.client.mqtt.message.MqttUnsubscribe;
 import plus.jmqx.client.mqtt.message.QoS;
@@ -44,24 +44,24 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public abstract class MqttClientEngine {
 
-    protected final MqttClientConfig config;
-    protected final MqttMessageService service;
-    protected final PacketIdManager packetIdManager = new PacketIdManager();
-    protected final AckTracker ackTracker = new AckTracker();
-    protected final SubscriptionStore subscriptionStore = new SubscriptionStore();
-    protected final MqttInbox inbox;
-    protected final InboundQos inboundQos = new InboundQos();
-    protected final MqttOutbox outbox;
-    protected final MessageBuffer messageBuffer;
-    protected final TransportFactory transportFactory = new TransportFactory();
-    protected final List<MqttClientConnectedListener> connectedListeners;
+    protected final MqttClientConfig                     config;
+    protected final MqttMessageService                   service;
+    protected final PacketIdManager                      packetIdManager   = new PacketIdManager();
+    protected final AckTracker                           ackTracker        = new AckTracker();
+    protected final SubscriptionStore                    subscriptionStore = new SubscriptionStore();
+    protected final MqttInbox                            inbox;
+    protected final InboundQos                           inboundQos        = new InboundQos();
+    protected final MqttOutbox                           outbox;
+    protected final MessageBuffer                        messageBuffer;
+    protected final TransportFactory                     transportFactory  = new TransportFactory();
+    protected final List<MqttClientConnectedListener>    connectedListeners;
     protected final List<MqttClientDisconnectedListener> disconnectedListeners;
-    protected final MqttAutoReconnect autoReconnect;
+    protected final MqttAutoReconnect                    autoReconnect;
 
-    protected final AtomicReference<MqttClientState> state =
+    protected final    AtomicReference<MqttClientState> state =
             new AtomicReference<>(MqttClientState.DISCONNECTED);
-    protected volatile Connection connection;
-    protected volatile MqttClientHandler handler;
+    protected volatile Connection                       connection;
+    protected volatile MqttClientHandler                handler;
 
     protected MqttClientEngine(MqttClientConfig config,
                                List<MqttClientConnectedListener> connectedListeners,
@@ -87,7 +87,7 @@ public abstract class MqttClientEngine {
 
     protected abstract MqttUnsubscribe copyUnsubscribeWithPacketId(MqttUnsubscribe unsubscribe, int packetId);
 
-  protected Mono<MqttConnAck> engineConnect() {
+    protected Mono<MqttConnAck> engineConnect() {
         return Mono.defer(() -> {
             if (!state.compareAndSet(MqttClientState.DISCONNECTED, MqttClientState.CONNECTING)) {
                 return Mono.error(new IllegalStateException("Client is " + state.get()));
@@ -291,7 +291,9 @@ public abstract class MqttClientEngine {
         return filter != MqttGlobalPublishFilter.UNSOLICITED || true;
     }
 
-    /** 保留 ack() 回调的入站 PUBLISH 视图。 */
+    /**
+     * 保留 ack() 回调的入站 PUBLISH 视图。
+     */
     protected static final class DeliverablePublishView implements MqttPublish {
         private final MqttInbox.Deliverable d;
 
@@ -338,4 +340,5 @@ public abstract class MqttClientEngine {
             return d;
         }
     }
+
 }

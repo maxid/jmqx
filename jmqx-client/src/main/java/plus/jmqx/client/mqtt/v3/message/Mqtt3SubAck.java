@@ -15,5 +15,6 @@ import java.util.List;
 public class Mqtt3SubAck implements MqttSubAck {
 
     List<QoS> grantedQos;
-    int packetId;
+    int       packetId;
+
 }

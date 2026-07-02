@@ -93,8 +93,4 @@ public class Mqtt5BlockingClientImpl implements Mqtt5BlockingClient {
         return rx;
     }
 
-    @Override
-    public Mqtt5BlockingClient toBlock() {
-        return this;
-    }
 }

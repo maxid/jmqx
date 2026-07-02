@@ -36,4 +36,5 @@ public enum Mqtt3ConnAckReturnCode {
     public boolean isAccepted() {
         return this == ACCEPTED;
     }
+
 }

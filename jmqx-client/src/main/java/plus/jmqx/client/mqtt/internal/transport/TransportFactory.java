@@ -87,4 +87,5 @@ public final class TransportFactory {
         MqttWebSocketConfig ws = c.getWebSocketConfig();
         return ws != null && ws.getPath() != null ? ws.getPath() : "/mqtt";
     }
+
 }

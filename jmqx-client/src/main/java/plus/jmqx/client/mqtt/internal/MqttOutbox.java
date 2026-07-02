@@ -19,9 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public final class MqttOutbox {
 
-    private final AtomicInteger permits;
-    private volatile int maxPermits;
-    private final Queue<Waiter> waiters = new ConcurrentLinkedQueue<>();
+    private final    AtomicInteger permits;
+    private volatile int           maxPermits;
+    private final    Queue<Waiter> waiters = new ConcurrentLinkedQueue<>();
 
     public MqttOutbox(int maxInflight) {
         this.maxPermits = maxInflight <= 0 ? Integer.MAX_VALUE : maxInflight;
@@ -40,7 +40,9 @@ public final class MqttOutbox {
         });
     }
 
-    /** 释放一个 slot（PUBACK/PUBCOMP 到达时）。唤醒一个等待者。 */
+    /**
+     * 释放一个 slot（PUBACK/PUBCOMP 到达时）。唤醒一个等待者。
+     */
     public void release(int packetId) {
         Waiter w = waiters.poll();
         if (w != null) {
@@ -52,7 +54,9 @@ public final class MqttOutbox {
         }
     }
 
-    /** 取消一个 pending 条目，不向等待者释放许可。 */
+    /**
+     * 取消一个 pending 条目，不向等待者释放许可。
+     */
     public void remove(int packetId) {
         // best-effort：waiters 按 packetId 标识但 poll 是 FIFO；取消路径下排空并重新入队非匹配项。
         int size = waiters.size();
@@ -113,4 +117,5 @@ public final class MqttOutbox {
 
     private record Waiter(int packetId, MonoSink<Void> sink) {
     }
+
 }

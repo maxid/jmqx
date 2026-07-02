@@ -3,7 +3,6 @@ package plus.jmqx.client.mqtt.internal.buffer;
 import org.junit.jupiter.api.Test;
 import plus.jmqx.client.mqtt.internal.MqttPublishResultImpl;
 import plus.jmqx.client.mqtt.message.MqttPublish;
-import plus.jmqx.client.mqtt.message.MqttPublishResult;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Publish;
 import reactor.core.publisher.Mono;
@@ -12,7 +11,7 @@ import reactor.test.StepVerifier;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MessageBufferTest {
 

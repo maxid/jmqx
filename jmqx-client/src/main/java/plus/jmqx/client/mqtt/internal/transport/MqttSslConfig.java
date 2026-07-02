@@ -12,11 +12,12 @@ import lombok.Data;
 @Builder
 public class MqttSslConfig {
 
-    private String trustStorePath;
-    private String trustStorePassword;
-    private String keyStorePath;
-    private String keyStorePassword;
+    private String   trustStorePath;
+    private String   trustStorePassword;
+    private String   keyStorePath;
+    private String   keyStorePassword;
     private String[] cipherSuites;
     private String[] protocols;
-    private int handshakeTimeoutMs = 10_000;
+    private int      handshakeTimeoutMs = 10_000;
+
 }

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class Mqtt5MessageServiceTest {
 
     private final Mqtt5MessageService svc = new Mqtt5MessageService();
-    private final EmbeddedChannel ch = new EmbeddedChannel(MqttEncoder.INSTANCE, new MqttDecoder(8 * 1024 * 1024));
+    private final EmbeddedChannel     ch  = new EmbeddedChannel(MqttEncoder.INSTANCE, new MqttDecoder(8 * 1024 * 1024));
 
     private MqttMessage roundTrip(MqttMessage out) {
         ch.writeOutbound(out);

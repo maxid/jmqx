@@ -1,13 +1,13 @@
 package plus.jmqx.client.mqtt.internal;
 
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MqttOutboxBackpressureTest {
 
@@ -35,8 +35,10 @@ class MqttOutboxBackpressureTest {
         MqttOutbox outbox = new MqttOutbox(1);
         outbox.acquire(1).block();
         // 两个等待者
-        outbox.acquire(2).doOnNext(v -> {}).subscribe();
-        outbox.acquire(3).doOnNext(v -> {}).subscribe();
+        outbox.acquire(2).doOnNext(v -> {
+        }).subscribe();
+        outbox.acquire(3).doOnNext(v -> {
+        }).subscribe();
         outbox.release(1);  // 唤醒 pid 2 的等待者
         // pid 3 仍阻塞（只有一个 slot，现由 2 占用）
         outbox.remove(2);    // 模拟：取消 pid 2 的 slot
