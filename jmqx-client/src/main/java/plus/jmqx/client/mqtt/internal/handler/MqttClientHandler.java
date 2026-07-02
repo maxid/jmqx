@@ -32,22 +32,38 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class MqttClientHandler extends ChannelDuplexHandler {
 
-    /** 客户端配置 */
+    /**
+     * 客户端配置
+     */
     private final MqttClientConfig       config;
-    /** 消息编解码服务 */
+    /**
+     * 消息编解码服务
+     */
     private final MqttMessageService     service;
-    /** ACK 跟踪器 */
+    /**
+     * ACK 跟踪器
+     */
     private final AckTracker             ackTracker;
-    /** 入站投递枢纽 */
+    /**
+     * 入站投递枢纽
+     */
     private final MqttInbox              inbox;
-    /** 入站 QoS 状态机 */
+    /**
+     * 入站 QoS 状态机
+     */
     private final InboundQos             inboundQos;
-    /** CONNACK 结果发射器 */
+    /**
+     * CONNACK 结果发射器
+     */
     private final Sinks.One<MqttConnAck> connAckSink;
 
-    /** 待完成的 SUBACK 回调（按 packetId 索引） */
+    /**
+     * 待完成的 SUBACK 回调（按 packetId 索引）
+     */
     private final Map<Integer, Sinks.One<MqttSubAck>> pendingSubAcks   = new ConcurrentHashMap<>();
-    /** 待完成的 UNSUBACK 回调（按 packetId 索引） */
+    /**
+     * 待完成的 UNSUBACK 回调（按 packetId 索引）
+     */
     private final Map<Integer, Sinks.Empty<Void>>     pendingUnsubAcks = new ConcurrentHashMap<>();
 
     /**

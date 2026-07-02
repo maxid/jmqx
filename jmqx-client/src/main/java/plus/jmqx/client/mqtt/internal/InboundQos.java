@@ -22,16 +22,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public final class InboundQos {
 
-    /** 等待 PUBREL 的 QoS2 packetId 集合 */
+    /**
+     * 等待 PUBREL 的 QoS2 packetId 集合
+     */
     private final Set<Integer> pendingPubRel = ConcurrentHashMap.newKeySet();
 
     /**
      * 处理入站 PUBLISH 消息。
      *
-     * @param ctx     Netty 通道处理器上下文
-     * @param nettyMsg  Netty 的 PUBLISH 消息
-     * @param service 消息编解码服务
-     * @param inbox   入站投递枢纽
+     * @param ctx      Netty 通道处理器上下文
+     * @param nettyMsg Netty 的 PUBLISH 消息
+     * @param service  消息编解码服务
+     * @param inbox    入站投递枢纽
      */
     public void onInboundPublish(ChannelHandlerContext ctx, MqttPublishMessage nettyMsg,
                                  MqttMessageService service, MqttInbox inbox) {

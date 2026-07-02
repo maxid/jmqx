@@ -16,9 +16,13 @@ import plus.jmqx.client.mqtt.message.QoS;
 @Builder
 public class Mqtt3TopicFilter implements MqttTopicFilter {
 
-    /** 主题过滤表达式（支持通配符 + 和 #） */
+    /**
+     * 主题过滤表达式（支持通配符 + 和 #）
+     */
     String topicFilter;
-    /** 请求的 QoS 等级 */
+    /**
+     * 请求的 QoS 等级
+     */
     QoS    qos;
 
     @Override

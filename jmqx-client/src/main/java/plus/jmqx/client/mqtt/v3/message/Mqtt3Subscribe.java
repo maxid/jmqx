@@ -17,9 +17,13 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Mqtt3Subscribe implements MqttSubscribe {
 
-    /** 主题过滤器列表 */
+    /**
+     * 主题过滤器列表
+     */
     List<Mqtt3TopicFilter> topicFilters;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     int                    packetId;
 
 }

@@ -12,17 +12,29 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public final class Mqtt3PublishImpl implements Mqtt3Publish {
 
-    /** 主题名 */
+    /**
+     * 主题名
+     */
     private final String  topic;
-    /** 消息负载字节数组 */
+    /**
+     * 消息负载字节数组
+     */
     private final byte[]  payload;
-    /** QoS 等级 */
+    /**
+     * QoS 等级
+     */
     private final QoS     qos;
-    /** 保留标志 */
+    /**
+     * 保留标志
+     */
     private final boolean retain;
-    /** 重复标志 */
+    /**
+     * 重复标志
+     */
     private final boolean dup;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     private final int     packetId;
 
     /**

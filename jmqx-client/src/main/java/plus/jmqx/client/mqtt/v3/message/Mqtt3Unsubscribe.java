@@ -17,9 +17,13 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Mqtt3Unsubscribe implements MqttUnsubscribe {
 
-    /** 要取消订阅的主题过滤器列表 */
+    /**
+     * 要取消订阅的主题过滤器列表
+     */
     List<String> topicFilters;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     int          packetId;
 
 }

@@ -14,11 +14,17 @@ import java.util.List;
 @Value
 public class Mqtt5SubAck implements MqttSubAck {
 
-    /** 授予的 QoS 列表 */
+    /**
+     * 授予的 QoS 列表
+     */
     List<QoS>  grantedQos;
-    /** 原因码列表 */
+    /**
+     * 原因码列表
+     */
     List<Byte> reasonCodes;
-    /** 报文标识符 */
+    /**
+     * 报文标识符
+     */
     int        packetId;
 
 }

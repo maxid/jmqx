@@ -43,8 +43,8 @@ public class DefaultMqtt3Client extends MqttClientEngine implements Mqtt3RxClien
     /**
      * 构造 DefaultMqtt3Client 实例。
      *
-     * @param config               MQTT 3 客户端配置
-     * @param connectedListeners   连接成功监听器列表
+     * @param config                MQTT 3 客户端配置
+     * @param connectedListeners    连接成功监听器列表
      * @param disconnectedListeners 断开连接监听器列表
      */
     public DefaultMqtt3Client(Mqtt3ClientConfig config,
@@ -165,7 +165,9 @@ public class DefaultMqtt3Client extends MqttClientEngine implements Mqtt3RxClien
      * {@link MqttInbox.Deliverable} 的 {@link Mqtt3Publish} 委托实现。
      */
     private static final class Mqtt3PublishDelegate implements Mqtt3Publish {
-        /** 底层可投递消息 */
+        /**
+         * 底层可投递消息
+         */
         private final MqttInbox.Deliverable d;
 
         Mqtt3PublishDelegate(MqttInbox.Deliverable d) {
@@ -219,7 +221,9 @@ public class DefaultMqtt3Client extends MqttClientEngine implements Mqtt3RxClien
      * {@link Mqtt3PublishResult} 的委托实现。
      */
     private static final class Mqtt3PublishResultDelegate implements Mqtt3PublishResult {
-        /** 底层发布结果 */
+        /**
+         * 底层发布结果
+         */
         private final plus.jmqx.client.mqtt.message.MqttPublishResult result;
 
         Mqtt3PublishResultDelegate(plus.jmqx.client.mqtt.message.MqttPublishResult result) {

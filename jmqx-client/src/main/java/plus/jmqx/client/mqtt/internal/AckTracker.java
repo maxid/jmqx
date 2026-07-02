@@ -14,7 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class AckTracker {
 
-    /** 待 ACK 的出站消息映射（packetId -> PendingOutbound） */
+    /**
+     * 待 ACK 的出站消息映射（packetId -> PendingOutbound）
+     */
     private final Map<Integer, PendingOutbound> pending = new ConcurrentHashMap<>();
 
     /**

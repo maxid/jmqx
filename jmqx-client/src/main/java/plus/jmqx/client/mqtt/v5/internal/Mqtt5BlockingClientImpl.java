@@ -26,10 +26,14 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Mqtt5BlockingClientImpl implements Mqtt5BlockingClient {
 
-    /** 默认操作超时时间 */
+    /**
+     * 默认操作超时时间
+     */
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
-    /** 被委托的 Reactor API 客户端 */
+    /**
+     * 被委托的 Reactor API 客户端
+     */
     private final Mqtt5RxClient rx;
 
     /**
