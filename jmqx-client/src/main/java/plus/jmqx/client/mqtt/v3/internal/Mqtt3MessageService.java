@@ -31,13 +31,14 @@ import java.util.List;
 /**
  * MQTT 3.1.1 协议适配器。
  *
- * <p>使用 netty-codec-mqtt（{@code MqttEncoder}/{@code MqttDecoder}/{@code MqttMessageBuilders}）处理线路格式，
- * 在业务消息类型与 Netty 类型之间转换。
+ * <p>使用 netty-codec-mqtt（{@code MqttEncoder}/{@code MqttDecoder}/{@code MqttMessageBuilders}）
+ * 处理线路格式，在业务消息类型与 Netty 类型之间进行转换。
  *
  * @author maxid
  */
 public class Mqtt3MessageService implements MqttMessageService {
 
+    /** Netty MQTT 3.1.1 协议版本常量 */
     private static final io.netty.handler.codec.mqtt.MqttVersion NETTY_VERSION =
             io.netty.handler.codec.mqtt.MqttVersion.MQTT_3_1_1;
 
@@ -194,7 +195,7 @@ public class Mqtt3MessageService implements MqttMessageService {
     @Override
     public RuntimeException connectionRefusedException(MqttConnAck ack) {
         Mqtt3ConnAckReturnCode code = ((Mqtt3ConnAck) ack).getReturnCode();
-        return new RuntimeException("MQTT connection refused: " + code);
+        return new RuntimeException("MQTT 连接被拒绝: " + code);
     }
 
 }

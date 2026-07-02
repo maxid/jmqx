@@ -10,7 +10,13 @@ import lombok.Value;
 @Value
 public class Mqtt5PubAck {
 
+    /**
+     * 报文标识符
+     */
     int  packetId;
+    /**
+     * 应答原因码
+     */
     byte reasonCode;
 
 }

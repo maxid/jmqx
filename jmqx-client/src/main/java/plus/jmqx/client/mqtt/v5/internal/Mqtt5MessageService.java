@@ -35,14 +35,22 @@ import java.util.Map;
 
 /**
  * MQTT 5.0 协议适配器。
+ * <p>负责 MQTT 5 协议报文与业务对象之间的编码/解码。
  *
  * @author maxid
  */
 public class Mqtt5MessageService implements MqttMessageService {
 
+    /** Netty MQTT 5 协议版本常量 */
     private static final io.netty.handler.codec.mqtt.MqttVersion NETTY_VERSION =
             io.netty.handler.codec.mqtt.MqttVersion.MQTT_5;
 
+    /**
+     * 编码 CONNECT 报文。
+     *
+     * @param config 客户端配置
+     * @return Netty MQTT CONNECT 报文
+     */
     @Override
     public MqttMessage encodeConnect(MqttClientConfig config) {
         MqttProperties props = new MqttProperties();
@@ -88,6 +96,14 @@ public class Mqtt5MessageService implements MqttMessageService {
         return builder.build();
     }
 
+    /**
+     * 编码 PUBLISH 报文。
+     *
+     * @param publish  待发布的 publish 对象
+     * @param packetId 报文标识符
+     * @param dup      DUP 标志
+     * @return Netty MQTT PUBLISH 报文
+     */
     @Override
     public MqttMessage encodePublish(MqttPublish publish, int packetId, boolean dup) {
         ByteBuf payload = publish.getPayloadAsBytes() != null && publish.getPayloadAsBytes().length > 0
@@ -134,6 +150,12 @@ public class Mqtt5MessageService implements MqttMessageService {
         return new MqttPublishMessage(fixed, var, payload);
     }
 
+    /**
+     * 编码 SUBSCRIBE 报文。
+     *
+     * @param subscribe 订阅消息
+     * @return Netty MQTT SUBSCRIBE 报文
+     */
     @Override
     public MqttMessage encodeSubscribe(MqttSubscribe subscribe) {
         var builder = MqttMessageBuilders.subscribe()
@@ -145,6 +167,12 @@ public class Mqtt5MessageService implements MqttMessageService {
         return builder.build();
     }
 
+    /**
+     * 编码 UNSUBSCRIBE 报文。
+     *
+     * @param unsubscribe 取消订阅消息
+     * @return Netty MQTT UNSUBSCRIBE 报文
+     */
     @Override
     public MqttMessage encodeUnsubscribe(MqttUnsubscribe unsubscribe) {
         var builder = MqttMessageBuilders.unsubscribe()
@@ -155,41 +183,82 @@ public class Mqtt5MessageService implements MqttMessageService {
         return builder.build();
     }
 
+    /**
+     * 编码 PUBACK 报文。
+     *
+     * @param packetId 报文标识符
+     * @return Netty MQTT PUBACK 报文
+     */
     @Override
     public MqttMessage encodePubAck(int packetId) {
         return MqttMessageBuilders.pubAck().packetId(packetId).build();
     }
 
+    /**
+     * 编码 PUBREC 报文。
+     *
+     * @param packetId 报文标识符
+     * @return Netty MQTT PUBREC 报文
+     */
     @Override
     public MqttMessage encodePubRec(int packetId) {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
         return new MqttMessage(fixed, MqttMessageIdVariableHeader.from(packetId));
     }
 
+    /**
+     * 编码 PUBREL 报文。
+     *
+     * @param packetId 报文标识符
+     * @return Netty MQTT PUBREL 报文
+     */
     @Override
     public MqttMessage encodePubRel(int packetId) {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
         return new MqttMessage(fixed, MqttMessageIdVariableHeader.from(packetId));
     }
 
+    /**
+     * 编码 PUBCOMP 报文。
+     *
+     * @param packetId 报文标识符
+     * @return Netty MQTT PUBCOMP 报文
+     */
     @Override
     public MqttMessage encodePubComp(int packetId) {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
         return new MqttMessage(fixed, MqttMessageIdVariableHeader.from(packetId));
     }
 
+    /**
+     * 编码 DISCONNECT 报文。
+     *
+     * @return Netty MQTT DISCONNECT 报文
+     */
     @Override
     public MqttMessage encodeDisconnect() {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.DISCONNECT, false, MqttQoS.AT_MOST_ONCE, false, 0);
         return new MqttMessage(fixed);
     }
 
+    /**
+     * 编码 PINGREQ 报文。
+     *
+     * @return Netty MQTT PINGREQ 报文
+     */
     @Override
     public MqttMessage encodePingReq() {
         MqttFixedHeader fixed = new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0);
         return new MqttMessage(fixed);
     }
 
+    /**
+     * 解码 CONNACK 报文为业务对象。
+     *
+     * @param msg    Netty CONNACK 报文
+     * @param config 客户端配置（用于获取默认值）
+     * @return MQTT 5 CONNACK 业务对象
+     */
     @Override
     public MqttConnAck decodeConnAck(MqttConnAckMessage msg, MqttClientConfig config) {
         byte reasonCode = msg.variableHeader().connectReturnCode().byteValue();
@@ -208,6 +277,12 @@ public class Mqtt5MessageService implements MqttMessageService {
         return new Mqtt5ConnAck(msg.variableHeader().isSessionPresent(), reasonCode, properties);
     }
 
+    /**
+     * 解码 PUBLISH 报文为业务对象。
+     *
+     * @param msg Netty PUBLISH 报文
+     * @return MQTT 5 PUBLISH 业务对象
+     */
     @Override
     public MqttPublish decodePublish(MqttPublishMessage msg) {
         MqttFixedHeader fixed = msg.fixedHeader();
@@ -252,6 +327,12 @@ public class Mqtt5MessageService implements MqttMessageService {
                 propsBuilder.build());
     }
 
+    /**
+     * 解码 SUBACK 报文为业务对象。
+     *
+     * @param msg Netty SUBACK 报文
+     * @return MQTT 5 SUBACK 业务对象
+     */
     @Override
     public MqttSubAck decodeSubAck(MqttSubAckMessage msg) {
         List<Byte> reasons = new ArrayList<>();
@@ -267,6 +348,12 @@ public class Mqtt5MessageService implements MqttMessageService {
         return new Mqtt5SubAck(granted, reasons, msg.variableHeader().messageId());
     }
 
+    /**
+     * 从报文中解码报文标识符。
+     *
+     * @param msg MQTT 报文
+     * @return 报文标识符，不存在则返回 0
+     */
     @Override
     public int decodePacketId(MqttMessage msg) {
         if (msg.variableHeader() instanceof MqttMessageIdVariableHeader id) {
@@ -278,16 +365,36 @@ public class Mqtt5MessageService implements MqttMessageService {
         return 0;
     }
 
+    /**
+     * 判断连接是否被 broker 接受。
+     *
+     * @param ack CONNACK
+     * @return true 表示连接被接受
+     */
     @Override
     public boolean isConnectionAccepted(MqttConnAck ack) {
         return ((Mqtt5ConnAck) ack).isAccepted();
     }
 
+    /**
+     * 创建连接被拒绝时的异常。
+     *
+     * @param ack CONNACK
+     * @return 连接被拒绝异常
+     */
     @Override
     public RuntimeException connectionRefusedException(MqttConnAck ack) {
         return new RuntimeException("MQTT5 connection refused: reasonCode=" + ((Mqtt5ConnAck) ack).getReasonCode());
     }
 
+    /**
+     * 从 MQTT 属性中获取整型属性值（带默认值）。
+     *
+     * @param props MQTT 属性集合
+     * @param type  属性类型标识
+     * @param def   默认值
+     * @return 属性值，不存在则返回默认值
+     */
     private int getIntProperty(MqttProperties props, int type, int def) {
         if (props == null) {
             return def;
@@ -299,6 +406,13 @@ public class Mqtt5MessageService implements MqttMessageService {
         return def;
     }
 
+    /**
+     * 从 MQTT 属性中获取可选的整型属性值。
+     *
+     * @param props MQTT 属性集合
+     * @param type  属性类型标识
+     * @return 属性值，不存在则返回 null
+     */
     private Integer getOptionalIntProperty(MqttProperties props, int type) {
         if (props == null) {
             return null;
@@ -310,6 +424,13 @@ public class Mqtt5MessageService implements MqttMessageService {
         return null;
     }
 
+    /**
+     * 从 MQTT 属性中获取字符串属性值。
+     *
+     * @param props MQTT 属性集合
+     * @param type  属性类型标识
+     * @return 属性值，不存在则返回 null
+     */
     private String getStringProperty(MqttProperties props, int type) {
         if (props == null) {
             return null;
@@ -321,6 +442,13 @@ public class Mqtt5MessageService implements MqttMessageService {
         return null;
     }
 
+    /**
+     * 从 MQTT 属性中获取二进制属性值。
+     *
+     * @param props MQTT 属性集合
+     * @param type  属性类型标识
+     * @return 属性值，不存在则返回 null
+     */
     private byte[] getBinaryProperty(MqttProperties props, int type) {
         if (props == null) {
             return null;
@@ -332,6 +460,12 @@ public class Mqtt5MessageService implements MqttMessageService {
         return null;
     }
 
+    /**
+     * 从 MQTT 属性中解码用户属性映射。
+     *
+     * @param props MQTT 属性集合
+     * @return 用户属性键值对映射
+     */
     private Map<String, String> decodeUserProperties(MqttProperties props) {
         Map<String, String> userProps = new HashMap<>();
         for (MqttProperties.MqttProperty property : props.listAll()) {

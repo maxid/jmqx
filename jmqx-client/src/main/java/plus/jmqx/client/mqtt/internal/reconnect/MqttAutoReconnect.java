@@ -21,12 +21,25 @@ import java.util.function.Supplier;
 @Slf4j
 public class MqttAutoReconnect implements MqttClientDisconnectedListener {
 
+    /** 初始重连延迟（毫秒） */
     private final long              initialDelayMs;
+    /** 最大重连延迟（毫秒） */
     private final long              maxDelayMs;
-    private final Supplier<Mono<?>> connectCall;     // 返回 connect() Mono
-    private final Scheduler         scheduler;              // 测试中为 VirtualTimeScheduler，生产为 parallel
+    /** 返回 connect() Mono 的供应器 */
+    private final Supplier<Mono<?>> connectCall;
+    /** 调度器（测试中使用 VirtualTimeScheduler，生产中使用 parallel） */
+    private final Scheduler         scheduler;
+    /** 是否已停止重连 */
     private final AtomicBoolean     stopped = new AtomicBoolean(false);
 
+    /**
+     * 构造 MqttAutoReconnect。
+     *
+     * @param initialDelayMs 初始重连延迟（毫秒）
+     * @param maxDelayMs     最大重连延迟（毫秒）
+     * @param connectCall    返回 connect() Mono 的供应器
+     * @param scheduler      调度器
+     */
     public MqttAutoReconnect(long initialDelayMs, long maxDelayMs,
                              Supplier<Mono<?>> connectCall, Scheduler scheduler) {
         this.initialDelayMs = initialDelayMs;
@@ -35,6 +48,11 @@ public class MqttAutoReconnect implements MqttClientDisconnectedListener {
         this.scheduler = scheduler;
     }
 
+    /**
+     * 断开连接事件处理。用户主动断开（source=USER）不触发重连。
+     *
+     * @param ctx 断开连接上下文
+     */
     @Override
     public void onDisconnected(MqttClientDisconnectedContext ctx) {
         if (ctx.getSource() == MqttClientDisconnectedContext.DisconnectSource.USER) {
@@ -66,6 +84,7 @@ public class MqttAutoReconnect implements MqttClientDisconnectedListener {
         return (long) (base * jitter);
     }
 
+    /** 停止自动重连 */
     public void stop() {
         stopped.set(true);
     }

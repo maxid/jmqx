@@ -21,10 +21,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public final class MqttInbox {
 
+    /**
+     * 入站消息发射器
+     */
     private final Sinks.Many<Deliverable> sink;
+    /**
+     * 缓冲容量上限
+     */
     private final int                     bufferSize;
+    /**
+     * 当前待消费消息数
+     */
     private final AtomicInteger           pending = new AtomicInteger(0);
 
+    /**
+     * 构造 MqttInbox。
+     *
+     * @param bufferSize 缓冲大小，<=0 则使用 Integer.MAX_VALUE
+     */
     public MqttInbox(int bufferSize) {
         this.bufferSize = bufferSize <= 0 ? Integer.MAX_VALUE : bufferSize;
         this.sink = Sinks.many().multicast().onBackpressureBuffer(this.bufferSize, false);
@@ -32,6 +46,10 @@ public final class MqttInbox {
 
     /**
      * 投递一个 publish 及其 ack 动作。缓冲满时返回 false（调用方应对 QoS0 丢弃）。
+     *
+     * @param pub       发布消息
+     * @param ackAction ack 回调动作
+     * @return 投递成功返回 true，缓冲满返回 false
      */
     public boolean deliver(MqttPublish pub, Runnable ackAction) {
         // 显式容量门控：multicast sink 在无订阅者时不自动溢出失败，故以计数器强制。
@@ -57,6 +75,8 @@ public final class MqttInbox {
 
     /**
      * 全局入站流（用于 publishes(ALL/SUBSCRIBED/UNSOLICITED)）。返回 Deliverable 以便 ack() 可达。
+     *
+     * @return 入站 Deliverable 流
      */
     public Flux<Deliverable> globalFlux() {
         return sink.asFlux();
@@ -64,6 +84,8 @@ public final class MqttInbox {
 
     /**
      * 订阅专属流。
+     *
+     * @return 订阅者专属的入站流
      */
     public Flux<Deliverable> subscriptionFlux() {
         return globalFlux();
@@ -77,12 +99,34 @@ public final class MqttInbox {
      */
     public static final class Deliverable implements MqttPublish {
 
+        /**
+         * 代理的真实发布消息
+         */
         private final MqttPublish   delegate;
+        /**
+         * ack 回调动作
+         */
         private final Runnable      ack;
+        /**
+         * 消费后释放容量的回调
+         */
         private final Runnable      onConsume;
+        /**
+         * 是否已 ACK
+         */
         private final AtomicBoolean acked    = new AtomicBoolean();
+        /**
+         * 是否已消费
+         */
         private final AtomicBoolean consumed = new AtomicBoolean();
 
+        /**
+         * 构造 Deliverable。
+         *
+         * @param delegate  代理的真实发布消息
+         * @param ack       ack 回调
+         * @param onConsume 消费后回调
+         */
         Deliverable(MqttPublish delegate, Runnable ack, Runnable onConsume) {
             this.delegate = delegate;
             this.ack = ack;

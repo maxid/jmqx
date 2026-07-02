@@ -17,21 +17,29 @@ public interface Mqtt3Client extends MqttClient {
     Mqtt3ClientConfig getConfig();
 
     /**
-     * @return Reactor API（Mono/Flux）
+     * 转换为 Reactor API（Mono/Flux）。
+     *
+     * @return Reactor API 客户端
      */
     Mqtt3RxClient toRx();
 
     /**
-     * @return CompletableFuture 异步 API
+     * 转换为 CompletableFuture 异步 API。
+     *
+     * @return 异步 API 客户端
      */
     Mqtt3AsyncClient toAsync();
 
     /**
-     * @return 阻塞 API
+     * 转换为阻塞 API。
+     *
+     * @return 阻塞 API 客户端
      */
     Mqtt3BlockingClient toBlock();
 
     /**
+     * 创建 MQTT 3 客户端 builder。
+     *
      * @return MQTT 3 客户端 builder
      */
     static Mqtt3ClientBuilder builder() {

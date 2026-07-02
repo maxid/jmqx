@@ -10,7 +10,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * MQTT 3 客户端的 reactive API（Reactor Mono/Flux）。
+ * MQTT 3 客户端的 Reactive API（Reactor Mono/Flux）。
  *
  * <p>所有方法返回 cold publisher —— 订阅时才执行。
  *
@@ -20,22 +20,22 @@ import reactor.core.publisher.Mono;
 public interface Mqtt3RxClient extends Mqtt3Client {
 
     /**
-     * 以默认 CONNECT 连接 broker。订阅返回的 Mono 时才连接。
+     * 以默认 CONNECT 报文连接 broker。订阅返回的 Mono 时才实际发起连接。
      *
-     * @return CONNACK
+     * @return 连接确认（CONNACK）
      */
     Mono<Mqtt3ConnAck> connect();
 
     /**
-     * 以给定 SUBSCRIBE 订阅。订阅返回的 Mono 时才订阅。
+     * 以给定的 SUBSCRIBE 报文订阅主题。订阅返回的 Mono 时才实际发送订阅。
      *
      * @param subscribe 订阅消息
-     * @return SUBACK；若所有订阅被拒绝则 error
+     * @return 订阅确认（SUBACK）；若所有订阅被拒绝则返回 error
      */
     Mono<Mqtt3SubAck> subscribe(Mqtt3Subscribe subscribe);
 
     /**
-     * 订阅并消费匹配的 PUBLISH。
+     * 订阅并消费匹配的 PUBLISH 报文流。
      *
      * @param subscribe 订阅消息
      * @return 匹配的 publish 流
@@ -43,7 +43,7 @@ public interface Mqtt3RxClient extends Mqtt3Client {
     Flux<Mqtt3Publish> subscribePublishes(Mqtt3Subscribe subscribe);
 
     /**
-     * 全局消费所有匹配给定过滤器的入站 PUBLISH。
+     * 全局消费所有匹配给定过滤器的入站 PUBLISH 报文。
      *
      * @param filter 入站消息过滤器
      * @return 入站 publish 流
@@ -51,7 +51,7 @@ public interface Mqtt3RxClient extends Mqtt3Client {
     Flux<Mqtt3Publish> publishes(MqttGlobalPublishFilter filter);
 
     /**
-     * 发布一条 PUBLISH。QoS1/2 在收到 ACK 时完成；QoS0 在发送时完成。
+     * 发布一条 PUBLISH 报文。QoS 1/2 在收到 ACK 时完成；QoS 0 在发送时完成。
      *
      * @param publish 待发布的消息
      * @return 发布结果（含可能的错误）
@@ -59,7 +59,7 @@ public interface Mqtt3RxClient extends Mqtt3Client {
     Mono<Mqtt3PublishResult> publish(Mqtt3Publish publish);
 
     /**
-     * 以给定 UNSUBSCRIBE 取消订阅。
+     * 以给定的 UNSUBSCRIBE 报文取消订阅。
      *
      * @param unsubscribe 取消订阅消息
      * @return 完成信号
@@ -67,7 +67,7 @@ public interface Mqtt3RxClient extends Mqtt3Client {
     Mono<Void> unsubscribe(Mqtt3Unsubscribe unsubscribe);
 
     /**
-     * 断开连接。
+     * 断开与 broker 的连接。
      *
      * @return 完成信号
      */

@@ -22,8 +22,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public final class InboundQos {
 
+    /** 等待 PUBREL 的 QoS2 packetId 集合 */
     private final Set<Integer> pendingPubRel = ConcurrentHashMap.newKeySet();
 
+    /**
+     * 处理入站 PUBLISH 消息。
+     *
+     * @param ctx     Netty 通道处理器上下文
+     * @param nettyMsg  Netty 的 PUBLISH 消息
+     * @param service 消息编解码服务
+     * @param inbox   入站投递枢纽
+     */
     public void onInboundPublish(ChannelHandlerContext ctx, MqttPublishMessage nettyMsg,
                                  MqttMessageService service, MqttInbox inbox) {
         MqttPublish pub = service.decodePublish(nettyMsg);
@@ -41,6 +50,13 @@ public final class InboundQos {
         }
     }
 
+    /**
+     * 处理入站 PUBREL 消息（QoS2 第二步）。
+     *
+     * @param ctx     Netty 通道处理器上下文
+     * @param msg     入站 PUBREL 消息
+     * @param service 消息编解码服务
+     */
     public void onInboundPubRel(ChannelHandlerContext ctx, MqttMessage msg, MqttMessageService service) {
         int pid = service.decodePacketId(msg);
         if (pendingPubRel.remove(pid)) {
@@ -51,6 +67,10 @@ public final class InboundQos {
 
     /**
      * 保证 ack 动作仅触发一次，即使下游多次调用 ack()。
+     *
+     * @param ctx Netty 通道处理器上下文
+     * @param ack 要保证仅执行一次的 ack 动作
+     * @return 包装后的 Runnable，保证仅执行一次
      */
     private Runnable ackOnce(ChannelHandlerContext ctx, Runnable ack) {
         AtomicBoolean fired = new AtomicBoolean();

@@ -32,17 +32,34 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class MqttClientHandler extends ChannelDuplexHandler {
 
+    /** 客户端配置 */
     private final MqttClientConfig       config;
+    /** 消息编解码服务 */
     private final MqttMessageService     service;
+    /** ACK 跟踪器 */
     private final AckTracker             ackTracker;
+    /** 入站投递枢纽 */
     private final MqttInbox              inbox;
+    /** 入站 QoS 状态机 */
     private final InboundQos             inboundQos;
+    /** CONNACK 结果发射器 */
     private final Sinks.One<MqttConnAck> connAckSink;
 
-    // 每个 packetId 的 SUBACK/UNSUBACK 完成槽
+    /** 待完成的 SUBACK 回调（按 packetId 索引） */
     private final Map<Integer, Sinks.One<MqttSubAck>> pendingSubAcks   = new ConcurrentHashMap<>();
+    /** 待完成的 UNSUBACK 回调（按 packetId 索引） */
     private final Map<Integer, Sinks.Empty<Void>>     pendingUnsubAcks = new ConcurrentHashMap<>();
 
+    /**
+     * 构造 MqttClientHandler。
+     *
+     * @param config      客户端配置
+     * @param service     消息编解码服务
+     * @param ackTracker  ACK 跟踪器
+     * @param inbox       入站投递枢纽
+     * @param inboundQos  入站 QoS 状态机
+     * @param connAckSink CONNACK 结果发射器
+     */
     public MqttClientHandler(MqttClientConfig config,
                              MqttMessageService service,
                              AckTracker ackTracker,
@@ -57,10 +74,22 @@ public class MqttClientHandler extends ChannelDuplexHandler {
         this.connAckSink = connAckSink;
     }
 
+    /**
+     * 注册 SUBACK 回调。
+     *
+     * @param packetId 对应的 packetId
+     * @param sink     SUBACK 结果发射器
+     */
     public void registerSubAck(int packetId, Sinks.One<MqttSubAck> sink) {
         pendingSubAcks.put(packetId, sink);
     }
 
+    /**
+     * 注册 UNSUBACK 回调。
+     *
+     * @param packetId 对应的 packetId
+     * @param sink     UNSUBACK 结果发射器
+     */
     public void registerUnsubAck(int packetId, Sinks.Empty<Void> sink) {
         pendingUnsubAcks.put(packetId, sink);
     }

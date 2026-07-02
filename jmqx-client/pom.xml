@@ -55,6 +55,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>osx-aarch-64</id>
+            <dependencies>
+                <dependency>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-resolver-dns-native-macos</artifactId>
+                    <classifier>osx-aarch_64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>

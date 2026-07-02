@@ -145,6 +145,10 @@ public class Mqtt5ClientBuilder {
         return this;
     }
 
+    /**
+     * 确保客户端标识符已设置，若未设置则自动生成。
+     * 同时设置 MQTT 协议版本为 5.0。
+     */
     private void ensureClientId() {
         if (config.getClientId() == null || config.getClientId().isEmpty()) {
             config.setClientId("jmqx-" + UUID.randomUUID().toString().substring(0, 8));

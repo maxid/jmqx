@@ -27,16 +27,32 @@ import java.util.function.Function;
 @Slf4j
 public final class MessageBuffer {
 
+    /** 缓存的消息队列 */
     private final Queue<BufferedPublish> queue        = new ConcurrentLinkedQueue<>();
+    /** 最大消息条数限制 */
     private final int                    maxSize;
+    /** 最大字节数限制 */
     private final long                   maxBytes;
+    /** 当前已缓存字节数 */
     private final AtomicLong             currentBytes = new AtomicLong(0);
 
+    /**
+     * 构造 MessageBuffer。
+     *
+     * @param maxSize  最大消息条数，<=0 则无限制
+     * @param maxBytes 最大字节数，<=0 则无限制
+     */
     public MessageBuffer(int maxSize, long maxBytes) {
         this.maxSize = maxSize <= 0 ? Integer.MAX_VALUE : maxSize;
         this.maxBytes = maxBytes <= 0 ? Long.MAX_VALUE : maxBytes;
     }
 
+    /**
+     * 将消息放入离线缓冲。
+     *
+     * @param publish 发布消息
+     * @return 待完成的发布结果 Mono（flush 时完成）
+     */
     public Mono<MqttPublishResult> offer(MqttPublish publish) {
         long bytes = estimateBytes(publish);
         if (currentBytes.get() + bytes > maxBytes || queue.size() >= maxSize) {
@@ -50,6 +66,9 @@ public final class MessageBuffer {
 
     /**
      * 通过 writer（完整 publish 路径）回放缓存的消息。返回 {@code Mono<Void>}，所有消息回放完成时完成。
+     *
+     * @param writer 用于实际发送消息的函数
+     * @return 所有消息回放完成后完成的 Mono
      */
     public Mono<Void> flush(Function<MqttPublish, Mono<MqttPublishResult>> writer) {
         return Mono.defer(() -> {
@@ -69,6 +88,8 @@ public final class MessageBuffer {
 
     /**
      * 失败所有缓存消息（禁用重连的断开时调用）。
+     *
+     * @param error 失败原因
      */
     public void failAll(Throwable error) {
         BufferedPublish bp;
@@ -78,15 +99,26 @@ public final class MessageBuffer {
         }
     }
 
+    /** 清空缓存 */
     public void clear() {
         queue.clear();
         currentBytes.set(0);
     }
 
+    /**
+     * 当前缓存的消息数量。
+     *
+     * @return 消息条数
+     */
     public int size() {
         return queue.size();
     }
 
+    /**
+     * 当前缓存的字节数。
+     *
+     * @return 字节数
+     */
     public long bytes() {
         return currentBytes.get();
     }
