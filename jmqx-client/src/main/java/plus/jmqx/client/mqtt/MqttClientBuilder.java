@@ -17,9 +17,9 @@ public class MqttClientBuilder {
     }
 
     /**
-     * 使用 MQTT 5.0（Task 21+ 实现）。
+     * 使用 MQTT 5.0。
      */
-    public Object useMqttVersion5() {
-        throw new UnsupportedOperationException("MQTT 5 added in Task 21+");
+    public plus.jmqx.client.mqtt.v5.Mqtt5ClientBuilder useMqttVersion5() {
+        return new plus.jmqx.client.mqtt.v5.Mqtt5ClientBuilder();
     }
 }
