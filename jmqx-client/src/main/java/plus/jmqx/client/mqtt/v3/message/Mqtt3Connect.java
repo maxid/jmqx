@@ -13,10 +13,11 @@ import plus.jmqx.client.mqtt.message.MqttPublish;
 @Builder(toBuilder = true)
 public class Mqtt3Connect {
 
-    String clientId;
-    boolean cleanSession;
-    int keepAliveSeconds;
-    String username;
-    byte[] password;
+    String      clientId;
+    boolean     cleanSession;
+    int         keepAliveSeconds;
+    String      username;
+    byte[]      password;
     MqttPublish willPublish;
+
 }

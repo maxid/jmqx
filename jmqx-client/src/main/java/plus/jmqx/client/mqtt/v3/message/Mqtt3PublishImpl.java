@@ -10,12 +10,12 @@ import plus.jmqx.client.mqtt.message.QoS;
  */
 public final class Mqtt3PublishImpl implements Mqtt3Publish {
 
-    private final String topic;
-    private final byte[] payload;
-    private final QoS qos;
+    private final String  topic;
+    private final byte[]  payload;
+    private final QoS     qos;
     private final boolean retain;
     private final boolean dup;
-    private final int packetId;
+    private final int     packetId;
 
     public Mqtt3PublishImpl(String topic, byte[] payload, QoS qos, boolean retain, boolean dup, int packetId) {
         this.topic = topic;
@@ -62,4 +62,5 @@ public final class Mqtt3PublishImpl implements Mqtt3Publish {
                 .topic(topic).payload(payload).qos(qos)
                 .retain(retain).dup(dup).packetId(packetId);
     }
+
 }

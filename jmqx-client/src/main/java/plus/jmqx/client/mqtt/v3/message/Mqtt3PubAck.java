@@ -11,4 +11,5 @@ import lombok.Value;
 public class Mqtt3PubAck {
 
     int packetId;
+
 }

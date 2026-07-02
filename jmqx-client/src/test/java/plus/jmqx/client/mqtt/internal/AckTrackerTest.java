@@ -7,7 +7,10 @@ import plus.jmqx.client.mqtt.message.QoS;
 import reactor.core.publisher.Sinks;
 import reactor.test.StepVerifier;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AckTrackerTest {
 
@@ -66,12 +69,35 @@ class AckTrackerTest {
 
     private MqttPublish stub() {
         return new MqttPublish() {
-            @Override public String getTopic() { return "t"; }
-            @Override public byte[] getPayloadAsBytes() { return new byte[0]; }
-            @Override public QoS getQoS() { return QoS.AT_LEAST_ONCE; }
-            @Override public boolean isRetain() { return false; }
-            @Override public boolean isDup() { return false; }
-            @Override public int getPacketId() { return 0; }
+            @Override
+            public String getTopic() {
+                return "t";
+            }
+
+            @Override
+            public byte[] getPayloadAsBytes() {
+                return new byte[0];
+            }
+
+            @Override
+            public QoS getQoS() {
+                return QoS.AT_LEAST_ONCE;
+            }
+
+            @Override
+            public boolean isRetain() {
+                return false;
+            }
+
+            @Override
+            public boolean isDup() {
+                return false;
+            }
+
+            @Override
+            public int getPacketId() {
+                return 0;
+            }
         };
     }
 }

@@ -71,11 +71,6 @@ public class Mqtt5AsyncClientImpl implements Mqtt5AsyncClient {
     }
 
     @Override
-    public Mqtt5AsyncClient toAsync() {
-        return this;
-    }
-
-    @Override
     public Mqtt5RxClient toRx() {
         return rx;
     }
@@ -84,4 +79,5 @@ public class Mqtt5AsyncClientImpl implements Mqtt5AsyncClient {
     public Mqtt5BlockingClient toBlock() {
         return rx.toBlock();
     }
+
 }

@@ -5,7 +5,6 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.client.mqtt.message.MqttPublish;
-import plus.jmqx.client.mqtt.message.QoS;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +29,8 @@ public final class InboundQos {
         MqttPublish pub = service.decodePublish(nettyMsg);
         int packetId = pub.getPacketId();
         switch (pub.getQoS()) {
-            case AT_MOST_ONCE -> inbox.deliver(pub, () -> {});
+            case AT_MOST_ONCE -> inbox.deliver(pub, () -> {
+            });
             case AT_LEAST_ONCE -> inbox.deliver(pub, ackOnce(ctx,
                     () -> ctx.writeAndFlush(service.encodePubAck(packetId))));
             case EXACTLY_ONCE -> {
@@ -49,7 +49,9 @@ public final class InboundQos {
         }
     }
 
-    /** 保证 ack 动作仅触发一次，即使下游多次调用 ack()。 */
+    /**
+     * 保证 ack 动作仅触发一次，即使下游多次调用 ack()。
+     */
     private Runnable ackOnce(ChannelHandlerContext ctx, Runnable ack) {
         AtomicBoolean fired = new AtomicBoolean();
         return () -> {
@@ -63,4 +65,5 @@ public final class InboundQos {
             }
         };
     }
+
 }

@@ -98,8 +98,4 @@ public class Mqtt3BlockingClientImpl implements Mqtt3BlockingClient {
         return rx;
     }
 
-    @Override
-    public Mqtt3BlockingClient toBlock() {
-        return this;
-    }
 }

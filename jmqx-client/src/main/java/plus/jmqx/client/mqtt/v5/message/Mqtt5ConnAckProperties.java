@@ -12,12 +12,13 @@ import lombok.Value;
 @Builder
 public class Mqtt5ConnAckProperties {
 
-    int receiveMaximum;
-    int serverKeepAlive;
-    long sessionExpiryInterval;
-    String responseInformation;
-    String serverReference;
-    String assignedClientIdentifier;
+    int     receiveMaximum;
+    int     serverKeepAlive;
+    long    sessionExpiryInterval;
+    String  responseInformation;
+    String  serverReference;
+    String  assignedClientIdentifier;
     boolean maximumPacketSizePresent;
-    int maximumPacketSize;
+    int     maximumPacketSize;
+
 }

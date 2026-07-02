@@ -19,4 +19,5 @@ public record MqttPublishResultImpl(MqttPublish publish, Throwable error) implem
     public Throwable getError() {
         return error;
     }
+
 }

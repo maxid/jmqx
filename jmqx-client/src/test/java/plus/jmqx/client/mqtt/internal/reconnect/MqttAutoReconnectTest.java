@@ -11,7 +11,8 @@ import reactor.test.scheduler.VirtualTimeScheduler;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MqttAutoReconnectTest {
 

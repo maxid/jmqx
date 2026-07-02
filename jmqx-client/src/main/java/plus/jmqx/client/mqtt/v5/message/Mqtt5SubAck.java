@@ -14,7 +14,8 @@ import java.util.List;
 @Value
 public class Mqtt5SubAck implements MqttSubAck {
 
-    List<QoS> grantedQos;
+    List<QoS>  grantedQos;
     List<Byte> reasonCodes;
-    int packetId;
+    int        packetId;
+
 }

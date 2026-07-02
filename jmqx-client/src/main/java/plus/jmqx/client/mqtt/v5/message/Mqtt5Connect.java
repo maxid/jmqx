@@ -13,12 +13,13 @@ import plus.jmqx.client.mqtt.message.MqttPublish;
 @Builder(toBuilder = true)
 public class Mqtt5Connect {
 
-    String clientId;
-    boolean cleanStart;
-    int keepAliveSeconds;
-    long sessionExpiryInterval;
-    int receiveMaximum;
-    String username;
-    byte[] password;
+    String      clientId;
+    boolean     cleanStart;
+    int         keepAliveSeconds;
+    long        sessionExpiryInterval;
+    int         receiveMaximum;
+    String      username;
+    byte[]      password;
     MqttPublish willPublish;
+
 }

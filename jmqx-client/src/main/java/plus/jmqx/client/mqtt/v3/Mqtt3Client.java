@@ -4,11 +4,12 @@ import plus.jmqx.client.mqtt.MqttClient;
 import plus.jmqx.client.mqtt.MqttClientBuilder;
 
 /**
- * MQTT 3.1.1 客户端（spec）。
+ * MQTT 3.1.1 客户端规范接口。
  *
  * <p>通过 {@link MqttClientBuilder#useMqttVersion3()} 构建。
  *
  * @author maxid
+ * @since 1.4.14
  */
 public interface Mqtt3Client extends MqttClient {
 
@@ -16,24 +17,25 @@ public interface Mqtt3Client extends MqttClient {
     Mqtt3ClientConfig getConfig();
 
     /**
-     * 转为 reactive API（Mono/Flux）。
+     * @return Reactor API（Mono/Flux）
      */
     Mqtt3RxClient toRx();
 
     /**
-     * 转为异步 API（CompletableFuture + 回调）。
+     * @return CompletableFuture 异步 API
      */
     Mqtt3AsyncClient toAsync();
 
     /**
-     * 转为阻塞 API。
+     * @return 阻塞 API
      */
     Mqtt3BlockingClient toBlock();
 
     /**
-     * 创建 MQTT 3 客户端 builder。
+     * @return MQTT 3 客户端 builder
      */
     static Mqtt3ClientBuilder builder() {
         return new Mqtt3ClientBuilder();
     }
+
 }

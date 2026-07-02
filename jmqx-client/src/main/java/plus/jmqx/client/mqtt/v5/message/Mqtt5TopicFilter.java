@@ -15,10 +15,11 @@ import plus.jmqx.client.mqtt.message.QoS;
 public class Mqtt5TopicFilter implements MqttTopicFilter {
 
     String topicFilter;
-    QoS qos;
+    QoS    qos;
 
     @Override
     public QoS getQoS() {
         return qos;
     }
+
 }
