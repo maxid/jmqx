@@ -2,9 +2,19 @@
 
 Jmqx lightweight MQTT Broker
 
-Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版本，主要是对 MQTT 实现部分的重构，并修正了一些问题，SMQTT
-是作为一个独立的完整应用，而 Jmqx 的目标是作为一个库栈嵌入到用户应用中，为用户应用提供 MQTT 设备接入能力，实现自己的物联网平台，在此感谢
-SMQTT 作者开源了那么优秀的项目。
+Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版本，主要是对 MQTT 实现部分的重构，并修正了一些问题，SMQTT 是作为一个独立的完整应用，而 Jmqx 的目标是作为一个轻量的库栈嵌入到用户应用中，为用户应用提供 MQTT 协议接入能力，实现自己的物联网或消息平台，在此感谢 SMQTT 作者开源了那么优秀的项目。
+
+## 模块说明
+
+
+| 模块                                                                     | 说明                                                |
+| ------------------------------------------------------------------------ | --------------------------------------------------- |
+| [jmqx-parent](jmqx-parent/README.md)                                     | Maven 父 POM，集中管理依赖版本与 Maven Central 发布 |
+| [jmqx-broker](jmqx-broker/README.md)                                     | 核心 MQTT Broker 库（必选）                         |
+| [jmqx-cluster](jmqx-cluster/README.md)                                   | 集群支持模块（可选，基于 ScaleCube）                |
+| [jmqx-client](jmqx-client/README.md)                                     | MQTT 客户端库（开发中）                             |
+| [jmqx-example/jmqx-spring-boot](jmqx-example/jmqx-spring-boot/README.md) | Spring Boot 集成示例                                |
+| [bench](bench/README.md)                                                 | 性能压测工具与对比脚本                              |
 
 ## 相同点：
 
@@ -18,6 +28,7 @@ SMQTT 作者开源了那么优秀的项目。
 3. 不提供读取配置文件（参考 jmqx-example 注入配置）
 
 ## 改进点：
+
 1. 可同时支持 MQTT、MQTTS、MQTT-WS、MQTT-WSS 端口监听，方便不同需求的设备接入 （1.0.0 ~ 1.4.2）
 2. 提供构造器注入用户自定义设备鉴权管理、主题访问控制管理、设备生命周期监听模块，方便与spring boot等框架集成 （1.0.0 ~ 1.4.2）
 3. 方便作为库栈嵌入用户应用（参考 jmqx-example）（1.0.0 ~ 1.4.2）
@@ -132,17 +143,18 @@ class BootstrapTest {
 验证 Broker 在大量 MQTT 长连接下的稳定性：连接建立、会话计数、保活、关闭后无泄漏。客户端使用 `cleanSession=true`，定时发送
 `PINGREQ` 保活，关闭时发送 `DISCONNECT`。
 
-| 系统属性                                 | 默认值                  | 说明                       |
-|--------------------------------------|----------------------|--------------------------|
-| `jmqx.test.targetConnections`        | `10000`              | 单节点目标连接数                 |
-| `jmqx.test.targetConnectionsPerNode` | `5000`               | 集群每节点目标连接数               |
-| `jmqx.test.connectConcurrency`       | `100`（单节点）/ `50`（集群） | 每批并发建连数                  |
-| `jmqx.test.batchIntervalMs`          | `10`                 | 批次间隔（毫秒）                 |
-| `jmqx.test.holdSeconds`              | `60`（单节点）/ `30`（集群）  | 保持连接时长（秒），`0` 表示不保持      |
-| `jmqx.test.port`                     | `0`                  | MQTT 端口，`0` 表示自动分配空闲端口   |
-| `jmqx.test.maxConnections`           | `0`                  | 连接上限，`0` 表示不限制（用于验证准入机制） |
-| `jmqx.test.connectTimeoutSeconds`    | `30`                 | 单次建连超时（秒）                |
-| `jmqx.test.keepAliveSeconds`         | `60`                 | 客户端 keepalive（秒）         |
+
+| 系统属性                             | 默认值                        | 说明                                         |
+| ------------------------------------ | ----------------------------- | -------------------------------------------- |
+| `jmqx.test.targetConnections`        | `10000`                       | 单节点目标连接数                             |
+| `jmqx.test.targetConnectionsPerNode` | `5000`                        | 集群每节点目标连接数                         |
+| `jmqx.test.connectConcurrency`       | `100`（单节点）/ `50`（集群） | 每批并发建连数                               |
+| `jmqx.test.batchIntervalMs`          | `10`                          | 批次间隔（毫秒）                             |
+| `jmqx.test.holdSeconds`              | `60`（单节点）/ `30`（集群）  | 保持连接时长（秒），`0` 表示不保持           |
+| `jmqx.test.port`                     | `0`                           | MQTT 端口，`0` 表示自动分配空闲端口          |
+| `jmqx.test.maxConnections`           | `0`                           | 连接上限，`0` 表示不限制（用于验证准入机制） |
+| `jmqx.test.connectTimeoutSeconds`    | `30`                          | 单次建连超时（秒）                           |
+| `jmqx.test.keepAliveSeconds`         | `60`                          | 客户端 keepalive（秒）                       |
 
 **单节点大量连接**
 
@@ -171,18 +183,19 @@ mvn test -pl jmqx-cluster \
 多客户端循环发布 QoS1 消息，统计 `published`、`acked`、`dispatchReceived` 及区间吞吐。启动前执行预检发布，确认 PUBACK
 与分发器回调均正常。
 
-| 系统属性                                | 默认值     | 说明                                        |
-|-------------------------------------|---------|-------------------------------------------|
-| `jmqx.stress.port`                  | `1883`  | node-1 MQTT 端口（集群 node-2 为 `port + 1000`） |
-| `jmqx.stress.threads`               | `4`     | 压测客户端数（集群均分两节点）                           |
-| `jmqx.stress.durationSeconds`       | `600`   | 每客户端持续发布时长（秒）                             |
-| `jmqx.stress.payloadBytes`          | `64`    | 消息负载大小（字节）                                |
+
+| 系统属性                            | 默认值  | 说明                                            |
+| ----------------------------------- | ------- | ----------------------------------------------- |
+| `jmqx.stress.port`                  | `1883`  | node-1 MQTT 端口（集群 node-2 为`port + 1000`） |
+| `jmqx.stress.threads`               | `4`     | 压测客户端数（集群均分两节点）                  |
+| `jmqx.stress.durationSeconds`       | `600`   | 每客户端持续发布时长（秒）                      |
+| `jmqx.stress.payloadBytes`          | `64`    | 消息负载大小（字节）                            |
 | `jmqx.stress.flushEvery`            | `256`   | 每 N 条消息 flush 一次                          |
-| `jmqx.stress.inFlightLimit`         | `20000` | 单客户端飞行窗口上限                                |
-| `jmqx.stress.timeoutSeconds`        | `720`   | 整体超时（秒）                                   |
-| `jmqx.stress.reportIntervalSeconds` | `10`    | 进度日志间隔（秒）                                 |
-| `jmqx.stress.connectConcurrency`    | `50`    | 集群压测逐批建连并发数                               |
-| `jmqx.stress.connectTimeoutSeconds` | `30`    | 单次建连超时（秒）                                 |
+| `jmqx.stress.inFlightLimit`         | `20000` | 单客户端飞行窗口上限                            |
+| `jmqx.stress.timeoutSeconds`        | `720`   | 整体超时（秒）                                  |
+| `jmqx.stress.reportIntervalSeconds` | `10`    | 进度日志间隔（秒）                              |
+| `jmqx.stress.connectConcurrency`    | `50`    | 集群压测逐批建连并发数                          |
+| `jmqx.stress.connectTimeoutSeconds` | `30`    | 单次建连超时（秒）                              |
 | `jmqx.stress.clusterPort1`          | `7771`  | 集群 node-1 通信端口                            |
 | `jmqx.stress.clusterPort2`          | `7772`  | 集群 node-2 通信端口                            |
 
@@ -230,6 +243,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-broker \
 ```
 
 **集群消息吞吐 (单台 m4 mini)**
+
 > 双节点，MQTT 端口分别为解析后的 `port` 与 `port + 1000`，集群通信端口默认 7771/7772，启动前同样会做可用端口解析
 
 ```shell
@@ -280,7 +294,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
 ```
 
 > 压测公共代码位于各模块 `src/test/java/plus/jmqx/broker/support/`（`StressTestSupport`、`MqttStressClient`、
-`MqttKeepaliveClient` 等）。broker 与 cluster 模块各自维护一份，互不依赖 test-jar。
+> `MqttKeepaliveClient` 等）。broker 与 cluster 模块各自维护一份，互不依赖 test-jar。
 
 - 单元测试方式启动：本机集群
 
