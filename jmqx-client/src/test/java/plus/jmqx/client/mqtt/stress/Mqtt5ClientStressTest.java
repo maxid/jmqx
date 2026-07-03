@@ -109,7 +109,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
         long acked = progress.acked.get();
         long failed = progress.failed.get();
         ClientStressSupport.logPublishStress("v5", c, acked, failed, start, end, latch.getCount() == 0);
-        assertTrue(latch.getCount() == 0, "publish stress did not finish");
+        assertTrue(latch.getCount() == 0, ClientStressSupport.publishStressTimeoutMessage(c, acked, failed));
         assertEquals(c.messages, acked,
                 "not all messages acked by broker (acked=" + acked + ", failed=" + failed + ")");
         assertEquals(0, failed, "publish ack failures detected");
@@ -159,7 +159,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
             }
             long end = System.nanoTime();
             ClientStressSupport.logSubscribeStress("v5", c, received.get(), start, end, ok);
-            assertTrue(ok, "subscribe stress did not finish within timeout");
+            assertTrue(ok, ClientStressSupport.subscribeStressTimeoutMessage(c, received.get(), expected));
             assertEquals(expected, received.get(), "not all messages received by subscribers");
             assertTrue(ClientStressSupport.throughput(received.get(), start, end) >= c.minThroughputMsgPerSec,
                     "subscribe throughput below minimum " + c.minThroughputMsgPerSec + " msg/s");
