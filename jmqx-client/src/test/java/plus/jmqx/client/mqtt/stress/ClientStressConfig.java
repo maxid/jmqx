@@ -14,6 +14,7 @@ public class ClientStressConfig {
     public int    subscribers;
     public int    publishers;
     public int    connections;
+    public int    connectionHoldSeconds;
     public int    payloadBytes;
     public QoS    qos;
     public int    minThroughputMsgPerSec;
