@@ -8,7 +8,6 @@ import plus.jmqx.client.mqtt.internal.buffer.MessageBuffer;
 import plus.jmqx.client.mqtt.internal.handler.MqttClientHandler;
 import plus.jmqx.client.mqtt.internal.reconnect.MqttAutoReconnect;
 import plus.jmqx.client.mqtt.internal.transport.TransportFactory;
-import plus.jmqx.client.mqtt.internal.NettyUtil;
 import plus.jmqx.client.mqtt.internal.util.PacketIdManager;
 import plus.jmqx.client.mqtt.internal.util.TopicMatcher;
 import plus.jmqx.client.mqtt.lifecycle.MqttClientConnectedContext;
@@ -27,11 +26,13 @@ import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Publish;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5ConnAck;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5Publish;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.netty.Connection;
 
+import java.net.SocketException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -107,6 +108,10 @@ public abstract class MqttClientEngine {
      * reactor-netty 连接
      */
     protected volatile Connection                       connection;
+    /**
+     * 入站 MQTT 报文订阅（断开时需 dispose，避免 Connection reset 触发 onErrorDropped）
+     */
+    protected volatile Disposable                       inboundSubscription;
     /**
      * MQTT 业务处理器
      */
@@ -187,12 +192,16 @@ public abstract class MqttClientEngine {
                         this.connection = conn;
                         this.handler = h;
                         transportFactory.installPipeline(conn, h, config);
-                        conn.inbound().receiveObject()
+                        this.inboundSubscription = conn.inbound().receiveObject()
                                 .ofType(io.netty.handler.codec.mqtt.MqttMessage.class)
-                                .doOnError(this::onTransportError)
-                                .subscribe(mqtt -> h.handleInbound(conn.channel(), mqtt));
-                        conn.onDispose().subscribe(v ->
-                                onTransportError(new RuntimeException("connection disposed")));
+                                .subscribe(
+                                        mqtt -> h.handleInbound(conn.channel(), mqtt),
+                                        this::onInboundStreamError);
+                        conn.onDispose().subscribe(v -> {
+                            if (state.get() != MqttClientState.DISCONNECTING) {
+                                onTransportError(new RuntimeException("connection disposed"));
+                            }
+                        });
                         NettyUtil.writeAndFlush(conn.channel(), service.encodeConnect(config));
                         return ackSink.asMono();
                     })
@@ -331,6 +340,11 @@ public abstract class MqttClientEngine {
             }
             state.set(MqttClientState.DISCONNECTING);
             if (connection != null) {
+                Disposable sub = inboundSubscription;
+                inboundSubscription = null;
+                if (sub != null) {
+                    sub.dispose();
+                }
                 NettyUtil.writeAndFlush(connection.channel(), service.encodeDisconnect());
                 connection.dispose();
                 state.set(MqttClientState.DISCONNECTED);
@@ -395,6 +409,23 @@ public abstract class MqttClientEngine {
             messageBuffer.failAll(err);
             ackTracker.failAll(err);
         }
+    }
+
+    private void onInboundStreamError(Throwable err) {
+        MqttClientState s = state.get();
+        if (s == MqttClientState.DISCONNECTING || s == MqttClientState.DISCONNECTED || isBenignDisconnect(err)) {
+            log.debug("Inbound closed: {}", err.toString());
+            return;
+        }
+        onTransportError(err);
+    }
+
+    private static boolean isBenignDisconnect(Throwable err) {
+        if (err instanceof SocketException) {
+            String msg = err.getMessage();
+            return msg != null && (msg.contains("Connection reset") || msg.contains("Broken pipe"));
+        }
+        return false;
     }
 
     /**
