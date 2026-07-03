@@ -47,8 +47,8 @@ public final class MessageBuffer {
     /**
      * 构造 MessageBuffer。
      *
-     * @param maxSize  最大消息条数，<=0 则无限制
-     * @param maxBytes 最大字节数，<=0 则无限制
+     * @param maxSize  最大消息条数，&lt;=0 则无限制
+     * @param maxBytes 最大字节数，&lt;=0 则无限制
      */
     public MessageBuffer(int maxSize, long maxBytes) {
         this.maxSize = maxSize <= 0 ? Integer.MAX_VALUE : maxSize;
