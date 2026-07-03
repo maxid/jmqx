@@ -160,7 +160,7 @@ mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT' -Djmqx.it.broker.p
 
 | 方法 | 场景 | 主要参数 | 度量 |
 |------|------|----------|------|
-| `connectStress` | 连接压测 | `connections`、`threads` | conn/s |
+| `connectStress` | 连接压测 | `connections`、`threads`、`connectionHoldSeconds` | 同时在线连接数（peakActive） |
 | `publishStress` | 发布压测 | `messages`、`qos`、`threads`、`inflight` | 出站 msg/s（**每条等 broker ACK**） |
 | `subscribeStress` | 订阅压测 | `messages`、`qos`、`subscribers`、`publishers` | 入站接收 msg/s |
 
@@ -175,10 +175,13 @@ mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT' -Djmqx.it.broker.p
 **运行示例：**
 
 ```bash
-# 连接压测
+# 连接压测（500 连接，保持 60s 同时在线）
 mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
   -Dtest=Mqtt3ClientStressTest#connectStress \
-  -Djmqx.client.stress.connections=500 -Djmqx.client.stress.threads=16
+  -Djmqx.client.stress.connections=500 \
+  -Djmqx.client.stress.threads=32 \
+  -Djmqx.client.stress.connectionHoldSeconds=60 \
+  -Djmqx.client.stress.timeoutSeconds=300
 
 # 发布压测（QoS1 须等 PUBACK；大批量请加大 timeout）
 mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
@@ -211,7 +214,8 @@ mvn -pl jmqx-client test -Djmqx.stress.tests=true \
 | `jmqx.client.stress.threads` | 4 | 连接/发布并发线程数 |
 | `jmqx.client.stress.publishers` | 1 | 订阅压测中的灌流发布端数量 |
 | `jmqx.client.stress.subscribers` | 1 | 订阅压测中的订阅客户端数 |
-| `jmqx.client.stress.connections` | 50 | 连接压测次数 |
+| `jmqx.client.stress.connections` | 50 | 连接压测目标连接数 |
+| `jmqx.client.stress.connectionHoldSeconds` | 30 | 全部建连后保持时长（秒），用于压同时在线连接 |
 | `jmqx.client.stress.payloadBytes` | 64 | 单条 payload 字节数 |
 | `jmqx.client.stress.qos` | 0 | QoS 级别（0/1/2） |
 | `jmqx.client.stress.inflight` | 256 | 发布侧滑动窗口（同时在途未 ACK 条数上限） |
