@@ -14,7 +14,6 @@ import plus.jmqx.client.mqtt.v5.message.Mqtt5Subscribe;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5Unsubscribe;
 import reactor.core.Disposable;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
