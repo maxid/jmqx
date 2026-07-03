@@ -37,7 +37,7 @@ public final class MqttInbox {
     /**
      * 构造 MqttInbox。
      *
-     * @param bufferSize 缓冲大小，<=0 则使用 Integer.MAX_VALUE
+     * @param bufferSize 缓冲大小，&lt;=0 则使用 Integer.MAX_VALUE
      */
     public MqttInbox(int bufferSize) {
         this.bufferSize = bufferSize <= 0 ? Integer.MAX_VALUE : bufferSize;

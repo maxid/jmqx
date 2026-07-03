@@ -35,7 +35,7 @@ public final class MqttOutbox {
     /**
      * 构造 MqttOutbox。
      *
-     * @param maxInflight 最大 inflight 消息数，<=0 则无限制
+     * @param maxInflight 最大 inflight 消息数，&lt;=0 则无限制
      */
     public MqttOutbox(int maxInflight) {
         this.maxPermits = maxInflight <= 0 ? Integer.MAX_VALUE : maxInflight;
