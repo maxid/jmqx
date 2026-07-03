@@ -45,6 +45,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 14. 优化：调整消息分发使用有界队列默认大小（2026-6-27）（1.4.13）
 15. 增强：增加 MetricsManager 提供指标 SPI 可替换监控实现（2026-6-27）（1.4.13）
 16. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`, 测试结果已更新见后文（2026-6-27）（1.4.13）
+17. 新增：增加 mqtt client (jmqx-client), 目标是对标 HiveMQ MQTT Client, 技术栈 reactor-netty + netty-codec-mqtt + Project Reactor （2026-7-3）（1.4.14）（使用 vibe coding 编码 + code review）
 
 ## 使用示例
 
