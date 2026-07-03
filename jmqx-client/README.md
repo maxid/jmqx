@@ -29,54 +29,17 @@ Mqtt3RxClient client = MqttClient.builder().useMqttVersion3()
         .automaticReconnect()
         .buildRx();
 
-client.
+client.connect().block(Duration.ofSeconds(5));
 
-connect().
+client.subscribePublishes(Mqtt3Subscribe.builder()
+        .topicFilters(List.of(Mqtt3TopicFilter.builder().topicFilter("sensor/#").qos(QoS.AT_LEAST_ONCE).build()))
+        .build())
+        .doOnNext(p ->System.out.println(p.getTopic() +": "+new String(p.getPayloadAsBytes())))
+        .subscribe();
 
-block(Duration.ofSeconds(5));
-
-        client.
-
-subscribePublishes(Mqtt3Subscribe.builder()
-        .
-
-topicFilters(List.of(
-        Mqtt3TopicFilter.builder().
-
-topicFilter("sensor/#").
-
-qos(QoS.AT_LEAST_ONCE).
-
-build()))
-        .
-
-build())
-        .
-
-doOnNext(p ->System.out.
-
-println(p.getTopic() +": "+new
-
-String(p.getPayloadAsBytes())))
-        .
-
-subscribe();
-
-client.
-
-publish(Mqtt3Publish.builder()
-        .
-
-topic("sensor/temp").
-
-payload("21.5".getBytes()).
-
-qos(QoS.AT_LEAST_ONCE).
-
-build())
-        .
-
-block();
+client.publish(Mqtt3Publish.builder()
+        .topic("sensor/temp").payload("21.5".getBytes()).qos(QoS.AT_LEAST_ONCE).build())
+        .block();
 ```
 
 ## 快速开始（MQTT 5.0）
@@ -91,11 +54,7 @@ Mqtt5RxClient client = MqttClient.builder().useMqttVersion5()
         .automaticReconnect()
         .buildRx();
 
-client.
-
-connect().
-
-block(Duration.ofSeconds(5));
+client.connect().block(Duration.ofSeconds(5));
 ```
 
 ## API 视图
@@ -108,32 +67,172 @@ block(Duration.ofSeconds(5));
 构建方式：
 
 ```java
-MqttClient.builder().
-
-useMqttVersion3()  // 或 useMqttVersion5()
-    .
-
-serverHost("localhost").
-
-serverPort(1883)
-    .
-
-identifier("id")
-    .
-
-buildRx();    // 或 buildAsync() / buildBlocking()
+MqttClient.builder().useMqttVersion3()  // 或 useMqttVersion5()
+    .serverHost("localhost").serverPort(1883)
+    .identifier("id")
+    .buildRx();    // 或 buildAsync() / buildBlocking()
 ```
 
 ## 测试
 
-```bash
-# 单元测试（默认排除 *IT.java）
-mvn -pl jmqx-client test
+测试分为三层：**单元测试**（默认 `mvn test`）、**集成测试**（`*IT.java`）、**压力测试**（`*StressTest.java`）。后两者被 surefire 默认排除，需显式指定 `-Dtest=...` 运行。
 
-# 集成测试（需 broker 在 localhost:1883）
+### 前置条件
+
+集成测试依赖 `jmqx-broker`（test scope，用于内嵌 broker）。首次运行前需安装 broker 模块：
+
+```bash
+mvn -pl jmqx-broker install -DskipTests
+```
+
+压测**不**使用内嵌 broker，无需上述依赖即可编译，但运行前须自行准备好外部 MQTT broker。
+
+### 单元测试
+
+覆盖编解码、背压、ACK 跟踪、断线缓存、自动重连、主题匹配等核心逻辑，**不依赖外部 broker**：
+
+| 测试类 | 覆盖范围 |
+|--------|----------|
+| `Mqtt3MessageServiceTest` / `Mqtt5MessageServiceTest` | PUBLISH/SUBSCRIBE 编解码往返 |
+| `MqttInboxBackpressureTest` / `MqttOutboxBackpressureTest` | 入站/出站背压与 inflight 控制 |
+| `AckTrackerTest` | QoS1/2 出站 ACK 跟踪 |
+| `MessageBufferTest` | 断线期间出站消息缓冲 |
+| `MqttAutoReconnectTest` | 自动重连退避策略 |
+| `TopicMatcherTest` / `PacketIdManagerTest` | 主题通配符匹配、packetId 分配 |
+| `QoSTest` | QoS 枚举与转换 |
+
+```bash
+# 默认运行（排除 *IT.java 与 *StressTest.java）
+mvn -pl jmqx-client test
+```
+
+### 集成测试
+
+`Mqtt3ClientIT`（15 个用例）与 `Mqtt5ClientIT`（12 个用例）验证 **jmqx-client ↔ jmqx-broker** 端到端行为。
+
+**Broker 模式：**
+
+- **默认**：JVM 内自动启动内嵌 jmqx-broker（随机端口），无需手动部署
+- **外部 broker**：`-Djmqx.it.broker.port=1883`（可选 `-Djmqx.it.broker.host=...`）
+
+**MQTT 3.1.1 覆盖（`Mqtt3ClientIT`）：**
+
+| 场景 | 说明 |
+|------|------|
+| 连接/断开 | CONNACK 接受、正常 DISCONNECT |
+| QoS 0/1/2 发布订阅 | 参数化覆盖全部 QoS 级别 |
+| 三种 API | Reactor（Rx）、`CompletableFuture`（Async）、Blocking |
+| 通配符订阅 | `#` 与 `+` 主题过滤 |
+| 取消订阅 | UNSUBSCRIBE 后不再投递 |
+| 双客户端 | 独立 publisher / subscriber |
+| Retain 消息 | 晚加入订阅者仍能收到 retain |
+| 会话持久化 | cleanSession=false 时离线消息重连后投递 |
+| 多 topic 订阅 | 单次 SUBSCRIBE 多个 filter |
+| 空 payload / 并发发布 | 边界与 Async 并发场景 |
+
+**MQTT 5.0 覆盖（`Mqtt5ClientIT`）：**
+
+| 场景 | 说明 |
+|------|------|
+| 连接/断开、QoS 0/1/2 | 同 v3 基础链路 |
+| User Properties / Content-Type | v5 发布属性 |
+| 三种 API、通配符、取消订阅 | 同 v3 |
+| 双客户端、Retain | 同 v3 |
+| CONNACK receiveMaximum | v5 会话协商属性 |
+
+```bash
+# 运行全部集成测试（27 个用例，内嵌 broker）
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT'
+
+# 单独运行
 mvn -pl jmqx-client test -Dtest=Mqtt3ClientIT
 mvn -pl jmqx-client test -Dtest=Mqtt5ClientIT
+
+# 对接本机已有 broker（如 jmqx-broker 或 EMQX）
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT' -Djmqx.it.broker.port=1883
 ```
+
+### 压力测试
+
+`Mqtt3ClientStressTest` 与 `Mqtt5ClientStressTest` 各含 **3 个独立场景**，分别压测连接、发布、订阅，互不混合。**不启动内嵌 broker**，须自行准备好 MQTT broker 后再运行。须设置 `-Djmqx.stress.tests=true` 才会执行。
+
+**三类场景：**
+
+| 方法 | 场景 | 主要参数 | 度量 |
+|------|------|----------|------|
+| `connectStress` | 连接压测 | `connections`、`threads` | conn/s |
+| `publishStress` | 发布压测 | `messages`、`qos`、`threads`、`inflight` | 出站 msg/s（**每条等 broker ACK**） |
+| `subscribeStress` | 订阅压测 | `messages`、`qos`、`subscribers`、`publishers` | 入站接收 msg/s |
+
+**前置：启动 broker**
+
+压测不会自动启动 broker。请自行部署并确保 MQTT 端口可连接（默认 `localhost:1883`），例如：
+
+- 在应用中内嵌 `jmqx-broker`（参考 `EmbeddedBrokerHolder`）
+- 使用 EMQX、Mosquitto 等独立 broker
+- Docker：`docker run -d --name emqx -p 1883:1883 emqx/emqx`
+
+**运行示例：**
+
+```bash
+# 连接压测
+mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest#connectStress \
+  -Djmqx.client.stress.connections=500 -Djmqx.client.stress.threads=16
+
+# 发布压测（QoS1 须等 PUBACK；大批量请加大 timeout）
+mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest#publishStress \
+  -Djmqx.client.stress.messages=10000000 \
+  -Djmqx.client.stress.threads=8 \
+  -Djmqx.client.stress.qos=1 \
+  -Djmqx.client.stress.inflight=512 \
+  -Djmqx.client.stress.timeoutSeconds=3600 \
+  -Djmqx.client.stress.minThroughput=0
+
+# 订阅压测
+mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest#subscribeStress \
+  -Djmqx.client.stress.messages=100000 \
+  -Djmqx.client.stress.qos=1
+
+# 按场景过滤整类运行（不指定 #方法名时）
+mvn -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest \
+  -Djmqx.client.stress.scenario=publish
+```
+
+**可调参数**（系统属性 `-Djmqx.client.stress.*`）：
+
+| 属性 | 默认值 | 说明 |
+|------|--------|------|
+| `jmqx.client.stress.scenario` | `all` | 场景过滤：`connect` / `publish` / `subscribe` / `all` |
+| `jmqx.client.stress.messages` | 2000 | 发布/订阅压测消息数 |
+| `jmqx.client.stress.threads` | 4 | 连接/发布并发线程数 |
+| `jmqx.client.stress.publishers` | 1 | 订阅压测中的灌流发布端数量 |
+| `jmqx.client.stress.subscribers` | 1 | 订阅压测中的订阅客户端数 |
+| `jmqx.client.stress.connections` | 50 | 连接压测次数 |
+| `jmqx.client.stress.payloadBytes` | 64 | 单条 payload 字节数 |
+| `jmqx.client.stress.qos` | 0 | QoS 级别（0/1/2） |
+| `jmqx.client.stress.inflight` | 256 | 发布侧滑动窗口（同时在途未 ACK 条数上限） |
+| `jmqx.client.stress.minThroughput` | 100 | 最低吞吐阈值（msg/s 或 conn/s 场景自适应） |
+| `jmqx.client.stress.timeoutSeconds` | 120 | 超时秒数 |
+| `jmqx.client.stress.topic` | `stress/client/topic` | 测试 topic 前缀 |
+| `jmqx.client.stress.broker.host` | `localhost` | broker 地址 |
+| `jmqx.client.stress.broker.port` | `1883` | broker 端口 |
+| `jmqx.client.stress.progressIntervalSeconds` | 5 | 进度日志间隔（秒），设为 0 关闭 |
+| `jmqx.client.stress.logLevel` | WARN | 压测日志级别 |
+
+### Netty 内存泄漏检测（可选）
+
+排查 ByteBuf 引用计数问题时，可开启 Netty 泄漏检测：
+
+```bash
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT' \
+  -Dio.netty.leakDetection.level=paranoid
+```
+
+入站 PUBLISH 的 payload 由 `MqttDecoder` 以 retained slice 分配，客户端在 `InboundQos` 消费后负责 `release()`。
 
 ## 架构
 

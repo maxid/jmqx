@@ -8,6 +8,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.internal.AckTracker;
@@ -110,6 +111,29 @@ public class MqttClientHandler extends ChannelDuplexHandler {
         pendingUnsubAcks.put(packetId, sink);
     }
 
+    /**
+     * 处理经 reactiveBridge 解码后的入站 MQTT 报文。
+     *
+     * @param channel 当前连接 channel（handler 须已挂载在 pipeline 中）
+     * @param msg     入站 MQTT 报文
+     */
+    public void handleInbound(io.netty.channel.Channel channel, MqttMessage msg) {
+        ChannelHandlerContext ctx = channel.pipeline().context(this);
+        if (ctx == null) {
+            log.warn("mqttClient handler not in pipeline, drop inbound {}", msg.fixedHeader().messageType());
+            ReferenceCountUtil.release(msg);
+            return;
+        }
+        try {
+            channelRead(ctx, msg);
+        } catch (Exception e) {
+            exceptionCaught(ctx, e);
+        } finally {
+            // MqttDecoder 对 PUBLISH payload 使用 retained slice，须在消费后 release
+            ReferenceCountUtil.release(msg);
+        }
+    }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (!(msg instanceof MqttMessage mqtt)) {
@@ -121,12 +145,9 @@ public class MqttClientHandler extends ChannelDuplexHandler {
             super.channelRead(ctx, msg);
             return;
         }
-        log.warn("DIAG inbound type={}", type);
-
         switch (type) {
             case CONNACK -> {
                 var ack = service.decodeConnAck((MqttConnAckMessage) mqtt, config);
-                log.warn("DIAG CONNACK received: {}", type);
                 connAckSink.tryEmitValue(ack);
             }
             case PUBLISH -> inboundQos.onInboundPublish(ctx, (MqttPublishMessage) mqtt, service, inbox);
