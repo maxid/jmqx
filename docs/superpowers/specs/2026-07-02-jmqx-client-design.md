@@ -623,25 +623,28 @@ class MqttAutoReconnect implements MqttClientDisconnectedListener {
 
 ```java
 class TransportFactory {
-    Mono<? extends Connection> connect(MqttClientConfig config) {
-        return switch (config.transportType()) {
+    Mono<Connection> connect(MqttClientConfig config) {
+        return switch (config.getTransportType()) {
             case TCP  -> tcpClient(config).connect();
-            case TLS  -> tcpClient(config).secure(spec -> sslSpec(spec, config)).connect();
-            case WS   -> httpClient(config).websocket(wspec -> wsSpec(wspec, config)).connect();
-            case WSS  -> httpClient(config).secure(...).websocket(...).connect();
+            case TLS  -> applyTlsTcp(tcpClient(config), config).connect();
+            case WS   -> httpClient(config).websocket().uri(wsUri(config)).connect();
+            case WSS  -> applyTlsHttp(httpClient(config), config).websocket().uri(wsUri(config)).connect();
         };
     }
-
-    private TcpClient tcpClient(MqttClientConfig c) {
-        return TcpClient.newConnection()
-            .host(c.getServerHost()).port(c.getServerPort())
-            .option(CONNECT_TIMEOUT_MILLIS, c.getSocketConnectTimeoutMs())
-            .option(ChannelOption.TCP_NODELAY, true)
-            .doOnConnected(this::installMqttPipeline);   // 挂 MqttEncoder/MqttDecoder/handlers
-    }
-    // WebSocket 走 reactor-netty HttpClient.websocket()，subprotocol="mqtt"
+    // pipeline 由 MqttClientEngine 在 connect 成功后调用 installPipeline() 挂载
 }
 ```
+
+**WS/WSS 帧封装**：reactor-netty `HttpClient.websocket()` 握手后，`channel.writeAndFlush(MqttMessage)` 的出站路径不会自动把 MQTT 字节流封装为 WebSocket 二进制帧。客户端在 `installPipeline()` 中额外安装与 jmqx-broker 对称的帧转换器（`transport/ws/`）：
+
+```
+ws-decoder → mqttWsFrameDecoder → ws-encoder → mqttWsFrameEncoder → mqttEncoder → mqttDecoder → …
+```
+
+- 出站：`MqttEncoder` → `ByteBuf` → `ByteBufToWebSocketFrameEncoder` → `BinaryWebSocketFrame` → `ws-encoder`
+- 入站：`ws-decoder` → `BinaryWebSocketFrame` → `WebSocketFrameToByteBufDecoder` → `ByteBuf` → `MqttDecoder`
+
+若不安装上述帧封装，CONNECT 首字节 `0x10` 会被 broker 侧 WebSocket 解码器误解析为 RSV=1 帧头，导致握手后立即断连。
 
 **与 jmqx-broker 对称**：broker 用 `TcpServer`/`DisposableServer`，client 用 `TcpClient`/`Connection`，同一套 reactor-netty。`MqttDecoder(8MB)` 自动识别 v3.1/3.1.1/5.0，无需分版本 decoder。
 
@@ -663,10 +666,11 @@ MqttClientHandler (inbound 业务分发 + outbound 写出)              ← 单�
     .trustStore(path).keyStore(path, pass)
     .cipherSuites(...).protocols("TLSv1.3","TLSv1.2")
     .handshakeTimeout(10_000)
+    .insecureTrustAll(true)   // 仅测试环境：信任自签证书
     .build())
 ```
 
-底层用 reactor-netty 的 `SslProvider` + Netty `SslContextBuilder`。支持单向/双向认证。
+底层用 Netty `SslContextBuilder.forClient()` 构建 `SslContext`，经 reactor-netty `secure(spec -> spec.sslContext(...))` 注入。`insecureTrustAll` 使用 `InsecureTrustManagerFactory`；生产环境应配置 trustStore 或 CA。
 
 ### WebSocket
 
@@ -677,7 +681,7 @@ MqttClientHandler (inbound 业务分发 + outbound 写出)              ← 单�
     .build())
 ```
 
-底层 reactor-netty `HttpClient.websocket()`，符合 MQTT over WebSocket 规范（`mqtt` subprotocol，二进制帧）。
+底层 reactor-netty `HttpClient.websocket().uri("/mqtt")` 建立 WebSocket 连接；路径与子协议由 `MqttWebSocketConfig` 配置（默认 `/mqtt`、`mqtt`）。MQTT 载荷经 §10 帧封装层以 **BinaryWebSocketFrame** 传输。
 
 ## 11. 配置模型
 
@@ -803,6 +807,7 @@ jmqx-client/src/main/java/plus/jmqx/client/
 │       ├── reconnect/MqttAutoReconnect.java
 │       ├── buffer/MessageBuffer.java
 │       ├── transport/TransportFactory.java  MqttSslConfig.java  MqttWebSocketConfig.java
+│       │   └── ws/ByteBufToWebSocketFrameEncoder.java  WebSocketFrameToByteBufDecoder.java
 │       └── util/PacketIdManager.java  NettyUtil.java  TopicMatcher.java
 ```
 
@@ -814,8 +819,10 @@ jmqx-client/src/main/java/plus/jmqx/client/
 | 编解码 | v3/v5 各消息 encode→decode 往返一致性；CONNECT wire 字节级断言 | `netty-codec-mqtt` EmbeddedChannel |
 | 背压 | inflight 满时 `publish()` Mono 挂起而非报错；下游不 request 时 PUBACK 不发（EmbeddedChannel + StepVerifier 验证未 flush ACK） | reactor `StepVerifier` |
 | 重连 | 模拟 transport 断开 → 指数退避调度 → 重连成功恢复订阅；用 `VirtualTimeScheduler` 验证 backoff 时序 | reactor test |
-| 集成 | connect/subscribe/publish/receive/disconnect；QoS0/1/2 全流程；断线缓存重发；v5 Properties 往返 | 启动 jmqx-broker (1883) |
-| v3/v5 互通 | client v3 ↔ jmqx-broker；client v5 ↔ jmqx-broker；v3 client 连 v5 broker 的降级 | jmqx-broker |
+| 集成（TCP） | `Mqtt3ClientIT`（15）/ `Mqtt5ClientIT`（12）：connect/subscribe/publish/receive/disconnect；QoS0/1/2；Async/Blocking；retain/会话持久化；v5 Properties | 内嵌 `EmbeddedBrokerHolder`（随机 TCP 端口）或外部 broker（默认 TCP `1883`，`-Djmqx.it.broker.port` 可覆盖） |
+| 集成（传输层） | `Mqtt3TransportIT` / `Mqtt5TransportIT`（各 3）：MQTTS(8883) / WS(1884) / WSS(8884) 连接 + QoS1 发布订阅 | 同上；内嵌 broker 四监听全开；外部 broker 默认 1883/8883/1884/8884 |
+| 压力 | `Mqtt3ClientStressTest` / `Mqtt5ClientStressTest`：连接/发布/订阅独立场景 | **外部 broker**（不内嵌）；`-Djmqx.stress.tests=true` |
+| v3/v5 互通 | client v3/v5 ↔ jmqx-broker | jmqx-broker |
 
 **不使用 mock broker**——直接用真实的 jmqx-broker 做集成测试（项目已有该模块），最贴近生产。单元测试用 `EmbeddedChannel` 驱动 pipeline，无需真实网络。
 
