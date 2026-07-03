@@ -8,6 +8,7 @@ import plus.jmqx.client.mqtt.internal.buffer.MessageBuffer;
 import plus.jmqx.client.mqtt.internal.handler.MqttClientHandler;
 import plus.jmqx.client.mqtt.internal.reconnect.MqttAutoReconnect;
 import plus.jmqx.client.mqtt.internal.transport.TransportFactory;
+import plus.jmqx.client.mqtt.internal.NettyUtil;
 import plus.jmqx.client.mqtt.internal.util.PacketIdManager;
 import plus.jmqx.client.mqtt.internal.util.TopicMatcher;
 import plus.jmqx.client.mqtt.lifecycle.MqttClientConnectedContext;
@@ -187,13 +188,13 @@ public abstract class MqttClientEngine {
                         this.handler = h;
                         transportFactory.installPipeline(conn, h, config);
                         conn.inbound().receiveObject()
-                                .cast(io.netty.handler.codec.mqtt.MqttMessage.class)
+                                .ofType(io.netty.handler.codec.mqtt.MqttMessage.class)
                                 .doOnError(this::onTransportError)
-                                .subscribe();
+                                .subscribe(mqtt -> h.handleInbound(conn.channel(), mqtt));
                         conn.onDispose().subscribe(v ->
                                 onTransportError(new RuntimeException("connection disposed")));
-                        return conn.outbound().sendObject(Mono.just(service.encodeConnect(config))).then()
-                                .then(ackSink.asMono());
+                        NettyUtil.writeAndFlush(conn.channel(), service.encodeConnect(config));
+                        return ackSink.asMono();
                     })
                     .doOnSuccess(ack -> {
                         state.set(MqttClientState.CONNECTED);
@@ -224,10 +225,8 @@ public abstract class MqttClientEngine {
             MqttSubscribe withPid = copySubscribeWithPacketId(subscribe, pid);
             Sinks.One<MqttSubAck> sink = Sinks.one();
             handler.registerSubAck(pid, sink);
-            return connection.outbound()
-                    .sendObject(Mono.just(service.encodeSubscribe(withPid)))
-                    .then()
-                    .then(sink.asMono());
+            NettyUtil.writeAndFlush(connection.channel(), service.encodeSubscribe(withPid));
+            return sink.asMono();
         });
     }
 
@@ -277,10 +276,9 @@ public abstract class MqttClientEngine {
         return Mono.defer(() -> {
             if (state.get() == MqttClientState.CONNECTED) {
                 if (publish.getQoS() == QoS.AT_MOST_ONCE) {
-                    return connection.outbound()
-                            .sendObject(Mono.just(service.encodePublish(publish, 0, false)))
-                            .then()
-                            .thenReturn(new MqttPublishResultImpl(publish, null));
+                    NettyUtil.writeAndFlush(connection.channel(),
+                            service.encodePublish(publish, 0, false));
+                    return Mono.just(new MqttPublishResultImpl(publish, null));
                 }
                 int pid = packetIdManager.nextPacketId();
                 MqttPublish withPid = withPacketId(publish, pid);
@@ -288,9 +286,8 @@ public abstract class MqttClientEngine {
                 PendingOutbound po = new PendingOutbound(withPid, sink);
                 ackTracker.register(pid, po);
                 return outbox.acquire(pid)
-                        .then(connection.outbound()
-                                .sendObject(Mono.just(service.encodePublish(withPid, pid, false)))
-                                .then())
+                        .doOnSuccess(v -> NettyUtil.writeAndFlush(connection.channel(),
+                                service.encodePublish(withPid, pid, false)))
                         .then(sink.asMono())
                         .doFinally(s -> outbox.release(pid));
             }
@@ -317,10 +314,8 @@ public abstract class MqttClientEngine {
             subscriptionStore.removeAll(withPid.getTopicFilters());
             Sinks.Empty<Void> sink = Sinks.empty();
             handler.registerUnsubAck(pid, sink);
-            return connection.outbound()
-                    .sendObject(Mono.just(service.encodeUnsubscribe(withPid)))
-                    .then()
-                    .then(sink.asMono());
+            NettyUtil.writeAndFlush(connection.channel(), service.encodeUnsubscribe(withPid));
+            return sink.asMono();
         });
     }
 
@@ -336,11 +331,10 @@ public abstract class MqttClientEngine {
             }
             state.set(MqttClientState.DISCONNECTING);
             if (connection != null) {
-                return connection.outbound().sendObject(Mono.just(service.encodeDisconnect())).then()
-                        .doFinally(s -> {
-                            connection.dispose();
-                            state.set(MqttClientState.DISCONNECTED);
-                        });
+                NettyUtil.writeAndFlush(connection.channel(), service.encodeDisconnect());
+                connection.dispose();
+                state.set(MqttClientState.DISCONNECTED);
+                return Mono.empty();
             }
             state.set(MqttClientState.DISCONNECTED);
             return Mono.empty();
@@ -380,7 +374,7 @@ public abstract class MqttClientEngine {
         }
         int pid = packetIdManager.nextPacketId();
         MqttSubscribe sub = buildResubscribe(filters, pid);
-        connection.outbound().sendObject(Mono.just(service.encodeSubscribe(sub))).then().subscribe();
+        NettyUtil.writeAndFlush(connection.channel(), service.encodeSubscribe(sub));
     }
 
     /**

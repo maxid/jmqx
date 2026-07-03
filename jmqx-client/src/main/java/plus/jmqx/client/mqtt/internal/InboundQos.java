@@ -3,6 +3,7 @@ package plus.jmqx.client.mqtt.internal;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.client.mqtt.message.MqttPublish;
 
@@ -37,18 +38,23 @@ public final class InboundQos {
      */
     public void onInboundPublish(ChannelHandlerContext ctx, MqttPublishMessage nettyMsg,
                                  MqttMessageService service, MqttInbox inbox) {
-        MqttPublish pub = service.decodePublish(nettyMsg);
-        int packetId = pub.getPacketId();
-        switch (pub.getQoS()) {
-            case AT_MOST_ONCE -> inbox.deliver(pub, () -> {
-            });
-            case AT_LEAST_ONCE -> inbox.deliver(pub, ackOnce(ctx,
-                    () -> ctx.writeAndFlush(service.encodePubAck(packetId))));
-            case EXACTLY_ONCE -> {
-                pendingPubRel.add(packetId);
-                inbox.deliver(pub, ackOnce(ctx,
-                        () -> ctx.writeAndFlush(service.encodePubRec(packetId))));
+        try {
+            MqttPublish pub = service.decodePublish(nettyMsg);
+            int packetId = pub.getPacketId();
+            switch (pub.getQoS()) {
+                case AT_MOST_ONCE -> inbox.deliver(pub, () -> {
+                });
+                case AT_LEAST_ONCE -> inbox.deliver(pub, ackOnce(ctx,
+                        () -> ctx.writeAndFlush(service.encodePubAck(packetId))));
+                case EXACTLY_ONCE -> {
+                    pendingPubRel.add(packetId);
+                    inbox.deliver(pub, ackOnce(ctx,
+                            () -> ctx.writeAndFlush(service.encodePubRec(packetId))));
+                }
             }
+        } finally {
+            // MqttDecoder 对 payload 使用 readRetainedSlice，MqttPublishMessage 本身非 ReferenceCounted
+            ReferenceCountUtil.release(nettyMsg.payload());
         }
     }
 

@@ -70,9 +70,9 @@ public final class TransportFactory {
     /**
      * 在已建立的 reactor-netty {@link Connection} 上安装 MQTT pipeline。
      *
-     * <p>顺序（head→tail）：{@code idle → mqttDecoder → mqttEncoder → mqttClient → reactor handlers}。
-     * 出站（tail→head）：reactiveBridge → mqttClient（业务可写出 MqttMessage）
-     * → mqttEncoder（编码为 ByteBuf）→ mqttDecoder（透传）→ idle → head。
+     * <p>与 jmqx-broker 测试客户端同构：{@code mqttClient → idle → mqttDecoder → mqttEncoder → reactiveBridge}。
+     * 入站经 reactiveBridge 解码后由 {@link MqttClientHandler#handleInbound} 分发；
+     * 出站经 {@link plus.jmqx.client.mqtt.internal.NettyUtil#writeAndFlush} 写出 {@code MqttMessage}。
      *
      * @param conn    reactor-netty 连接
      * @param handler MQTT 业务处理器
@@ -80,12 +80,31 @@ public final class TransportFactory {
      */
     public void installPipeline(Connection conn, MqttClientHandler handler, MqttClientConfig config) {
         int keepAlive = config.getKeepAliveSeconds();
-        // 使用 Connection API 挂载（reactor-netty 会插入到 reactiveBridge 之前），与 broker 同构
-        conn.addHandlerFirst("mqttEncoder", MqttEncoder.INSTANCE)
-                .addHandlerFirst("mqttDecoder", new MqttDecoder(8 * 1024 * 1024))
-                .addHandlerFirst("idle",
-                        new IdleStateHandler((long) (keepAlive * 1.5), keepAlive, 0, TimeUnit.SECONDS))
-                .addHandlerFirst("mqttClient", handler);
+        var pipeline = conn.channel().pipeline();
+        String bridge = pipeline.get("reactor.right.reactiveBridge") != null
+                ? "reactor.right.reactiveBridge"
+                : "reactor.left.reactiveBridge";
+        if (pipeline.get(bridge) != null) {
+            if (pipeline.get(MqttEncoder.class) == null) {
+                pipeline.addBefore(bridge, "mqttEncoder", MqttEncoder.INSTANCE);
+            }
+            if (pipeline.get(MqttDecoder.class) == null) {
+                pipeline.addBefore(bridge, "mqttDecoder", new MqttDecoder(8 * 1024 * 1024));
+            }
+            if (pipeline.get("idle") == null) {
+                pipeline.addBefore(bridge, "idle",
+                        new IdleStateHandler((long) (keepAlive * 1.5), keepAlive, 0, TimeUnit.SECONDS));
+            }
+            if (pipeline.get("mqttClient") == null) {
+                pipeline.addBefore(bridge, "mqttClient", handler);
+            }
+        } else {
+            pipeline.addFirst("mqttDecoder", new MqttDecoder(8 * 1024 * 1024))
+                    .addAfter("mqttDecoder", "mqttEncoder", MqttEncoder.INSTANCE)
+                    .addAfter("mqttEncoder", "idle",
+                            new IdleStateHandler((long) (keepAlive * 1.5), keepAlive, 0, TimeUnit.SECONDS))
+                    .addAfter("idle", "mqttClient", handler);
+        }
         log.debug("MQTT pipeline installed on {}", conn.channel());
     }
 

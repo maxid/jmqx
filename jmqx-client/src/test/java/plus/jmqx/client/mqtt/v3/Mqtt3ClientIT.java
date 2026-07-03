@@ -2,127 +2,311 @@ package plus.jmqx.client.mqtt.v3;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import plus.jmqx.client.mqtt.MqttClient;
+import plus.jmqx.client.mqtt.it.BrokerITSupport;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3ConnAck;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Publish;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Subscribe;
-import plus.jmqx.client.mqtt.v3.message.Mqtt3TopicFilter;
+import plus.jmqx.client.mqtt.v3.message.Mqtt3Unsubscribe;
 import reactor.core.Disposable;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * v3 客户端对接 jmqx-broker 的端到端集成测试。
+ * MQTT 3.1.1 客户端 ↔ jmqx-broker 端到端集成测试。
  *
- * <p>需要 jmqx-broker 在 {@code localhost:1883} 运行。集成测试以 IT 后缀命名，
- * 被 surefire 排除在默认 {@code mvn test} 之外；用 {@code -Dtest=Mqtt3ClientIT} 显式运行。
- *
- * @author maxid
+ * <p>默认内嵌 broker；对接外部 broker 时使用 {@code -Djmqx.it.broker.port=1883}。
+ * 被 surefire 排除在默认 {@code mvn test} 之外，显式运行：{@code mvn -pl jmqx-client -Dtest=Mqtt3ClientIT test}
  */
-class Mqtt3ClientIT {
-
-    private static final Logger   log     = LoggerFactory.getLogger(Mqtt3ClientIT.class);
-    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+class Mqtt3ClientIT extends BrokerITSupport {
 
     private Mqtt3RxClient client;
 
     @AfterEach
     void cleanup() {
-        if (client != null) {
-            try {
-                client.disconnect().block(TIMEOUT);
-            } catch (Exception e) {
-                log.warn("cleanup disconnect failed: {}", e.toString());
-            }
-        }
+        disconnectQuietly(client);
+        client = null;
     }
 
     @Test
-    void connectSubscribePublishReceiveDisconnect() throws Exception {
-        String topic = "test/it/" + System.nanoTime();
-        client = MqttClient.builder().useMqttVersion3()
-                .serverHost("localhost").serverPort(1883)
-                .identifier("it-v3-" + System.nanoTime())
-                .buildRx();
-
+    void connectAndDisconnect() {
+        client = v3Rx(uniqueId("it-v3-conn"));
         Mqtt3ConnAck ack = client.connect().block(TIMEOUT);
-        assertNotNull(ack, "CONNACK not received");
-        assertTrue(ack.getReturnCode().isAccepted(), "connect refused: " + ack.getReturnCode());
-        log.info("connected, sessionPresent={}", ack.isSessionPresent());
+        assertNotNull(ack);
+        assertTrue(ack.getReturnCode().isAccepted());
+        client.disconnect().block(TIMEOUT);
+    }
 
-        Mqtt3Subscribe sub = Mqtt3Subscribe.builder()
-                .topicFilters(java.util.List.of(
-                        Mqtt3TopicFilter.builder().topicFilter(topic).qos(QoS.AT_LEAST_ONCE).build()))
-                .build();
+    @ParameterizedTest
+    @EnumSource(QoS.class)
+    void publishSubscribeAllQosLevels(QoS qos) throws Exception {
+        String topic = uniqueTopic("test/qos");
+        client = v3Rx(uniqueId("it-v3-qos"));
+        assertConnAcceptedV3(client);
 
+        Mqtt3Subscribe sub = v3Sub(topic, qos);
         AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
         Disposable stream = client.subscribePublishes(sub)
                 .doOnNext(p -> {
-                    log.info("received: {}", p.getTopic());
-                    p.ack();
+                    if (p.getQoS().value() > 0) {
+                        p.ack();
+                    }
                 })
                 .subscribe(received::set);
-
         client.subscribe(sub).block(TIMEOUT);
-        log.info("subscribed to {}", topic);
 
-        client.publish(Mqtt3Publish.builder()
-                        .topic(topic)
-                        .payload("world".getBytes())
-                        .qos(QoS.AT_LEAST_ONCE)
-                        .build())
-                .block(TIMEOUT);
-        log.info("published to {}", topic);
-
-        long deadline = System.nanoTime() + 5_000_000_000L;
-        while (received.get() == null && System.nanoTime() < deadline) {
-            Thread.sleep(20);
-        }
+        client.publish(v3Pub(topic, "qos-" + qos.value(), qos)).block(TIMEOUT);
+        awaitV3(received);
         stream.dispose();
-        assertNotNull(received.get(), "did not receive published message");
-        assertEquals(topic, received.get().getTopic());
-        assertEquals("world", new String(received.get().getPayloadAsBytes()));
+        assertV3Payload(received.get(), topic, "qos-" + qos.value());
     }
 
     @Test
-    void qos0PublishDelivered() throws Exception {
-        String topic = "test/it0/" + System.nanoTime();
-        client = MqttClient.builder().useMqttVersion3()
-                .serverHost("localhost").serverPort(1883)
-                .identifier("it-v3q0-" + System.nanoTime())
-                .buildRx();
-        assertTrue(client.connect().block(TIMEOUT).getReturnCode().isAccepted());
+    void asyncApiPublishSubscribe() throws Exception {
+        String topic = uniqueTopic("test/async");
+        var async = MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerPort())
+                .identifier(uniqueId("it-v3-async"))
+                .buildAsync();
 
-        Mqtt3Subscribe sub = Mqtt3Subscribe.builder()
-                .topicFilters(java.util.List.of(
-                        Mqtt3TopicFilter.builder().topicFilter(topic).qos(QoS.AT_MOST_ONCE).build()))
-                .build();
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_LEAST_ONCE);
+        async.connect().get();
+        async.subscribe(sub, p -> {
+            p.ack();
+            received.set(p);
+        }).get();
+        async.publish(v3Pub(topic, "async-payload", QoS.AT_LEAST_ONCE)).get();
+        awaitV3(received);
+        assertV3Payload(received.get(), topic, "async-payload");
+        async.disconnect().get();
+    }
 
+    @Test
+    void blockingApiPublishSubscribe() throws Exception {
+        String topic = uniqueTopic("test/block");
+        var blocking = MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerPort())
+                .identifier(uniqueId("it-v3-block"))
+                .buildBlocking();
+
+        blocking.connect();
+        blocking.subscribe(v3Sub(topic, QoS.AT_MOST_ONCE));
+        blocking.publish(v3Pub(topic, "block-payload", QoS.AT_MOST_ONCE));
+
+        client = blocking.toRx();
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Disposable stream = client.subscribePublishes(v3Sub(topic, QoS.AT_MOST_ONCE))
+                .subscribe(received::set);
+        blocking.publish(v3Pub(topic, "block-payload-2", QoS.AT_MOST_ONCE));
+        awaitV3(received);
+        stream.dispose();
+        assertV3Payload(received.get(), topic, "block-payload-2");
+        blocking.disconnect();
+        client = null;
+    }
+
+    @Test
+    void wildcardHashSubscription() throws Exception {
+        String base = uniqueTopic("sensor");
+        String topic = base + "/temp";
+        client = v3Rx(uniqueId("it-v3-hash"));
+        assertConnAcceptedV3(client);
+
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Mqtt3Subscribe sub = v3Sub(base + "/#", QoS.AT_MOST_ONCE);
+        Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+        client.subscribe(sub).block(TIMEOUT);
+        client.publish(v3Pub(topic, "22.5", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
+        stream.dispose();
+        assertV3Payload(received.get(), topic, "22.5");
+    }
+
+    @Test
+    void wildcardPlusSubscription() throws Exception {
+        String base = uniqueTopic("home");
+        String room = base + "/room";
+        String topic = room + "/temp";
+        client = v3Rx(uniqueId("it-v3-plus"));
+        assertConnAcceptedV3(client);
+
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Mqtt3Subscribe sub = v3Sub(base + "/+/temp", QoS.AT_MOST_ONCE);
+        Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+        client.subscribe(sub).block(TIMEOUT);
+        client.publish(v3Pub(topic, "19.8", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
+        stream.dispose();
+        assertV3Payload(received.get(), topic, "19.8");
+    }
+
+    @Test
+    void unsubscribeStopsDelivery() throws Exception {
+        String topic = uniqueTopic("test/unsub");
+        client = v3Rx(uniqueId("it-v3-unsub"));
+        assertConnAcceptedV3(client);
+
+        Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_MOST_ONCE);
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+        client.subscribe(sub).block(TIMEOUT);
+        client.publish(v3Pub(topic, "before", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
+        assertV3Payload(received.get(), topic, "before");
+
+        client.unsubscribe(Mqtt3Unsubscribe.builder().topicFilters(List.of(topic)).build()).block(TIMEOUT);
+        received.set(null);
+        client.publish(v3Pub(topic, "after", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        assertNoV3Within(received, Duration.ofMillis(800));
+        stream.dispose();
+    }
+
+    @Test
+    void twoClientsPublisherAndSubscriber() throws Exception {
+        String topic = uniqueTopic("test/peer");
+        Mqtt3RxClient subscriber = v3Rx(uniqueId("it-v3-sub"));
+        Mqtt3RxClient publisher = v3Rx(uniqueId("it-v3-pub"));
+        client = subscriber;
+        try {
+            assertConnAcceptedV3(subscriber);
+            assertConnAcceptedV3(publisher);
+
+            AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+            Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_LEAST_ONCE);
+            Disposable stream = subscriber.subscribePublishes(sub)
+                    .doOnNext(Mqtt3Publish::ack)
+                    .subscribe(received::set);
+            subscriber.subscribe(sub).block(TIMEOUT);
+
+            publisher.publish(v3Pub(topic, "peer-msg", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+            awaitV3(received);
+            stream.dispose();
+            assertV3Payload(received.get(), topic, "peer-msg");
+        } finally {
+            disconnectQuietly(publisher);
+        }
+    }
+
+    @Test
+    void retainMessageDeliveredToLateSubscriber() throws Exception {
+        String topic = uniqueTopic("test/retain");
+        Mqtt3RxClient publisher = v3Rx(uniqueId("it-v3-ret-pub"));
+        client = v3Rx(uniqueId("it-v3-ret-sub"));
+        try {
+            assertConnAcceptedV3(publisher);
+            publisher.publish(v3PubRetain(topic, "retained", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+
+            assertConnAcceptedV3(client);
+            AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+            Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_MOST_ONCE);
+            Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+            client.subscribe(sub).block(TIMEOUT);
+            awaitV3(received);
+            stream.dispose();
+            assertV3Payload(received.get(), topic, "retained");
+        } finally {
+            disconnectQuietly(publisher);
+        }
+    }
+
+    @Test
+    void sessionPersistenceDeliversOfflineMessage() throws Exception {
+        String topic = uniqueTopic("test/session");
+        String clientId = uniqueId("it-v3-persist");
+        Mqtt3RxClient subscriber = v3Rx(clientId, false);
+        Mqtt3RxClient publisher = v3Rx(uniqueId("it-v3-offline-pub"));
+        client = subscriber;
+        try {
+            assertConnAcceptedV3(subscriber);
+            Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_LEAST_ONCE);
+            subscriber.subscribe(sub).block(TIMEOUT);
+            subscriber.disconnect().block(TIMEOUT);
+
+            assertConnAcceptedV3(publisher);
+            publisher.publish(v3Pub(topic, "offline", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+
+            subscriber = v3Rx(clientId, false);
+            client = subscriber;
+            AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+            Disposable stream = subscriber.subscribePublishes(sub)
+                    .doOnNext(Mqtt3Publish::ack)
+                    .subscribe(received::set);
+            Mqtt3ConnAck ack = subscriber.connect().block(TIMEOUT);
+            assertTrue(ack.getReturnCode().isAccepted());
+            awaitV3(received);
+            stream.dispose();
+            assertV3Payload(received.get(), topic, "offline");
+        } finally {
+            disconnectQuietly(publisher);
+        }
+    }
+
+    @Test
+    void multipleTopicFiltersInOneSubscribe() throws Exception {
+        String topicA = uniqueTopic("test/multi/a");
+        String topicB = uniqueTopic("test/multi/b");
+        client = v3Rx(uniqueId("it-v3-multi"));
+        assertConnAcceptedV3(client);
+
+        Mqtt3Subscribe sub = v3Sub(List.of(topicA, topicB), QoS.AT_MOST_ONCE);
         AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
         Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
         client.subscribe(sub).block(TIMEOUT);
 
-        client.publish(Mqtt3Publish.builder()
-                        .topic(topic)
-                        .payload("fire".getBytes())
-                        .qos(QoS.AT_MOST_ONCE)
-                        .build())
-                .block(TIMEOUT);
-
-        long deadline = System.nanoTime() + 5_000_000_000L;
-        while (received.get() == null && System.nanoTime() < deadline) {
-            Thread.sleep(20);
-        }
+        client.publish(v3Pub(topicB, "multi-b", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
         stream.dispose();
-        assertNotNull(received.get(), "did not receive QoS0 message");
-        assertEquals("fire", new String(received.get().getPayloadAsBytes()));
+        assertV3Payload(received.get(), topicB, "multi-b");
     }
+
+    @Test
+    void emptyPayloadPublish() throws Exception {
+        String topic = uniqueTopic("test/empty");
+        client = v3Rx(uniqueId("it-v3-empty"));
+        assertConnAcceptedV3(client);
+
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_MOST_ONCE);
+        Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+        client.subscribe(sub).block(TIMEOUT);
+        client.publish(v3Pub(topic, "", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
+        stream.dispose();
+        assertNotNull(received.get());
+        assertTrue(received.get().getPayloadAsBytes().length == 0);
+    }
+
+    @Test
+    void concurrentPublishesFromAsyncClient() throws Exception {
+        String topic = uniqueTopic("test/concurrent");
+        client = v3Rx(uniqueId("it-v3-conc-rx"));
+        var async = client.toAsync();
+        assertConnAcceptedV3(client);
+
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_MOST_ONCE);
+        Disposable stream = client.subscribePublishes(sub).subscribe(received::set);
+        client.subscribe(sub).block(TIMEOUT);
+
+        CompletableFuture<?>[] futures = new CompletableFuture[5];
+        for (int i = 0; i < futures.length; i++) {
+            final int n = i;
+            futures[i] = async.publish(v3Pub(topic, "msg-" + n, QoS.AT_MOST_ONCE));
+        }
+        CompletableFuture.allOf(futures).get();
+        awaitV3(received);
+        stream.dispose();
+        assertNotNull(received.get());
+    }
+
 }
