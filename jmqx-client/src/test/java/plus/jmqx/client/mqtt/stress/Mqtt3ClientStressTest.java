@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import plus.jmqx.client.mqtt.MqttClient;
 import plus.jmqx.client.mqtt.v3.Mqtt3AsyncClient;
 import plus.jmqx.client.mqtt.v3.Mqtt3RxClient;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Subscribe;
@@ -26,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * MQTT 3.1.1 jmqx-client 压力测试（三类独立场景）。
  *
- * <p>须事先启动外部 MQTT broker（默认 {@code localhost:1883}）。
+ * <p>须事先启动外部 MQTT broker，默认 {@code tcp://localhost:1883}。
+ * 传输层：{@code -Djmqx.client.stress.transport=tcp|mqtts|ws|wss}（端口默认 1883/8883/1884/8884）。
+ * 认证：{@code -Djmqx.client.stress.broker.username=...} / {@code broker.password=...}。
  *
  * <p>按场景单独运行（推荐）：
  * <pre>
@@ -68,7 +69,7 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
     @EnabledIf("plus.jmqx.client.mqtt.stress.StressScenarioFilter#connectEnabled")
     void connectStress() throws Exception {
         ClientStressConfig c = cfg;
-        ConnectStressRunner.ConnectStats stats = ConnectStressRunner.run("v3", c, clientId -> {
+        ConnectStressRunner.ConnectStats stats = ConnectStressRunner.run(stressLabel("v3"), c, clientId -> {
             Mqtt3RxClient client = newClient(clientId);
             client.connect().block(CONNECT_TIMEOUT);
             return () -> disconnectQuietly(client);
@@ -99,7 +100,7 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
 
         long start = System.nanoTime();
         try (StressProgressReporter progressReporter = StressProgressReporter.start(
-                "v3-publish", c.progressIntervalSeconds, start,
+                stressLabel("v3-publish"), c.progressIntervalSeconds, start,
                 () -> ClientStressSupport.formatPublishProgress(
                         c.messages, progress.sent.get(), progress.acked.get(), progress.failed.get(), start))) {
             for (int i = 0; i < workers; i++) {
@@ -108,10 +109,7 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
                 pool.submit(() -> {
                     Mqtt3AsyncClient client = null;
                     try {
-                        client = MqttClient.builder().useMqttVersion3()
-                                .serverHost(brokerHost()).serverPort(brokerPort())
-                                .identifier("stress-v3-pub-" + idx + "-" + System.nanoTime())
-                                .buildAsync();
+                        client = v3Async("stress-v3-pub-" + idx + "-" + System.nanoTime());
                         client.connect().get(c.timeoutSeconds, TimeUnit.SECONDS);
                         AckAwareStressPublisher.publishV3(
                                 client, topic, payload, c.qos, messagesPerWorker, c.inflight, c.timeoutSeconds, progress);
@@ -183,7 +181,7 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
             long start = System.nanoTime();
             boolean ok;
             try (StressProgressReporter progressReporter = StressProgressReporter.start(
-                    "v3-subscribe", c.progressIntervalSeconds, start,
+                    stressLabel("v3-subscribe"), c.progressIntervalSeconds, start,
                     () -> ClientStressSupport.formatSubscribeProgress(expected, received.get(), start))) {
                 publishAll(topic, payload, c);
                 ok = latch.await(c.timeoutSeconds, TimeUnit.SECONDS);
@@ -204,10 +202,7 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
         List<Mqtt3AsyncClient> publishers = new ArrayList<>();
         try {
             for (int i = 0; i < c.publishers; i++) {
-                Mqtt3AsyncClient pub = MqttClient.builder().useMqttVersion3()
-                        .serverHost(brokerHost()).serverPort(brokerPort())
-                        .identifier("stress-v3-feed-" + i + "-" + System.nanoTime())
-                        .buildAsync();
+                Mqtt3AsyncClient pub = v3Async("stress-v3-feed-" + i + "-" + System.nanoTime());
                 pub.connect().get(c.timeoutSeconds, TimeUnit.SECONDS);
                 publishers.add(pub);
             }
@@ -233,6 +228,10 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
                 }
             }
         }
+    }
+
+    private static String stressLabel(String suffix) {
+        return cfg.transport.label() + "-" + suffix;
     }
 
     private static Mqtt3RxClient newClient(String clientId) {

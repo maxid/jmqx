@@ -1,8 +1,10 @@
 package plus.jmqx.client.mqtt.stress;
 
 import lombok.extern.slf4j.Slf4j;
+import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.message.QoS;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -22,6 +24,40 @@ public final class ClientStressSupport {
         return Integer.parseInt(value);
     }
 
+    public static String stringProp(String key) {
+        String value = System.getProperty(key);
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        return value;
+    }
+
+    /**
+     * MQTT 认证用户名（未设置则匿名连接）。
+     *
+     * <p>{@code jmqx.client.stress.broker.username}，兼容 {@code jmqx.client.stress.username}。
+     */
+    public static String username() {
+        String stress = stringProp("jmqx.client.stress.broker.username");
+        if (stress != null) {
+            return stress;
+        }
+        return stringProp("jmqx.client.stress.username");
+    }
+
+    /**
+     * MQTT 认证密码（未设置则为 null）。
+     *
+     * <p>{@code jmqx.client.stress.broker.password}，兼容 {@code jmqx.client.stress.password}。
+     */
+    public static byte[] password() {
+        String stress = stringProp("jmqx.client.stress.broker.password");
+        if (stress == null) {
+            stress = stringProp("jmqx.client.stress.password");
+        }
+        return stress != null ? stress.getBytes(StandardCharsets.UTF_8) : null;
+    }
+
     public static String brokerHost() {
         String stress = System.getProperty("jmqx.client.stress.broker.host");
         if (stress != null && !stress.isEmpty()) {
@@ -31,21 +67,35 @@ public final class ClientStressSupport {
     }
 
     public static int brokerPort() {
-        String stress = System.getProperty("jmqx.client.stress.broker.port");
+        return brokerPort(transport());
+    }
+
+    public static ClientStressTransport transport() {
+        return ClientStressTransport.parse(System.getProperty("jmqx.client.stress.transport", "tcp"));
+    }
+
+    public static int brokerPort(ClientStressTransport transport) {
+        String stress = System.getProperty(transport.stressPortProperty());
         if (stress != null && !stress.isEmpty()) {
             return Integer.parseInt(stress);
         }
-        String it = System.getProperty("jmqx.it.broker.port");
+        String it = System.getProperty(transport.itPortProperty());
         if (it != null && !it.isEmpty()) {
             return Integer.parseInt(it);
         }
-        return 1883;
+        if (transport == ClientStressTransport.TCP) {
+            return 1883;
+        }
+        return transport.defaultPort();
     }
 
     public static ClientStressConfig loadConfig() {
         ClientStressConfig c = new ClientStressConfig();
+        c.transport = transport();
         c.brokerHost = brokerHost();
-        c.brokerPort = brokerPort();
+        c.brokerPort = brokerPort(c.transport);
+        c.username = username();
+        c.password = password();
         c.messages = intProp("jmqx.client.stress.messages", 2_000);
         c.threads = intProp("jmqx.client.stress.threads", 4);
         c.subscribers = intProp("jmqx.client.stress.subscribers", 1);
@@ -71,8 +121,11 @@ public final class ClientStressSupport {
     public static void logConnectStress(String label, ClientStressConfig config, ConnectStressRunner.ConnectStats stats,
                                         long startNanos, long endNanos, boolean completed) {
         double seconds = Math.max((endNanos - startNanos) / 1_000_000_000.0, 0.001);
-        log.info("{} connect stress: connections={}, hold={}s, threads={}, established={}, peakActive={}, completed={}, failed={}, time={}s, completed={}",
+        log.info("{} connect stress [{}://{}:{}]: connections={}, hold={}s, threads={}, established={}, peakActive={}, completed={}, failed={}, time={}s, completed={}",
                 label,
+                config.transport.label(),
+                config.brokerHost,
+                config.brokerPort,
                 config.connections,
                 config.connectionHoldSeconds,
                 config.threads,
@@ -102,8 +155,11 @@ public final class ClientStressSupport {
                                           long startNanos, long endNanos, boolean completed) {
         double seconds = Math.max((endNanos - startNanos) / 1_000_000_000.0, 0.001);
         double throughput = received / seconds;
-        log.info("{} subscribe stress: subscribers={}, publishers={}, messages={}, qos={}, received={}, time={}s, throughput={} msg/s, completed={}",
+        log.info("{} subscribe stress [{}://{}:{}]: subscribers={}, publishers={}, messages={}, qos={}, received={}, time={}s, throughput={} msg/s, completed={}",
                 label,
+                config.transport.label(),
+                config.brokerHost,
+                config.brokerPort,
                 config.subscribers,
                 config.publishers,
                 config.messages,
@@ -118,8 +174,11 @@ public final class ClientStressSupport {
                                         long startNanos, long endNanos, boolean completed) {
         double seconds = Math.max((endNanos - startNanos) / 1_000_000_000.0, 0.001);
         double throughput = acked / seconds;
-        log.info("{} publish stress: target={}, acked={}, failed={}, inflight={}, threads={}, publishers={}, qos={}, payload={}B, time={}s, throughput={} msg/s, completed={}",
+        log.info("{} publish stress [{}://{}:{}]: target={}, acked={}, failed={}, inflight={}, threads={}, publishers={}, qos={}, payload={}B, time={}s, throughput={} msg/s, completed={}",
                 label,
+                config.transport.label(),
+                config.brokerHost,
+                config.brokerPort,
                 config.messages,
                 acked,
                 failed,
