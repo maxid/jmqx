@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class BootstrapTest {
 
     /**
-     * 验证多个 Broker 实例启动与关闭
+     * Broker 实例启动与关闭
      *
      * @throws Exception 测试异常
      */
@@ -62,11 +62,29 @@ class BootstrapTest {
     void testBroker() throws Exception {
         setLogContext();
 
-        MqttConfiguration config1 = config("n1", 1883, 1884, 8883, 8884);
+        MqttConfiguration config = config("n1", 1883, 8883, 1884, 8884);
+        Bootstrap bootstrap = new Bootstrap(config);
+        bootstrap.start().block();
+
+        Thread.sleep(intProp("jmqx.test.await.seconds", 5) * TimeUnit.SECONDS.toMillis(1));
+
+        bootstrap.shutdown();
+    }
+
+    /**
+     * 验证多个 Broker 实例启动与关闭
+     *
+     * @throws Exception 测试异常
+     */
+    @Test
+    void testNamespaceBroker() throws Exception {
+        setLogContext();
+
+        MqttConfiguration config1 = config("n2", 1883, 8883, 1884, 8884);
         Bootstrap bootstrap1 = new Bootstrap(config1, dispatcher());
         bootstrap1.start().block();
 
-        MqttConfiguration config2 = config("n2", 2883, 2884, 9883, 9884);
+        MqttConfiguration config2 = config("n3", 2883, 9883, 2884, 9884);
         Bootstrap bootstrap2 = new Bootstrap(config2, dispatcher());
         bootstrap2.start().block();
 
