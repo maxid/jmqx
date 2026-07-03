@@ -22,7 +22,8 @@ public final class ConnectStressRunner {
     private ConnectStressRunner() {
     }
 
-    public record ConnectStats(long established, long peakActive, long completed, long failed, boolean completedInTime) {
+    public record ConnectStats(long established, long peakActive, long completed, long failed,
+                               boolean completedInTime) {
     }
 
     @FunctionalInterface
