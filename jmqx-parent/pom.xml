@@ -138,6 +138,16 @@
                 <artifactId>jmqx-broker</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>plus.jmqx.iot</groupId>
+                <artifactId>jmqx-cluster</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>plus.jmqx.iot</groupId>
+                <artifactId>jmqx-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
