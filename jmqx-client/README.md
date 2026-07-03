@@ -18,7 +18,7 @@
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-client</artifactId>
-    <version>1.4.14</version>
+    <version>1.4.15</version>
 </dependency>
 ```
 
