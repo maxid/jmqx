@@ -51,6 +51,7 @@ public final class ClientStressSupport {
         c.subscribers = intProp("jmqx.client.stress.subscribers", 1);
         c.publishers = intProp("jmqx.client.stress.publishers", 1);
         c.connections = intProp("jmqx.client.stress.connections", 50);
+        c.connectionHoldSeconds = intProp("jmqx.client.stress.connectionHoldSeconds", 30);
         c.payloadBytes = intProp("jmqx.client.stress.payloadBytes", 64);
         c.qos = QoS.fromValue(intProp("jmqx.client.stress.qos", 0));
         c.minThroughputMsgPerSec = intProp("jmqx.client.stress.minThroughput", 100);
@@ -65,6 +66,22 @@ public final class ClientStressSupport {
         byte[] payload = new byte[bytes];
         ThreadLocalRandom.current().nextBytes(payload);
         return payload;
+    }
+
+    public static void logConnectStress(String label, ClientStressConfig config, ConnectStressRunner.ConnectStats stats,
+                                        long startNanos, long endNanos, boolean completed) {
+        double seconds = Math.max((endNanos - startNanos) / 1_000_000_000.0, 0.001);
+        log.info("{} connect stress: connections={}, hold={}s, threads={}, established={}, peakActive={}, completed={}, failed={}, time={}s, completed={}",
+                label,
+                config.connections,
+                config.connectionHoldSeconds,
+                config.threads,
+                stats.established(),
+                stats.peakActive(),
+                stats.completed(),
+                stats.failed(),
+                String.format("%.3f", seconds),
+                completed);
     }
 
     public static void logConnectStress(String label, ClientStressConfig config, long success,
@@ -158,6 +175,13 @@ public final class ClientStressSupport {
         double pct = target == 0 ? 100.0 : received * 100.0 / target;
         return String.format("target=%d, received=%d, throughput=%.0f msg/s, progress=%.1f%%",
                 target, received, received / sec, pct);
+    }
+
+    public static String formatConnectProgress(long target, long active, long established, long completed,
+                                               long startNanos) {
+        double sec = Math.max((System.nanoTime() - startNanos) / 1_000_000_000.0, 0.001);
+        return String.format("target=%d, active=%d, established=%d, completed=%d, elapsed=%.1fs",
+                target, active, established, completed, sec);
     }
 
     public static String formatConnectProgress(long target, long success, long startNanos) {

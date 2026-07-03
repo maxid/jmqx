@@ -61,46 +61,23 @@ class Mqtt3ClientStressTest extends ClientStressBrokerSupport {
     }
 
     /**
-     * 连接压测：并发 CONNECT → DISCONNECT，度量 conn/s。
-     * 参数：{@code connections}、{@code threads}、{@code timeoutSeconds}
+     * 连接压测：并发建连 → 持久保持 {@code connectionHoldSeconds} → 断开，压测同时在线连接数。
+     * 参数：{@code connections}、{@code threads}、{@code connectionHoldSeconds}、{@code timeoutSeconds}
      */
     @Test
     @EnabledIf("plus.jmqx.client.mqtt.stress.StressScenarioFilter#connectEnabled")
     void connectStress() throws Exception {
         ClientStressConfig c = cfg;
-        CountDownLatch latch = new CountDownLatch(c.connections);
-        ExecutorService pool = Executors.newFixedThreadPool(Math.min(c.threads, c.connections));
-        AtomicLong success = new AtomicLong();
-
-        long start = System.nanoTime();
-        try (StressProgressReporter progressReporter = StressProgressReporter.start(
-                "v3-connect", c.progressIntervalSeconds, start,
-                () -> ClientStressSupport.formatConnectProgress(c.connections, success.get(), start))) {
-            for (int i = 0; i < c.connections; i++) {
-                final int idx = i;
-                pool.submit(() -> {
-                    Mqtt3RxClient client = null;
-                    try {
-                        client = newClient("stress-v3-conn-" + idx + "-" + System.nanoTime());
-                        client.connect().block(CONNECT_TIMEOUT);
-                        client.disconnect().block(CONNECT_TIMEOUT);
-                        success.incrementAndGet();
-                    } catch (Exception ignored) {
-                        // counted via success metric
-                    } finally {
-                        disconnectQuietly(client);
-                        latch.countDown();
-                    }
-                });
-            }
-            latch.await(c.timeoutSeconds, TimeUnit.SECONDS);
-        }
-        pool.shutdownNow();
-        long end = System.nanoTime();
-        ClientStressSupport.logConnectStress("v3", c, success.get(), start, end, latch.getCount() == 0);
-        assertTrue(latch.getCount() == 0, "connect stress timed out");
-        assertTrue(success.get() >= c.connections * 0.95,
-                "too many connection failures: " + success.get() + "/" + c.connections);
+        ConnectStressRunner.ConnectStats stats = ConnectStressRunner.run("v3", c, clientId -> {
+            Mqtt3RxClient client = newClient(clientId);
+            client.connect().block(CONNECT_TIMEOUT);
+            return () -> disconnectQuietly(client);
+        });
+        assertTrue(stats.completedInTime(), "connect stress timed out");
+        assertTrue(stats.established() >= c.connections * 0.95,
+                "too many connection failures: established=" + stats.established() + "/" + c.connections);
+        assertEquals(stats.established(), stats.completed(),
+                "not all established connections were cleanly disconnected");
     }
 
     /**
