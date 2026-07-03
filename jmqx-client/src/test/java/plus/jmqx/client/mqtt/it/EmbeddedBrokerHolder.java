@@ -6,17 +6,28 @@ import plus.jmqx.broker.mqtt.MqttConfiguration;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * 集成测试用内嵌 jmqx-broker 生命周期管理。
  *
- * <p>默认在随机端口启动 broker；若设置了 {@code -Djmqx.it.broker.port=1883} 则使用外部 broker。
+ * <p>默认在随机端口启动 broker（TCP + MQTTS + WS + WSS）；若设置了任一 {@code jmqx.it.broker.*Port}
+ * 则使用外部 broker，各端口默认与 jmqx-broker 一致（1883 / 8883 / 1884 / 8884）。
  */
 final class EmbeddedBrokerHolder {
 
-    private static final    Object    LOCK = new Object();
-    private static volatile Bootstrap bootstrap;
-    private static volatile int       port;
+    /** jmqx-broker 默认 MQTT TCP 端口 */
+    static final int DEFAULT_PORT                  = 1883;
+    /** jmqx-broker 默认 MQTTS 端口 */
+    static final int DEFAULT_SECURE_PORT           = 8883;
+    /** jmqx-broker 默认 WS 端口 */
+    static final int DEFAULT_WEBSOCKET_PORT        = 1884;
+    /** jmqx-broker 默认 WSS 端口 */
+    static final int DEFAULT_WEBSOCKET_SECURE_PORT = 8884;
+
+    private static final    Object             LOCK = new Object();
+    private static volatile Bootstrap          bootstrap;
+    private static volatile MqttConfiguration  mqttConfig;
 
     private EmbeddedBrokerHolder() {
     }
@@ -26,12 +37,23 @@ final class EmbeddedBrokerHolder {
     }
 
     static int port() {
-        String external = System.getProperty("jmqx.it.broker.port");
-        if (external != null && !external.isEmpty()) {
-            return Integer.parseInt(external);
-        }
-        ensureStarted();
-        return port;
+        return resolvePort("jmqx.it.broker.port", DEFAULT_PORT, false,
+                () -> mqttConfig.getPort());
+    }
+
+    static int securePort() {
+        return resolvePort("jmqx.it.broker.securePort", DEFAULT_SECURE_PORT, true,
+                () -> mqttConfig.getSecurePort());
+    }
+
+    static int websocketPort() {
+        return resolvePort("jmqx.it.broker.websocketPort", DEFAULT_WEBSOCKET_PORT, false,
+                () -> mqttConfig.getWebsocketPort());
+    }
+
+    static int websocketSecurePort() {
+        return resolvePort("jmqx.it.broker.websocketSecurePort", DEFAULT_WEBSOCKET_SECURE_PORT, true,
+                () -> mqttConfig.getWebsocketSecurePort());
     }
 
     static void ensureStarted() {
@@ -42,25 +64,15 @@ final class EmbeddedBrokerHolder {
             if (bootstrap != null) {
                 return;
             }
-            if (System.getProperty("jmqx.it.broker.port") != null) {
+            if (usesExternalBroker()) {
                 return;
             }
-            port = randomPort();
-            MqttConfiguration config = new MqttConfiguration();
-            config.setBusinessQueueSize(Integer.MAX_VALUE);
-            config.setSslEnable(false);
-            config.setPort(port);
-            config.setSecurePort(-1);
-            config.setWebsocketPort(-1);
-            config.setWebsocketSecurePort(-1);
-            config.setWiretap(false);
-            config.getClusterConfig().setNamespace("jmqx-client-it-" + port);
-            config.getClusterConfig().setNode("");
-            bootstrap = new Bootstrap(config);
+            mqttConfig = createEmbeddedConfig();
+            bootstrap = new Bootstrap(mqttConfig);
             try {
                 bootstrap.start().block(Duration.ofSeconds(30));
             } catch (Exception e) {
-                throw new IllegalStateException("failed to start embedded broker on port " + port, e);
+                throw new IllegalStateException("failed to start embedded broker", e);
             }
             Runtime.getRuntime().addShutdownHook(new Thread(EmbeddedBrokerHolder::shutdownQuietly));
         }
@@ -75,8 +87,54 @@ final class EmbeddedBrokerHolder {
                     // test JVM shutdown
                 }
                 bootstrap = null;
+                mqttConfig = null;
             }
         }
+    }
+
+    private static MqttConfiguration createEmbeddedConfig() {
+        MqttConfiguration config = new MqttConfiguration();
+        config.setBusinessQueueSize(Integer.MAX_VALUE);
+        config.setSslEnable(true);
+        config.setPort(randomPort());
+        config.setSecurePort(randomPort());
+        config.setWebsocketPort(randomPort());
+        config.setWebsocketSecurePort(randomPort());
+        config.setWiretap(false);
+        config.setSslCa(resourcePath("/ssl/ca.crt"));
+        config.setSslCrt(resourcePath("/ssl/server.crt"));
+        config.setSslKey(resourcePath("/ssl/server.key"));
+        config.getClusterConfig().setNamespace("jmqx-client-it-" + config.getPort());
+        config.getClusterConfig().setNode("");
+        return config;
+    }
+
+    private static String resourcePath(String resource) {
+        return Objects.requireNonNull(EmbeddedBrokerHolder.class.getResource(resource),
+                "missing test resource: " + resource).getPath();
+    }
+
+    private static int resolvePort(String property, int defaultPort, boolean requiresSsl,
+                                   IntSupplier embeddedPort) {
+        String external = System.getProperty(property);
+        if (external != null && !external.isEmpty()) {
+            return Integer.parseInt(external);
+        }
+        if (usesExternalBroker()) {
+            return defaultPort;
+        }
+        ensureStarted();
+        if (requiresSsl && !mqttConfig.getSslEnable()) {
+            throw new IllegalStateException("embedded broker SSL is disabled, cannot resolve " + property);
+        }
+        return embeddedPort.getAsInt();
+    }
+
+    private static boolean usesExternalBroker() {
+        return System.getProperty("jmqx.it.broker.port") != null
+                || System.getProperty("jmqx.it.broker.securePort") != null
+                || System.getProperty("jmqx.it.broker.websocketPort") != null
+                || System.getProperty("jmqx.it.broker.websocketSecurePort") != null;
     }
 
     private static int randomPort() {
@@ -85,6 +143,11 @@ final class EmbeddedBrokerHolder {
         } catch (IOException e) {
             throw new IllegalStateException("cannot allocate port for embedded broker", e);
         }
+    }
+
+    @FunctionalInterface
+    private interface IntSupplier {
+        int getAsInt();
     }
 
 }

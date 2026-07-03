@@ -146,6 +146,22 @@ public class Mqtt5ClientBuilder {
     }
 
     /**
+     * @param sslConfig TLS 配置。 @return this builder
+     */
+    public Mqtt5ClientBuilder sslConfig(plus.jmqx.client.mqtt.internal.transport.MqttSslConfig sslConfig) {
+        config.setSslConfig(sslConfig);
+        return this;
+    }
+
+    /**
+     * @param webSocketConfig WebSocket 配置。 @return this builder
+     */
+    public Mqtt5ClientBuilder webSocketConfig(plus.jmqx.client.mqtt.internal.transport.MqttWebSocketConfig webSocketConfig) {
+        config.setWebSocketConfig(webSocketConfig);
+        return this;
+    }
+
+    /**
      * 确保客户端标识符已设置，若未设置则自动生成。
      * 同时设置 MQTT 协议版本为 5.0。
      */

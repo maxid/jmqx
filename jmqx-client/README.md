@@ -120,8 +120,9 @@ mvn -pl jmqx-client test
 
 **Broker 模式：**
 
-- **默认**：JVM 内自动启动内嵌 jmqx-broker（随机端口），无需手动部署
+- **默认**：JVM 内自动启动内嵌 jmqx-broker（TCP + MQTTS + WS + WSS，随机端口），无需手动部署
 - **外部 broker**：`-Djmqx.it.broker.port=1883`（可选 `-Djmqx.it.broker.host=...`）
+- **传输层端口**（对接外部 broker 时，默认与 jmqx-broker 一致）：TCP `1883`、MQTTS `8883`、WS `1884`、WSS `8884`，可通过 `-Djmqx.it.broker.port` / `securePort` / `websocketPort` / `websocketSecurePort` 覆盖
 
 **MQTT 3.1.1 覆盖（`Mqtt3ClientIT`）：**
 
@@ -148,16 +149,31 @@ mvn -pl jmqx-client test
 | 双客户端、Retain | 同 v3 |
 | CONNACK receiveMaximum | v5 会话协商属性 |
 
+**传输层覆盖（`Mqtt3TransportIT` / `Mqtt5TransportIT`，各 3 个用例）：**
+
+| 传输 | 默认端口 | 说明 |
+|------|----------|------|
+| TCP | 1883 | 明文 MQTT（`Mqtt3ClientIT` / `Mqtt5ClientIT`） |
+| MQTTS (TLS) | 8883 | 连接 + QoS1 发布订阅 |
+| WS | 1884 | WebSocket `/mqtt` 子协议 |
+| WSS | 8884 | WebSocket over TLS |
+
 ```bash
-# 运行全部集成测试（27 个用例，内嵌 broker）
-mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT'
+# 运行全部集成测试（33 个用例，内嵌 broker）
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT,Mqtt3TransportIT,Mqtt5TransportIT'
 
 # 单独运行
 mvn -pl jmqx-client test -Dtest=Mqtt3ClientIT
 mvn -pl jmqx-client test -Dtest=Mqtt5ClientIT
+mvn -pl jmqx-client test -Dtest=Mqtt3TransportIT
+mvn -pl jmqx-client test -Dtest=Mqtt5TransportIT
 
 # 对接本机已有 broker（如 jmqx-broker 或 EMQX）
-mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT' -Djmqx.it.broker.port=1883
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT,Mqtt3TransportIT,Mqtt5TransportIT' \
+  -Djmqx.it.broker.port=1883 \
+  -Djmqx.it.broker.securePort=8883 \
+  -Djmqx.it.broker.websocketPort=1884 \
+  -Djmqx.it.broker.websocketSecurePort=8884
 ```
 
 ### 压力测试

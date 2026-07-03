@@ -176,6 +176,28 @@ public class Mqtt3ClientBuilder {
     }
 
     /**
+     * 设置 TLS 配置。
+     *
+     * @param sslConfig TLS 配置
+     * @return this builder
+     */
+    public Mqtt3ClientBuilder sslConfig(plus.jmqx.client.mqtt.internal.transport.MqttSslConfig sslConfig) {
+        config.setSslConfig(sslConfig);
+        return this;
+    }
+
+    /**
+     * 设置 WebSocket 配置。
+     *
+     * @param webSocketConfig WebSocket 配置
+     * @return this builder
+     */
+    public Mqtt3ClientBuilder webSocketConfig(plus.jmqx.client.mqtt.internal.transport.MqttWebSocketConfig webSocketConfig) {
+        config.setWebSocketConfig(webSocketConfig);
+        return this;
+    }
+
+    /**
      * 确保客户端标识符已设置，若未设置则生成随机标识符。
      */
     private void ensureClientId() {

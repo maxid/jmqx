@@ -40,5 +40,9 @@ public class MqttSslConfig {
      * 握手超时时间（毫秒），默认 10000
      */
     private int      handshakeTimeoutMs = 10_000;
+    /**
+     * 信任所有服务端证书（仅用于测试环境，生产环境勿用）
+     */
+    private boolean  insecureTrustAll;
 
 }

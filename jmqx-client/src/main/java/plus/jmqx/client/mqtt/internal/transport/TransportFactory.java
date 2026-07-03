@@ -3,10 +3,15 @@ package plus.jmqx.client.mqtt.internal.transport;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.client.mqtt.MqttClientConfig;
 import plus.jmqx.client.mqtt.internal.handler.MqttClientHandler;
+import plus.jmqx.client.mqtt.internal.transport.ws.ByteBufToWebSocketFrameEncoder;
+import plus.jmqx.client.mqtt.internal.transport.ws.WebSocketFrameToByteBufDecoder;
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClient;
@@ -38,9 +43,9 @@ public final class TransportFactory {
     public Mono<Connection> connect(MqttClientConfig config) {
         Mono<? extends Connection> mono = switch (config.getTransportType()) {
             case TCP -> tcpClient(config).connect();
-            case TLS -> tcpClient(config).secure().connect();
+            case TLS -> applyTlsTcp(tcpClient(config), config).connect();
             case WS -> httpClient(config).websocket().uri(wsUri(config)).connect();
-            case WSS -> httpClient(config).secure().websocket().uri(wsUri(config)).connect();
+            case WSS -> applyTlsHttp(httpClient(config), config).websocket().uri(wsUri(config)).connect();
         };
         return (Mono<Connection>) mono;
     }
@@ -65,6 +70,28 @@ public final class TransportFactory {
             client = client.runOn(c.getLoopResources());
         }
         return client;
+    }
+
+    private TcpClient applyTlsTcp(TcpClient client, MqttClientConfig config) {
+        SslContext sslContext = buildClientSslContext(config.getSslConfig());
+        return client.secure(spec -> spec.sslContext(sslContext));
+    }
+
+    private HttpClient applyTlsHttp(HttpClient client, MqttClientConfig config) {
+        SslContext sslContext = buildClientSslContext(config.getSslConfig());
+        return client.secure(spec -> spec.sslContext(sslContext));
+    }
+
+    private SslContext buildClientSslContext(MqttSslConfig ssl) {
+        try {
+            SslContextBuilder builder = SslContextBuilder.forClient();
+            if (ssl != null && ssl.isInsecureTrustAll()) {
+                builder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            }
+            return builder.build();
+        } catch (Exception e) {
+            throw new IllegalStateException("failed to build client SSL context", e);
+        }
     }
 
     /**
@@ -105,12 +132,29 @@ public final class TransportFactory {
                             new IdleStateHandler((long) (keepAlive * 1.5), keepAlive, 0, TimeUnit.SECONDS))
                     .addAfter("idle", "mqttClient", handler);
         }
+        if (isWebSocket(config)) {
+            installWebSocketFraming(pipeline);
+        }
         log.debug("MQTT pipeline installed on {}", conn.channel());
     }
 
     private String wsUri(MqttClientConfig c) {
         MqttWebSocketConfig ws = c.getWebSocketConfig();
         return ws != null && ws.getPath() != null ? ws.getPath() : "/mqtt";
+    }
+
+    private static boolean isWebSocket(MqttClientConfig config) {
+        MqttClientConfig.TransportType type = config.getTransportType();
+        return type == MqttClientConfig.TransportType.WS || type == MqttClientConfig.TransportType.WSS;
+    }
+
+    private static void installWebSocketFraming(io.netty.channel.ChannelPipeline pipeline) {
+        if (pipeline.get("ws-decoder") != null && pipeline.get("mqttWsFrameDecoder") == null) {
+            pipeline.addAfter("ws-decoder", "mqttWsFrameDecoder", new WebSocketFrameToByteBufDecoder());
+        }
+        if (pipeline.get("mqttEncoder") != null && pipeline.get("mqttWsFrameEncoder") == null) {
+            pipeline.addBefore("mqttEncoder", "mqttWsFrameEncoder", new ByteBufToWebSocketFrameEncoder());
+        }
     }
 
 }
