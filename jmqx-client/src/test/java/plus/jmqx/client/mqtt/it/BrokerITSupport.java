@@ -2,6 +2,9 @@ package plus.jmqx.client.mqtt.it;
 
 import org.junit.jupiter.api.BeforeAll;
 import plus.jmqx.client.mqtt.MqttClient;
+import plus.jmqx.client.mqtt.MqttClientConfig;
+import plus.jmqx.client.mqtt.internal.transport.MqttSslConfig;
+import plus.jmqx.client.mqtt.internal.transport.MqttWebSocketConfig;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.Mqtt3RxClient;
 import plus.jmqx.client.mqtt.v3.message.Mqtt3Publish;
@@ -16,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+
+import reactor.core.Disposable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,8 +43,28 @@ public abstract class BrokerITSupport {
         return EmbeddedBrokerHolder.port();
     }
 
+    protected static int brokerSecurePort() {
+        return EmbeddedBrokerHolder.securePort();
+    }
+
+    protected static int brokerWebsocketPort() {
+        return EmbeddedBrokerHolder.websocketPort();
+    }
+
+    protected static int brokerWebsocketSecurePort() {
+        return EmbeddedBrokerHolder.websocketSecurePort();
+    }
+
     protected static String brokerHost() {
         return EmbeddedBrokerHolder.host();
+    }
+
+    protected static MqttSslConfig testSslConfig() {
+        return MqttSslConfig.builder().insecureTrustAll(true).build();
+    }
+
+    protected static MqttWebSocketConfig testWebSocketConfig() {
+        return MqttWebSocketConfig.builder().path("/mqtt").subprotocol("mqtt").build();
     }
 
     protected static String uniqueId(String prefix) {
@@ -68,6 +93,65 @@ public abstract class BrokerITSupport {
     protected static Mqtt5RxClient v5Rx(String clientId) {
         return MqttClient.builder().useMqttVersion5()
                 .serverHost(brokerHost()).serverPort(brokerPort())
+                .identifier(clientId)
+                .cleanStart(true)
+                .buildRx();
+    }
+
+    protected static Mqtt3RxClient v3RxTls(String clientId) {
+        return MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerSecurePort())
+                .transportType(MqttClientConfig.TransportType.TLS)
+                .sslConfig(testSslConfig())
+                .identifier(clientId)
+                .buildRx();
+    }
+
+    protected static Mqtt3RxClient v3RxWs(String clientId) {
+        return MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerWebsocketPort())
+                .transportType(MqttClientConfig.TransportType.WS)
+                .webSocketConfig(testWebSocketConfig())
+                .identifier(clientId)
+                .buildRx();
+    }
+
+    protected static Mqtt3RxClient v3RxWss(String clientId) {
+        return MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerWebsocketSecurePort())
+                .transportType(MqttClientConfig.TransportType.WSS)
+                .sslConfig(testSslConfig())
+                .webSocketConfig(testWebSocketConfig())
+                .identifier(clientId)
+                .buildRx();
+    }
+
+    protected static Mqtt5RxClient v5RxTls(String clientId) {
+        return MqttClient.builder().useMqttVersion5()
+                .serverHost(brokerHost()).serverPort(brokerSecurePort())
+                .transportType(MqttClientConfig.TransportType.TLS)
+                .sslConfig(testSslConfig())
+                .identifier(clientId)
+                .cleanStart(true)
+                .buildRx();
+    }
+
+    protected static Mqtt5RxClient v5RxWs(String clientId) {
+        return MqttClient.builder().useMqttVersion5()
+                .serverHost(brokerHost()).serverPort(brokerWebsocketPort())
+                .transportType(MqttClientConfig.TransportType.WS)
+                .webSocketConfig(testWebSocketConfig())
+                .identifier(clientId)
+                .cleanStart(true)
+                .buildRx();
+    }
+
+    protected static Mqtt5RxClient v5RxWss(String clientId) {
+        return MqttClient.builder().useMqttVersion5()
+                .serverHost(brokerHost()).serverPort(brokerWebsocketSecurePort())
+                .transportType(MqttClientConfig.TransportType.WSS)
+                .sslConfig(testSslConfig())
+                .webSocketConfig(testWebSocketConfig())
                 .identifier(clientId)
                 .cleanStart(true)
                 .buildRx();
@@ -185,6 +269,34 @@ public abstract class BrokerITSupport {
 
     protected static void assertConnAcceptedV5(Mqtt5RxClient client) {
         assertTrue(client.connect().block(TIMEOUT).isAccepted());
+    }
+
+    protected void v3PublishSubscribeSmoke(Mqtt3RxClient client) throws Exception {
+        String topic = uniqueTopic("test/transport");
+        assertConnAcceptedV3(client);
+        AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+        Disposable stream = client.subscribePublishes(v3Sub(topic, QoS.AT_LEAST_ONCE))
+                .doOnNext(Mqtt3Publish::ack)
+                .subscribe(received::set);
+        client.subscribe(v3Sub(topic, QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+        client.publish(v3Pub(topic, "transport-ok", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+        awaitV3(received);
+        stream.dispose();
+        assertV3Payload(received.get(), topic, "transport-ok");
+    }
+
+    protected void v5PublishSubscribeSmoke(Mqtt5RxClient client) throws Exception {
+        String topic = uniqueTopic("test/transport");
+        assertConnAcceptedV5(client);
+        AtomicReference<Mqtt5Publish> received = new AtomicReference<>();
+        Disposable stream = client.subscribePublishes(v5Sub(topic, QoS.AT_LEAST_ONCE))
+                .doOnNext(Mqtt5Publish::ack)
+                .subscribe(received::set);
+        client.subscribe(v5Sub(topic, QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+        client.publish(v5Pub(topic, "transport-ok", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+        awaitV5(received);
+        stream.dispose();
+        assertV5Payload(received.get(), topic, "transport-ok");
     }
 
 }

@@ -20,7 +20,7 @@
 - 消息是**不可变值类型**（接口 + `*Impl` final 类 + builder）。在 impl 上使用 Lombok `@Builder`/`@AllArgsConstructor`，在 API 中暴露接口。
 - 纯逻辑组件采用测试驱动（PacketIdManager、MessageBuffer、AckTracker、TopicMatcher、codec）。对于 reactor 接线与集成，使用 `StepVerifier` + 真实 broker。
 - 频繁提交：每个任务以一次提交结束。
-- 运行单个测试：从仓库根目录执行 `mvn -pl jmqx-client test -Dtest=ClassName#method`。构建整个 client：`mvn -pl jmqx-client test`。集成测试（以 `IT` 为后缀）需要 jmqx-broker 在 `localhost:1883` 上运行：单独启动它。
+- 运行单个测试：从仓库根目录执行 `mvn -pl jmqx-client test -Dtest=ClassName#method`。默认 `mvn test` 排除 `*IT.java` 与 `*StressTest.java`。集成测试显式运行：`-Dtest=Mqtt3ClientIT,...`；默认内嵌 broker（`EmbeddedBrokerHolder`），也可 `-Djmqx.it.broker.port=1883` 对接外部 broker。压测须自备 broker 并加 `-Djmqx.stress.tests=true`。
 
 ---
 
@@ -87,8 +87,10 @@ jmqx-client/src/test/java/plus/jmqx/client/mqtt/
 ├── internal/MqttInboxBackpressureTest.java
 ├── internal/MqttOutboxBackpressureTest.java
 ├── internal/reconnect/MqttAutoReconnectTest.java
-├── v3/Mqtt3ClientIT.java                    # integration (needs broker)
-└── v5/Mqtt5ClientIT.java
+├── it/EmbeddedBrokerHolder.java  BrokerITSupport.java   # 内嵌 broker + IT 公共基类
+├── v3/Mqtt3ClientIT.java  Mqtt3TransportIT.java         # TCP / MQTTS+WS+WSS 集成
+├── v5/Mqtt5ClientIT.java  Mqtt5TransportIT.java
+└── stress/ConnectStressRunner.java  …                  # 外部 broker 压测（*StressTest.java）
 ```
 
 ---
@@ -2303,6 +2305,13 @@ git add jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/Trans
 git commit -m "feat(client): add TransportFactory (reactor-netty TCP/TLS/WS/WSS)"
 ```
 
+**实现备注（2026-07-03，传输层 IT 落地后）：**
+
+- `connect()` 不再在 `doOnConnected` 内挂 pipeline；由 `MqttClientEngine.engineConnect()` 在连接建立后调用 `installPipeline()`。
+- TLS/WSS：`MqttSslConfig.insecureTrustAll` → `SslContextBuilder.forClient()` + `InsecureTrustManagerFactory`（测试用）；生产 trustStore 加载待扩展。
+- WS/WSS：`installPipeline()` 在 `mqttEncoder` 前安装 `ByteBufToWebSocketFrameEncoder`，在 `ws-decoder` 后安装 `WebSocketFrameToByteBufDecoder`（`transport/ws/`，与 broker 对称）。
+- Builder 新增 `sslConfig()` / `webSocketConfig()`（`Mqtt3ClientBuilder`、`Mqtt5ClientBuilder`）。
+
 ---
 
 ### Task 14: MqttClientHandler — 单一 Netty inbound/outbound 处理器
@@ -3483,14 +3492,16 @@ git commit -m "feat(client): add DefaultMqtt3Client engine + Async/Blocking wrap
 **文件：**
 - 创建：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/v3/Mqtt3ClientIT.java`
 
-这是 v3 客户端被证明端到端可用的时刻。需要 jmqx-broker 在 `localhost:1883` 上运行。标记为集成测试（IT 后缀），以便在需要时可通过 surefire 排除从默认 `mvn test` 运行中排除；对于 v1，我们将其作为 `test` 的一部分运行。
+这是 v3 客户端被证明端到端可用的时刻。标记为集成测试（IT 后缀），surefire 默认排除；显式 `-Dtest=Mqtt3ClientIT` 运行。**当前实现**：`BrokerITSupport` + `EmbeddedBrokerHolder` 自动启动内嵌 jmqx-broker（随机 TCP 端口），无需手动部署；外部 broker 用 `-Djmqx.it.broker.port=1883`。
 
-- [x] **步骤 1：启动 jmqx-broker（手动，在另一个终端）**
+- [x] **步骤 1：启动 jmqx-broker（可选 —— 内嵌 broker 为默认）**
+
+内嵌模式（默认）：`EmbeddedBrokerHolder.ensureStarted()` 在 `@BeforeAll` 启动四监听（TCP/MQTTS/WS/WSS）。外部模式：手动启动 broker 并 `-Djmqx.it.broker.port=1883`。
 
 ```bash
-mvn -pl jmqx-broker spring-boot:run -q
+# 外部 broker 时（可选）
+mvn -pl jmqx-broker install -DskipTests && … # 或 spring-boot:run
 ```
-验证日志显示 MQTT 监听在 1883。
 
 - [x] **步骤 2：编写集成测试**
 
@@ -4212,15 +4223,17 @@ class Mqtt5ClientIT {
 }
 ```
 
-- [x] **步骤 2：运行 v5 IT（broker 必须在运行）**
+- [x] **步骤 2：运行 v5 IT（内嵌或外部 broker）**
 
 运行：`mvn -pl jmqx-client test -Dtest=Mqtt5ClientIT -q`
 预期：BUILD SUCCESS。
 
 - [x] **步骤 3：运行完整 client 测试套件**
 
-运行：`mvn -pl jmqx-client test -q`
-预期：BUILD SUCCESS —— 所有单元测试 + 两个 IT 通过。
+运行：`mvn -pl jmqx-client test -q`（单元测试；IT/压测被 surefire 排除）
+预期：BUILD SUCCESS。
+
+显式集成测试：`mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT'`
 
 - [x] **步骤 4：提交**
 
@@ -4289,6 +4302,40 @@ git commit -m "docs(client): rewrite README for shipped reactor-netty client"
 
 ---
 
+### Task 26: 传输层集成测试 —— MQTTS / WS / WSS
+
+**文件：**
+- 修改：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/it/EmbeddedBrokerHolder.java`（四监听 + SSL 证书）
+- 修改：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/it/BrokerITSupport.java`（`v3RxTls`/`v3RxWs`/`v3RxWss` 等 helper）
+- 创建：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/v3/Mqtt3TransportIT.java`
+- 创建：`jmqx-client/src/test/java/plus/jmqx/client/mqtt/v5/Mqtt5TransportIT.java`
+- 修改：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/TransportFactory.java`（TLS + WS 帧封装）
+- 创建：`jmqx-client/src/main/java/plus/jmqx/client/mqtt/internal/transport/ws/*.java`
+- 修改：`jmqx-client/README.md`（传输层 IT 说明）
+
+- [x] **步骤 1：扩展内嵌 broker**
+
+`EmbeddedBrokerHolder` 启用 `sslEnable`，暴露 `port()` / `securePort()` / `websocketPort()` / `websocketSecurePort()`；外部 broker 默认端口与 jmqx-broker 一致（1883 / 8883 / 1884 / 8884）。
+
+- [x] **步骤 2：修复 WS 出站帧封装**
+
+在 `TransportFactory.installPipeline()` 为 WS/WSS 安装 `ByteBufToWebSocketFrameEncoder`（`addBefore("mqttEncoder", …)`）与 `WebSocketFrameToByteBufDecoder`（`addAfter("ws-decoder", …)`）。
+
+- [x] **步骤 3：编写传输层 IT**
+
+`Mqtt3TransportIT` / `Mqtt5TransportIT` 各 3 用例：MQTTS、WS、WSS 连接 + QoS1 发布订阅冒烟。
+
+- [x] **步骤 4：运行**
+
+```bash
+mvn -pl jmqx-broker install -DskipTests
+mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT,Mqtt3TransportIT,Mqtt5TransportIT'
+```
+
+预期：BUILD SUCCESS，33 个集成用例通过。
+
+---
+
 ## 规格覆盖检查
 
 | 规格章节 | 任务 | 状态 |
@@ -4302,11 +4349,11 @@ git commit -m "docs(client): rewrite README for shipped reactor-netty client"
 | §7 双向背压 (request 门控 + inflight 信号量) | 12, 17 | ✅ |
 | §8 断线缓存 (flush 重注 ACK) | 10, 19 | ✅ |
 | §9 自动重连 (reactor Mono.delay) | 15, 19 | ✅ |
-| §10 传输层 (TCP/SSL/WS/WSS TransportFactory) | 6, 13 | ✅ |
+| §10 传输层 (TCP/SSL/WS/WSS TransportFactory + WS 帧封装) | 6, 13, 26 | ✅ |
 | §11 配置模型 | 6, 18, 23 | ✅ |
-| §12 Builder API | 19, 23 | ✅ |
+| §12 Builder API | 19, 23, 26 | ✅ |
 | §13 文件结构 | all | ✅ |
-| §14 测试策略 (单元测试 + StepVerifier + broker IT) | 2-4, 8-12, 15, 17, 20, 24 | ✅ |
+| §14 测试策略 (单元 + IT + 传输层 IT + 压测) | 2-4, 8-12, 15, 17, 20, 24, 26 | ✅ |
 | §15 实现范围 (v3+v5, QoS0/1/2, 背压, 重连, 缓存, keepalive) | 1-24 | ✅ |
 | §16 依赖 | 1 | ✅ |
 | §17 旧设计缺陷修复 | 所有任务中已修复 | ✅ |
