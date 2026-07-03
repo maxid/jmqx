@@ -13,6 +13,8 @@ import plus.jmqx.broker.mqtt.message.MqttMessageBuilder;
 import plus.jmqx.broker.mqtt.transport.Transport;
 import reactor.core.publisher.Mono;
 
+import java.net.SocketException;
+
 /**
  * MQTT服务上下文
  *
@@ -51,7 +53,9 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
                 .cast(MqttMessage.class)
                 .onErrorContinue((err, msg) -> log.error("on message error {}", msg, err))
                 .filter(mqttMessage -> mqttMessage.decoderResult().isSuccess())
-                .subscribe(mqttMessage -> this.accept(session, new MessageWrapper<>(mqttMessage, System.currentTimeMillis(), Boolean.FALSE)));
+                .subscribe(
+                        mqttMessage -> this.accept(session, new MessageWrapper<>(mqttMessage, System.currentTimeMillis(), Boolean.FALSE)),
+                        err -> onInboundTerminalError(session, err));
     }
 
     /**
@@ -71,6 +75,22 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
             return;
         }
         this.getMessageDispatcher().dispatch(session, message, this);
+    }
+
+    private void onInboundTerminalError(MqttSession session, Throwable err) {
+        if (isBenignDisconnect(err)) {
+            log.debug("Session inbound closed: clientId={}, {}", session.getClientId(), err.toString());
+            return;
+        }
+        log.warn("Session inbound error: clientId={}", session.getClientId(), err);
+    }
+
+    private static boolean isBenignDisconnect(Throwable err) {
+        if (err instanceof SocketException) {
+            String msg = err.getMessage();
+            return msg != null && (msg.contains("Connection reset") || msg.contains("Broken pipe"));
+        }
+        return false;
     }
 
 }
