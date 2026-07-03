@@ -14,6 +14,14 @@
 
 ## 快速开始（MQTT 3.1.1）
 
+```xml
+<dependency>
+    <groupId>plus.jmqx.iot</groupId>
+    <artifactId>jmqx-client</artifactId>
+    <version>1.4.14</version>
+</dependency>
+```
+
 ```java
 import plus.jmqx.client.mqtt.MqttClient;
 import plus.jmqx.client.mqtt.message.QoS;
