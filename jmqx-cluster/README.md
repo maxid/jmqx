@@ -46,7 +46,7 @@
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-cluster</artifactId>
-    <version>1.4.14-SNAPSHOT</version>
+    <version>1.4.14</version>
 </dependency>
 ```
 
