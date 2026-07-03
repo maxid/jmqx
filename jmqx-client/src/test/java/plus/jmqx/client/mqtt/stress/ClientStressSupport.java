@@ -89,6 +89,32 @@ public final class ClientStressSupport {
         return transport.defaultPort();
     }
 
+    /**
+     * 是否显式设置了 {@code jmqx.client.stress.timeoutSeconds}。
+     */
+    public static boolean hasExplicitTimeoutSeconds() {
+        String value = System.getProperty("jmqx.client.stress.timeoutSeconds");
+        return value != null && !value.isEmpty();
+    }
+
+    /**
+     * 解析压测超时：显式配置优先；否则按消息量自动估算（保守按 5 万 msg/s，1.3 倍余量）。
+     */
+    public static int resolveTimeoutSeconds(int messages) {
+        if (hasExplicitTimeoutSeconds()) {
+            return intProp("jmqx.client.stress.timeoutSeconds", 120);
+        }
+        return autoTimeoutSeconds(messages);
+    }
+
+    static int autoTimeoutSeconds(int messages) {
+        if (messages <= 50_000) {
+            return 120;
+        }
+        long seconds = (long) Math.ceil(messages / 50_000.0 * 1.3) + 30;
+        return (int) Math.min(Math.max(120, seconds), 86_400);
+    }
+
     public static ClientStressConfig loadConfig() {
         ClientStressConfig c = new ClientStressConfig();
         c.transport = transport();
@@ -106,7 +132,11 @@ public final class ClientStressSupport {
         c.qos = QoS.fromValue(intProp("jmqx.client.stress.qos", 0));
         c.minThroughputMsgPerSec = intProp("jmqx.client.stress.minThroughput", 100);
         c.inflight = intProp("jmqx.client.stress.inflight", 256);
-        c.timeoutSeconds = intProp("jmqx.client.stress.timeoutSeconds", 120);
+        c.timeoutSeconds = resolveTimeoutSeconds(c.messages);
+        if (!hasExplicitTimeoutSeconds() && c.messages > 50_000) {
+            log.info("stress timeout auto: {}s (messages={}; override with -Djmqx.client.stress.timeoutSeconds)",
+                    c.timeoutSeconds, c.messages);
+        }
         c.progressIntervalSeconds = intProp("jmqx.client.stress.progressIntervalSeconds", 5);
         c.topic = System.getProperty("jmqx.client.stress.topic", "stress/client/topic");
         return c;
@@ -248,6 +278,16 @@ public final class ClientStressSupport {
         double pct = target == 0 ? 100.0 : success * 100.0 / target;
         return String.format("target=%d, success=%d, throughput=%.0f conn/s, progress=%.1f%%",
                 target, success, success / sec, pct);
+    }
+
+    public static String publishStressTimeoutMessage(ClientStressConfig c, long acked, long failed) {
+        return "publish stress did not finish within " + c.timeoutSeconds + "s (acked=" + acked + "/"
+                + c.messages + ", failed=" + failed + "); set -Djmqx.client.stress.timeoutSeconds higher";
+    }
+
+    public static String subscribeStressTimeoutMessage(ClientStressConfig c, long received, long expected) {
+        return "subscribe stress did not finish within " + c.timeoutSeconds + "s (received=" + received + "/"
+                + expected + "); set -Djmqx.client.stress.timeoutSeconds higher";
     }
 
 }

@@ -273,7 +273,7 @@ mvn -pl jmqx-client test -Djmqx.stress.tests=true \
 | `jmqx.client.stress.qos` | 0 | QoS 级别（0/1/2） |
 | `jmqx.client.stress.inflight` | 256 | 发布侧滑动窗口（同时在途未 ACK 条数上限） |
 | `jmqx.client.stress.minThroughput` | 100 | 最低吞吐阈值（msg/s 或 conn/s 场景自适应） |
-| `jmqx.client.stress.timeoutSeconds` | 120 | 超时秒数 |
+| `jmqx.client.stress.timeoutSeconds` | `120`（≤5 万条）/ 按消息量自动估算 | 超时秒数；未显式设置且 `messages` > 50000 时按约 5 万 msg/s 保守估算 |
 | `jmqx.client.stress.topic` | `stress/client/topic` | 测试 topic 前缀 |
 | `jmqx.client.stress.broker.host` | `localhost` | broker 地址 |
 | `jmqx.client.stress.broker.port` | `1883` | TCP 端口（`transport=tcp`） |
