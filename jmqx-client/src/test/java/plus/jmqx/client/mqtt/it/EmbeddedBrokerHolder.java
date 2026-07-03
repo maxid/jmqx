@@ -14,9 +14,9 @@ import java.time.Duration;
  */
 final class EmbeddedBrokerHolder {
 
-    private static final Object   LOCK      = new Object();
+    private static final    Object    LOCK = new Object();
     private static volatile Bootstrap bootstrap;
-    private static volatile int     port;
+    private static volatile int       port;
 
     private EmbeddedBrokerHolder() {
     }
