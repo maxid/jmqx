@@ -9,6 +9,9 @@ public class ClientStressConfig {
 
     public String brokerHost;
     public int    brokerPort;
+    public ClientStressTransport transport;
+    public String username;
+    public byte[] password;
     public int    messages;
     public int    threads;
     public int    subscribers;
