@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import plus.jmqx.client.mqtt.MqttClient;
 import plus.jmqx.client.mqtt.v5.Mqtt5AsyncClient;
 import plus.jmqx.client.mqtt.v5.Mqtt5RxClient;
 import plus.jmqx.client.mqtt.v5.message.Mqtt5Subscribe;
@@ -27,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * MQTT 5.0 jmqx-client 压力测试（三类独立场景）。
  *
  * <p>用法同 {@link Mqtt3ClientStressTest}，将类名替换为 {@code Mqtt5ClientStressTest} 即可。
+ * 支持 {@code -Djmqx.client.stress.transport=tcp|mqtts|ws|wss}。
  */
 @EnabledIfSystemProperty(named = "jmqx.stress.tests", matches = "true")
 class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
@@ -48,7 +48,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
     @EnabledIf("plus.jmqx.client.mqtt.stress.StressScenarioFilter#connectEnabled")
     void connectStress() throws Exception {
         ClientStressConfig c = cfg;
-        ConnectStressRunner.ConnectStats stats = ConnectStressRunner.run("v5", c, clientId -> {
+        ConnectStressRunner.ConnectStats stats = ConnectStressRunner.run(stressLabel("v5"), c, clientId -> {
             Mqtt5RxClient client = newClient(clientId);
             client.connect().block(CONNECT_TIMEOUT);
             return () -> disconnectQuietly(client);
@@ -75,7 +75,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
 
         long start = System.nanoTime();
         try (StressProgressReporter progressReporter = StressProgressReporter.start(
-                "v5-publish", c.progressIntervalSeconds, start,
+                stressLabel("v5-publish"), c.progressIntervalSeconds, start,
                 () -> ClientStressSupport.formatPublishProgress(
                         c.messages, progress.sent.get(), progress.acked.get(), progress.failed.get(), start))) {
             for (int i = 0; i < workers; i++) {
@@ -84,11 +84,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
                 pool.submit(() -> {
                     Mqtt5AsyncClient client = null;
                     try {
-                        client = MqttClient.builder().useMqttVersion5()
-                                .serverHost(brokerHost()).serverPort(brokerPort())
-                                .identifier("stress-v5-pub-" + idx + "-" + System.nanoTime())
-                                .cleanStart(true)
-                                .buildAsync();
+                        client = v5Async("stress-v5-pub-" + idx + "-" + System.nanoTime());
                         client.connect().get(c.timeoutSeconds, TimeUnit.SECONDS);
                         AckAwareStressPublisher.publishV5(
                                 client, topic, payload, c.qos, messagesPerWorker, c.inflight, c.timeoutSeconds, progress);
@@ -156,7 +152,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
             long start = System.nanoTime();
             boolean ok;
             try (StressProgressReporter progressReporter = StressProgressReporter.start(
-                    "v5-subscribe", c.progressIntervalSeconds, start,
+                    stressLabel("v5-subscribe"), c.progressIntervalSeconds, start,
                     () -> ClientStressSupport.formatSubscribeProgress(expected, received.get(), start))) {
                 publishAll(topic, payload, c);
                 ok = latch.await(c.timeoutSeconds, TimeUnit.SECONDS);
@@ -177,11 +173,7 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
         List<Mqtt5AsyncClient> publishers = new ArrayList<>();
         try {
             for (int i = 0; i < c.publishers; i++) {
-                Mqtt5AsyncClient pub = MqttClient.builder().useMqttVersion5()
-                        .serverHost(brokerHost()).serverPort(brokerPort())
-                        .identifier("stress-v5-feed-" + i + "-" + System.nanoTime())
-                        .cleanStart(true)
-                        .buildAsync();
+                Mqtt5AsyncClient pub = v5Async("stress-v5-feed-" + i + "-" + System.nanoTime());
                 pub.connect().get(c.timeoutSeconds, TimeUnit.SECONDS);
                 publishers.add(pub);
             }
@@ -207,6 +199,10 @@ class Mqtt5ClientStressTest extends ClientStressBrokerSupport {
                 }
             }
         }
+    }
+
+    private static String stressLabel(String suffix) {
+        return cfg.transport.label() + "-" + suffix;
     }
 
     private static Mqtt5RxClient newClient(String clientId) {

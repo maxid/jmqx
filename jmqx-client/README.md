@@ -190,11 +190,20 @@ mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT,Mqtt3TransportIT,Mq
 
 **前置：启动 broker**
 
-压测不会自动启动 broker。请自行部署并确保 MQTT 端口可连接（默认 `localhost:1883`），例如：
+压测不会自动启动 broker。请自行部署并确保对应传输端口可连接（默认与 jmqx-broker 一致）：
 
-- 在应用中内嵌 `jmqx-broker`（参考 `EmbeddedBrokerHolder`）
+| 传输 | 默认端口 | 属性 `jmqx.client.stress.transport` |
+|------|----------|-------------------------------------|
+| TCP | 1883 | `tcp`（默认） |
+| MQTTS | 8883 | `mqtts` |
+| WS | 1884 | `ws` |
+| WSS | 8884 | `wss` |
+
+例如：
+
+- 在应用中内嵌 `jmqx-broker`（参考 `EmbeddedBrokerHolder`，须开启四监听）
 - 使用 EMQX、Mosquitto 等独立 broker
-- Docker：`docker run -d --name emqx -p 1883:1883 emqx/emqx`
+- Docker：`docker run -d --name emqx -p 1883:1883 -p 8883:8883 -p 8083:8083 -p 8084:8084 emqx/emqx`
 
 **运行示例：**
 
@@ -223,6 +232,25 @@ mvn -P osx-aarch-64 -pl jmqx-client test -Djmqx.stress.tests=true \
   -Djmqx.client.stress.messages=100000 \
   -Djmqx.client.stress.qos=1
 
+# MQTTS 发布压测（默认连 8883，自签证书用 insecureTrustAll）
+mvn -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest#publishStress \
+  -Djmqx.client.stress.transport=mqtts \
+  -Djmqx.client.stress.messages=10000 -Djmqx.client.stress.qos=1
+
+# WebSocket 连接压测
+mvn -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt5ClientStressTest#connectStress \
+  -Djmqx.client.stress.transport=ws \
+  -Djmqx.client.stress.connections=100
+
+# 带用户名密码（broker 开启鉴权时）
+mvn -pl jmqx-client test -Djmqx.stress.tests=true \
+  -Dtest=Mqtt3ClientStressTest#publishStress \
+  -Djmqx.client.stress.broker.username=stress \
+  -Djmqx.client.stress.broker.password=secret \
+  -Djmqx.client.stress.messages=1000
+
 # 按场景过滤整类运行（不指定 #方法名时）
 mvn -pl jmqx-client test -Djmqx.stress.tests=true \
   -Dtest=Mqtt3ClientStressTest \
@@ -234,6 +262,7 @@ mvn -pl jmqx-client test -Djmqx.stress.tests=true \
 | 属性 | 默认值 | 说明 |
 |------|--------|------|
 | `jmqx.client.stress.scenario` | `all` | 场景过滤：`connect` / `publish` / `subscribe` / `all` |
+| `jmqx.client.stress.transport` | `tcp` | 传输层：`tcp` / `mqtts` / `ws` / `wss` |
 | `jmqx.client.stress.messages` | 2000 | 发布/订阅压测消息数 |
 | `jmqx.client.stress.threads` | 4 | 连接/发布并发线程数 |
 | `jmqx.client.stress.publishers` | 1 | 订阅压测中的灌流发布端数量 |
@@ -247,7 +276,12 @@ mvn -pl jmqx-client test -Djmqx.stress.tests=true \
 | `jmqx.client.stress.timeoutSeconds` | 120 | 超时秒数 |
 | `jmqx.client.stress.topic` | `stress/client/topic` | 测试 topic 前缀 |
 | `jmqx.client.stress.broker.host` | `localhost` | broker 地址 |
-| `jmqx.client.stress.broker.port` | `1883` | broker 端口 |
+| `jmqx.client.stress.broker.port` | `1883` | TCP 端口（`transport=tcp`） |
+| `jmqx.client.stress.broker.securePort` | `8883` | MQTTS 端口 |
+| `jmqx.client.stress.broker.websocketPort` | `1884` | WS 端口 |
+| `jmqx.client.stress.broker.websocketSecurePort` | `8884` | WSS 端口 |
+| `jmqx.client.stress.broker.username` | — | MQTT 用户名（未设置则匿名） |
+| `jmqx.client.stress.broker.password` | — | MQTT 密码 |
 | `jmqx.client.stress.progressIntervalSeconds` | 5 | 进度日志间隔（秒），设为 0 关闭 |
 | `jmqx.client.stress.logLevel` | WARN | 压测日志级别 |
 
