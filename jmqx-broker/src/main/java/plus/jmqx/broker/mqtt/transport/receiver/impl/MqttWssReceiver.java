@@ -15,6 +15,7 @@ import plus.jmqx.broker.mqtt.transport.handler.SslHandler;
 import plus.jmqx.broker.mqtt.transport.receiver.Receiver;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.ByteBufToWebSocketFrameEncoder;
 import plus.jmqx.broker.mqtt.transport.receiver.ws.WebSocketFrameToByteBufDecoder;
+import plus.jmqx.broker.mqtt.transport.receiver.ws.WebSocketSubProtocolValidator;
 import plus.jmqx.broker.util.PortUtil;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
@@ -76,6 +77,7 @@ public class MqttWssReceiver extends SslHandler implements Receiver {
                 .doOnConnection(connection -> {
                     connection.addHandlerLast(new HttpServerCodec())
                             .addHandlerLast(new HttpObjectAggregator(65536))
+                            .addHandlerLast(new WebSocketSubProtocolValidator())
                             .addHandlerLast(new WebSocketServerProtocolHandler(config.getWebsocketPath(), "mqtt, mqttv3.1, mqttv3.1.1"))
                             .addHandlerLast(new WebSocketFrameToByteBufDecoder())
                             .addHandlerLast(new ByteBufToWebSocketFrameEncoder())
