@@ -23,8 +23,7 @@ public class WebSocketSubProtocolValidator extends ChannelInboundHandlerAdapter 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof FullHttpRequest) {
-            FullHttpRequest req = (FullHttpRequest) msg;
+        if (msg instanceof FullHttpRequest req) {
             if (isWebSocketUpgrade(req) && !req.headers().contains(HttpHeaderNames.SEC_WEBSOCKET_PROTOCOL)) {
                 DefaultFullHttpResponse resp = new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
@@ -39,4 +38,5 @@ public class WebSocketSubProtocolValidator extends ChannelInboundHandlerAdapter 
     private static boolean isWebSocketUpgrade(FullHttpRequest req) {
         return "websocket".equalsIgnoreCase(req.headers().get(HttpHeaderNames.UPGRADE));
     }
+
 }
