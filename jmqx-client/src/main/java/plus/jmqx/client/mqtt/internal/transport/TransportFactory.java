@@ -15,6 +15,7 @@ import plus.jmqx.client.mqtt.internal.transport.ws.WebSocketFrameToByteBufDecode
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.http.client.WebsocketClientSpec;
 import reactor.netty.tcp.TcpClient;
 
 import java.util.concurrent.TimeUnit;
@@ -41,11 +42,12 @@ public final class TransportFactory {
      */
     @SuppressWarnings("unchecked")
     public Mono<Connection> connect(MqttClientConfig config) {
+        WebsocketClientSpec wsSpec = buildWebSocketSpec(config.getWebSocketConfig());
         Mono<? extends Connection> mono = switch (config.getTransportType()) {
             case TCP -> tcpClient(config).connect();
             case TLS -> applyTlsTcp(tcpClient(config), config).connect();
-            case WS -> httpClient(config).websocket().uri(wsUri(config)).connect();
-            case WSS -> applyTlsHttp(httpClient(config), config).websocket().uri(wsUri(config)).connect();
+            case WS -> httpClient(config).websocket(wsSpec).uri(wsUri(config)).connect();
+            case WSS -> applyTlsHttp(httpClient(config), config).websocket(wsSpec).uri(wsUri(config)).connect();
         };
         return (Mono<Connection>) mono;
     }
@@ -140,7 +142,24 @@ public final class TransportFactory {
 
     private String wsUri(MqttClientConfig c) {
         MqttWebSocketConfig ws = c.getWebSocketConfig();
-        return ws != null && ws.getPath() != null ? ws.getPath() : "/mqtt";
+        String path = ws != null && ws.getPath() != null ? ws.getPath() : "/mqtt";
+        String query = ws != null ? ws.getQuery() : null;
+        return query != null && !query.isEmpty() ? path + "?" + query : path;
+    }
+
+    /**
+     * 根据 {@link MqttWebSocketConfig} 构建 reactor-netty {@link WebsocketClientSpec}。
+     * 将 mqtt 子协议传入 {@link WebsocketClientSpec.Builder#protocols(String)}。
+     */
+    private static WebsocketClientSpec buildWebSocketSpec(MqttWebSocketConfig wsConfig) {
+        if (wsConfig == null) {
+            return WebsocketClientSpec.builder().build();
+        }
+        WebsocketClientSpec.Builder builder = WebsocketClientSpec.builder();
+        if (wsConfig.getSubprotocol() != null && !wsConfig.getSubprotocol().isEmpty()) {
+            builder.protocols(wsConfig.getSubprotocol());
+        }
+        return builder.build();
     }
 
     private static boolean isWebSocket(MqttClientConfig config) {
