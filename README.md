@@ -47,6 +47,8 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 16. 测试：连接压力测试与消息压力测试独立为 `MassiveConnectionTest`、`BrokerStressTest`、`ClusterStressTest`, 测试结果已更新见后文（2026-6-27）（1.4.13）
 17. 新增：增加 MQTT Client (jmqx-client), 目标是对标 HiveMQ MQTT Client, 技术栈为 reactor-netty + netty-codec-mqtt + Project Reactor （2026-7-3）（1.4.14）（使用 vibe coding 编码 + code review）
 18. 增强：jmqx-client 增加 WebSocket 编解码器, 并补充 MQTTS/WS/WSS 集成和压力测试测试用例 （2026-7-3）（1.4.15）（使用 vibe coding 编码 + code review）
+19. 增强：jmqx-broker 根据 OASIS MQTT v3.1.1/v5.0 第 6 章要求增加 WebSocket 握手校验 Sec-WebSocket-Protocol 子协议头（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
+20. 修复：jmqx-client mqtt-ws 连接 EMQX 时未添加 Sec-WebSocket-Protocol: mqtt 导致 400 错误响应（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
 
 ## 使用示例
 
@@ -58,7 +60,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.15</version>
+            <version>1.4.16</version>
         </dependency>
 ```
 
@@ -306,7 +308,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.15</version>
+            <version>1.4.16</version>
         </dependency>
 ```
 
