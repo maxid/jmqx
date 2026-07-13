@@ -1,6 +1,7 @@
 package plus.jmqx.client.mqtt.it;
 
 import plus.jmqx.broker.Bootstrap;
+import plus.jmqx.broker.config.ConnectMode;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 
 import java.io.IOException;
@@ -101,6 +102,8 @@ final class EmbeddedBrokerHolder {
         config.setWebsocketPort(randomPort());
         config.setWebsocketSecurePort(randomPort());
         config.setWiretap(false);
+        config.setConnectMode(ConnectMode.KICK); // 集成测试使用 KICK 模式验证重复 clientId 踢出
+        config.setNotKickSeconds(0); // 集成测试中允许立即踢出重复 clientId
         config.setSslCa(resourcePath("/ssl/ca.crt"));
         config.setSslCrt(resourcePath("/ssl/server.crt"));
         config.setSslKey(resourcePath("/ssl/server.key"));
