@@ -309,4 +309,65 @@ class Mqtt3ClientIT extends BrokerITSupport {
         assertNotNull(received.get());
     }
 
+    /**
+     * MQTT v3.1.1 规范 §3.1.4：新客户端使用相同 clientId 连接时，
+     * broker 必须断开旧客户端并接受新连接。
+     * <p>验证：旧客户端无法继续通信 → 新客户端连接成功 → 新客户端正常收发消息。
+     */
+    @Test
+    void duplicateClientIdKicksOldConnection() throws Exception {
+        String clientId = uniqueId("it-v3-dup");
+
+        // 第一个客户端 — 干净会话，无自动重连
+        Mqtt3RxClient clientA = MqttClient.builder().useMqttVersion3()
+                .serverHost(brokerHost()).serverPort(brokerPort())
+                .identifier(clientId)
+                .cleanSession(true)
+                .buildRx();
+
+        try {
+            assertConnAcceptedV3(clientA);
+
+            // client B 使用相同 clientId 连接——应为成功
+            Mqtt3RxClient clientB = v3Rx(clientId);
+            try {
+                Mqtt3ConnAck ackB = clientB.connect().block(TIMEOUT);
+                assertNotNull(ackB);
+                assertTrue(ackB.getReturnCode().isAccepted(),
+                        "client B with same clientId should be accepted");
+
+                // 验证 client A 无法继续通信（被 broker 踢出）
+                // 尝试在 client A 上发送消息，应因连接断开而失败
+                String failTopic = uniqueTopic("test/dup-v3-fail");
+                boolean publishFailed = false;
+                try {
+                    clientA.publish(v3Pub(failTopic, "should-fail", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+                } catch (Exception e) {
+                    publishFailed = true;
+                }
+                assertTrue(publishFailed,
+                        "client A publish must fail after being kicked");
+
+                // 验证 client B 可正常收发消息
+                String topic = uniqueTopic("test/dup-v3");
+                AtomicReference<Mqtt3Publish> received = new AtomicReference<>();
+                Mqtt3Subscribe sub = v3Sub(topic, QoS.AT_LEAST_ONCE);
+                Disposable stream = clientB.subscribePublishes(sub)
+                        .doOnNext(Mqtt3Publish::ack)
+                        .subscribe(received::set);
+                clientB.subscribe(sub).block(TIMEOUT);
+                clientB.publish(v3Pub(topic, "dup-hello", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+                awaitV3(received);
+                stream.dispose();
+                assertV3Payload(received.get(), topic, "dup-hello");
+
+                clientB.disconnect().block(TIMEOUT);
+            } finally {
+                disconnectQuietly(clientB);
+            }
+        } finally {
+            disconnectQuietly(clientA);
+        }
+    }
+
 }

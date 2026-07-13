@@ -237,4 +237,65 @@ class Mqtt5ClientIT extends BrokerITSupport {
         assertTrue(ack.getProperties().getReceiveMaximum() >= 0);
     }
 
+    /**
+     * MQTT v5.0 规范 §3.1.4：新客户端使用相同 clientId 连接时，
+     * broker 必须断开旧客户端（Session taken over）并接受新连接。
+     * <p>验证：旧客户端无法继续通信 → 新客户端连接成功 → 新客户端正常收发消息。
+     */
+    @Test
+    void duplicateClientIdKicksOldConnection() throws Exception {
+        String clientId = uniqueId("it-v5-dup");
+
+        // 第一个客户端 — cleanStart，无自动重连
+        Mqtt5RxClient clientA = MqttClient.builder().useMqttVersion5()
+                .serverHost(brokerHost()).serverPort(brokerPort())
+                .identifier(clientId)
+                .cleanStart(true)
+                .buildRx();
+
+        try {
+            assertConnAcceptedV5(clientA);
+
+            // client B 使用相同 clientId 连接——应为成功
+            Mqtt5RxClient clientB = v5Rx(clientId);
+            try {
+                Mqtt5ConnAck ackB = clientB.connect().block(TIMEOUT);
+                assertNotNull(ackB);
+                assertTrue(ackB.isAccepted(),
+                        "client B with same clientId should be accepted");
+
+                // 验证 client A 无法继续通信（被 broker 踢出）
+                // 尝试在 client A 上发送消息，应因连接断开而失败
+                String failTopic = uniqueTopic("v5/dup-fail");
+                boolean publishFailed = false;
+                try {
+                    clientA.publish(v5Pub(failTopic, "should-fail", QoS.AT_MOST_ONCE)).block(TIMEOUT);
+                } catch (Exception e) {
+                    publishFailed = true;
+                }
+                assertTrue(publishFailed,
+                        "client A publish must fail after being kicked");
+
+                // 验证 client B 可正常收发消息
+                String topic = uniqueTopic("v5/dup");
+                AtomicReference<Mqtt5Publish> received = new AtomicReference<>();
+                Mqtt5Subscribe sub = v5Sub(topic, QoS.AT_LEAST_ONCE);
+                Disposable stream = clientB.subscribePublishes(sub)
+                        .doOnNext(Mqtt5Publish::ack)
+                        .subscribe(received::set);
+                clientB.subscribe(sub).block(TIMEOUT);
+                clientB.publish(v5Pub(topic, "v5-dup-hello", QoS.AT_LEAST_ONCE)).block(TIMEOUT);
+                awaitV5(received);
+                stream.dispose();
+                assertV5Payload(received.get(), topic, "v5-dup-hello");
+
+                clientB.disconnect().block(TIMEOUT);
+            } finally {
+                disconnectQuietly(clientB);
+            }
+        } finally {
+            disconnectQuietly(clientA);
+        }
+    }
+
 }
