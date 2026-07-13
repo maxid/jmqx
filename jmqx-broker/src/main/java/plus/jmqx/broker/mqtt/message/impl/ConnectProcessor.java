@@ -106,19 +106,26 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         EventRegistry eventRegistry = context.getEventRegistry();
         byte mqttVersion = (byte) header.version();
         // 处理同一个设备多个连接的情况
+        // 特色实现：连接模式为 UNIQUE 时保障旧设备连接安全, 先获取旧设备连接
         MqttSession clientSession = channelRegistry.get(clientId);
         if (context.getConfiguration().getConnectMode() == ConnectMode.UNIQUE) {
+            // 如果旧设备在线，直接拒绝新设备连接
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
                 dispatchConnectionLost(session, context);
                 rejected(session, mqttVersion);
                 return;
             }
         } else {
+            // 按 MQTT 协议改良实现（增加了指定时间窗内不踢出）：
+            // 已实现: MQTT 3.1.1 时 Broker 通常直接 RST/FIN 关闭 TCP 连接，旧客户端会感知到意外断连。
+            // 待实现：MQTT 5.0 时 Broker 向旧设备发送 DISCONNECT 报文（Reason Code 0x8ESession taken over）并关闭 TCP 连接。
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
                 if (System.currentTimeMillis() - clientSession.getConnectTime()
                         > (context.getConfiguration().getNotKickSeconds() * 1000L)) {
+                    // 时间窗保护期外，按 MQTT 协议定义处理（存在 BUG: 两个设备轮番重连接时 channelRegistry 会丢失其中一个设备会话）
                     clientSession.close();
                 } else {
+                    // 时间窗保护期内同 UNIQUE 逻辑处理
                     dispatchConnectionLost(session, context);
                     rejected(session, mqttVersion);
                     return;

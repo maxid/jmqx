@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
+import plus.jmqx.broker.config.ConnectMode;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
@@ -150,6 +151,8 @@ class BootstrapTest {
         config.setSecurePort(mqttsPort);
         config.setWebsocketPort(wsPort);
         config.setWebsocketSecurePort(wssPort);
+        config.setConnectMode(ConnectMode.KICK); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
+        config.setNotKickSeconds(30); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
