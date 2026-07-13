@@ -9,11 +9,11 @@ package plus.jmqx.broker.config;
 public enum ConnectMode {
 
     /**
-     * 唯一
+     * 唯一，保障旧设备连接安全，直接拒绝新设备连接 Broker
      */
     UNIQUE,
     /**
-     * 踢出
+     * 踢出,
      */
     KICK
 
