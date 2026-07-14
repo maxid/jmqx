@@ -49,8 +49,8 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 18. 增强：jmqx-client 增加 WebSocket 编解码器, 并补充 MQTTS/WS/WSS 集成和压力测试测试用例 （2026-7-3）（1.4.15）（使用 vibe coding 编码 + code review）
 19. 增强：jmqx-broker 根据 OASIS MQTT v3.1.1/v5.0 第 6 章要求增加 WebSocket Sec-WebSocket-Protocol 子协议头握手校验（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
 20. 修复：jmqx-client mqtt-ws 连接 EMQX 时未添加 Sec-WebSocket-Protocol: mqtt 导致 400 错误响应（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
-21. 修复：定向投递须校验目标已订阅主题，未订阅不下发，符合 MQTT 订阅语义（2026-7-14）
-22. 修复：KICK 模式同 clientId 接管时 SessionRegistry/集群路由按实例移除，避免轮番重连误删新会话；MQTT 5 踢连接下发 DISCONNECT 0x8E Session taken over（2026-7-14）
+21. 修复：定向投递须校验目标已订阅主题，未订阅不下发，符合 MQTT 订阅语义（2026-7-14））（1.4.17）（使用 vibe coding 编码 + code review）
+22. 修复：KICK 模式同 clientId 接管时 SessionRegistry/集群路由按实例移除，避免轮番重连误删新会话；MQTT 5 踢连接下发 DISCONNECT 0x8E Session taken over（2026-7-14））（1.4.17）（使用 vibe coding 编码 + code review）
 
 ## 使用示例
 
@@ -62,7 +62,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.16</version>
+            <version>1.4.17</version>
         </dependency>
 ```
 
@@ -310,7 +310,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.16</version>
+            <version>1.4.17</version>
         </dependency>
 ```
 
