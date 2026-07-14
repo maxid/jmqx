@@ -39,7 +39,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 8. 修复发布及订阅未授权主题时, 未按 MQTT V3/V5 正确处理 ACK 消息（2026-4-1）（1.4.8）
 9. 重要：修复因在 Netty Event Loop 线程中调用鉴权（鉴权业务由用户实现，不确定会采用何种方案）可能会发阻塞，而影响心跳、收发包和重连风暴（2026-4-17）（1.4.10）
 10. 重要：修复 PUBREL 流程不当使用 MessageUtils.wrapPublishMessage 产生 Netty ByteBuf 泄漏（2026-4-18）（1.4.11）
-11. 增强：支持通过 clientId 主动向指定设备下发消息（在设备订阅同一个主题情况下），不经过主题路由，走完整分发管线（含 ACL 检查），集群模式自动扩散（2026-6-24）（1.4.12）
+11. 增强：支持通过 clientId 主动向指定设备下发消息（在设备订阅同一个主题情况下），不经过主题路由扇出、走完整分发管线（含 ACL 检查），集群模式自动扩散（2026-6-24）（1.4.12）；订阅门禁于 2026-7-14 修复落地
 12. 测试：同一 JVM 内可通过 namespace + node 组合键启动多个集群节点，支持集成测试验证集群间消息路由（2026-6-25）（1.4.12）
 13. 集群：增加订阅感知路由，只有设备订阅主题匹配才扩散 PUBLISH 事件消息到设备所在节点，大大提升集群性能（2026-6-26～2026-6-27）（1.4.13）
 14. 优化：调整消息分发使用有界队列默认大小（2026-6-27）（1.4.13）
@@ -49,6 +49,8 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 18. 增强：jmqx-client 增加 WebSocket 编解码器, 并补充 MQTTS/WS/WSS 集成和压力测试测试用例 （2026-7-3）（1.4.15）（使用 vibe coding 编码 + code review）
 19. 增强：jmqx-broker 根据 OASIS MQTT v3.1.1/v5.0 第 6 章要求增加 WebSocket Sec-WebSocket-Protocol 子协议头握手校验（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
 20. 修复：jmqx-client mqtt-ws 连接 EMQX 时未添加 Sec-WebSocket-Protocol: mqtt 导致 400 错误响应（2026-7-7）（1.4.16）（使用 vibe coding 编码 + code review）
+21. 修复：定向投递须校验目标已订阅主题，未订阅不下发，符合 MQTT 订阅语义（2026-7-14）
+22. 修复：KICK 模式同 clientId 接管时 SessionRegistry/集群路由按实例移除，避免轮番重连误删新会话；MQTT 5 踢连接下发 DISCONNECT 0x8E Session taken over（2026-7-14）
 
 ## 使用示例
 

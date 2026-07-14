@@ -46,10 +46,11 @@ public interface MessageDispatcher {
     void publish(MqttPublishMessage message);
 
     /**
-     * 向指定客户端设备下发消息（直接写入设备 Session，不经过主题路由）
+     * 向指定客户端设备下发消息（不经主题扇出，但仍要求目标已订阅该主题）
      * <p>
      * 通过 {@link MessageWrapper#clientId} 标识定向投递，
-     * 走完整分发管线（含 ACL 检查），集群模式由 TailIntercept 自动扩散。
+     * 走完整分发管线（含 ACL 检查与订阅校验），集群模式由 TailIntercept 自动扩散。
+     * 目标未订阅对应主题时不下发（符合 MQTT 订阅语义）。
      *
      * @param clientId 目标设备 clientId
      * @param message  发布消息

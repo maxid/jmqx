@@ -6,7 +6,6 @@ import plus.jmqx.broker.mqtt.registry.SessionRegistry;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -68,12 +67,18 @@ public class DefaultSessionRegistry implements SessionRegistry {
 
     /**
      * 关闭并移除会话
+     * <p>
+     * 仅当 registry 中当前映射仍是该 session 实例时才移除，
+     * 避免旧连接 dispose 回调误删同 clientId 的新会话（轮番重连竞态）。
      *
      * @param session 会话
      */
     @Override
     public void close(MqttSession session) {
-        Optional.ofNullable(session.getClientId()).ifPresent(sessions::remove);
+        if (session == null || session.getClientId() == null) {
+            return;
+        }
+        sessions.remove(session.getClientId(), session);
     }
 
     /**
