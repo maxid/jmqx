@@ -142,30 +142,39 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
     }
 
     /**
-     * 定向投递：查找目标设备 Session 并直接写入
+     * 定向投递：目标设备须已订阅该主题，才写入 Session（符合 MQTT 订阅语义）
      *
      * @param clientId 目标设备 clientId
      * @param message  MQTT 发布消息
      * @param context  接收上下文
      */
     private void send(String clientId, MqttPublishMessage message, ReceiveContext<?> context) {
-        // 查找目标 Session
         MqttSession session = context.getSessionRegistry().get(clientId);
         if (session == null || !session.active()) {
             MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
             log.debug("[{}] publish: device [{}] not online, skip", config.getClusterId(), clientId);
             return;
         }
-        MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(
-                message,
-                message.fixedHeader().qosLevel(),
-                session.generateMessageId()
-        );
-        if (pmsg.variableHeader().packetId() < 0) {
+        String topicName = message.variableHeader().topicName();
+        MqttQoS publishQos = message.fixedHeader().qosLevel();
+        // 按 MQTT 规范：未订阅目标主题则不下发（定向投递不能绕过订阅关系）
+        SubscribeTopic matched = context.getTopicRegistry()
+                .getSubscribesByTopic(topicName, publishQos)
+                .stream()
+                .filter(t -> clientId.equals(t.getSession().getClientId()))
+                .findFirst()
+                .orElse(null);
+        if (matched == null) {
+            log.debug("skip publish to [{}]: not subscribed to [{}]", clientId, topicName);
+            return;
+        }
+        int packetId = session.generateMessageId();
+        if (packetId < 0) {
             log.warn("skip publish to [{}]: no available packet ID", clientId);
             return;
         }
-        session.write(pmsg, message.fixedHeader().qosLevel().value() > 0);
+        MqttPublishMessage pmsg = MessageUtils.wrapPublishMessage(message, matched.getQoS(), packetId);
+        session.write(pmsg, matched.getQoS().value() > 0);
     }
 
     /**
