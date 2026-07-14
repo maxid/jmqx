@@ -6,8 +6,10 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.cluster.ClusterMessage;
@@ -117,13 +119,13 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             }
         } else {
             // 按 MQTT 协议改良实现（增加了指定时间窗内不踢出）：
-            // 已实现: MQTT 3.1.1 时 Broker 通常直接 RST/FIN 关闭 TCP 连接，旧客户端会感知到意外断连。
-            // 待实现：MQTT 5.0 时 Broker 向旧设备发送 DISCONNECT 报文（Reason Code 0x8ESession taken over）并关闭 TCP 连接。
+            // MQTT 3.1.1：Broker 直接关闭 TCP，旧客户端感知意外断连。
+            // MQTT 5.0：Broker 向旧设备发送 DISCONNECT（Reason Code 0x8E Session taken over）再关闭 TCP。
+            // SessionRegistry.close / 集群 unregister 按会话实例校验，避免轮番重连时误删新会话。
             if (clientSession != null && clientSession.getStatus() == SessionStatus.ONLINE) {
                 if (System.currentTimeMillis() - clientSession.getConnectTime()
                         > (context.getConfiguration().getNotKickSeconds() * 1000L)) {
-                    // 时间窗保护期外，按 MQTT 协议定义处理（存在 BUG: 两个设备轮番重连接时 channelRegistry 会丢失其中一个设备会话）
-                    clientSession.close();
+                    takeOverSession(clientSession);
                 } else {
                     // 时间窗保护期内同 UNIQUE 逻辑处理
                     dispatchConnectionLost(session, context);
@@ -397,9 +399,36 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         }
         eventRegistry.registry(Event.CLOSE, session, null, context);
         MetricsManagerHolder.get().decrementConnections();
-        context.getClusterRegistry().unregisterSession(session.getClientId());
+        // 仅当 registry 当前仍映射本会话时才摘除集群路由，避免旧连接 dispose 误删新连接路由
+        MqttSession current = context.getSessionRegistry().get(session.getClientId());
+        if (current == null || current == session) {
+            context.getClusterRegistry().unregisterSession(session.getClientId());
+        }
         session.close();
         dispatchConnectionLost(session, context);
+    }
+
+    /**
+     * 接管会话：踢出同 clientId 的旧连接
+     * <p>
+     * MQTT 5.0 先下发 DISCONNECT Reason Code 0x8E（Session taken over），flush 后再关闭 TCP；
+     * MQTT 3.x 直接关闭 TCP。接管时清除遗愿，避免非正常断开触发 Will 发布。
+     *
+     * @param oldSession 将被踢出的旧会话
+     */
+    private void takeOverSession(MqttSession oldSession) {
+        oldSession.setWill(null);
+        if (oldSession.getProtocolVersion() == MqttVersion.MQTT_5.protocolLevel()
+                && oldSession.getConnection() != null
+                && !oldSession.getConnection().isDisposed()) {
+            MqttMessage disconnect = MqttMessageBuilder.disconnectMessage(
+                    MqttReasonCodes.Disconnect.SESSION_TAKEN_OVER.byteValue());
+            oldSession.getConnection().channel()
+                    .writeAndFlush(disconnect)
+                    .addListener(future -> oldSession.close());
+            return;
+        }
+        oldSession.close();
     }
 
     /**

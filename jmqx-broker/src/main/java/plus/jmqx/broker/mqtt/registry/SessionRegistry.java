@@ -19,7 +19,10 @@ public interface SessionRegistry extends Startup {
     SessionRegistry INSTANCE = DynamicLoader.findFirst(SessionRegistry.class).orElse(null);
 
     /**
-     * 关闭会话
+     * 关闭并移除会话
+     * <p>
+     * 实现须按会话实例移除：仅当 registry 中当前映射仍是该 session 时才删除，
+     * 避免同 clientId 接管/轮番重连时旧连接 dispose 回调误删新会话。
      *
      * @param session 会话
      */

@@ -124,8 +124,8 @@ public class MqttMessageDispatcher implements MessageDispatcher {
     /**
      * 向指定客户端设备下发消息
      * <p>
-     * 设置 clientId 后走完整分发管线，借用 PublishProcessor 的 ACL 检查；
-     * 集群模式由 TailIntercept 自动扩散到各节点。
+     * 设置 clientId 后走完整分发管线，借用 PublishProcessor 的 ACL 与订阅校验；
+     * 目标未订阅主题时不下发。集群模式由 TailIntercept 自动扩散到各节点。
      *
      * @param clientId 目标设备 clientId
      * @param message  发布消息

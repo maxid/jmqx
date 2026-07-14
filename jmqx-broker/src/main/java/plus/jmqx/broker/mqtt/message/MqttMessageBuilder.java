@@ -9,6 +9,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -340,6 +341,16 @@ public class MqttMessageBuilder {
         MqttConnectPayload mqttConnectPayload = new MqttConnectPayload(clientId, willTopic, isWill ? willMessage.getBytes() : null, username, isPassword ? password.getBytes() : null);
         MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT, false, MqttQoS.AT_MOST_ONCE, false, 10);
         return new MqttConnectMessage(mqttFixedHeader, mqttConnectVariableHeader, mqttConnectPayload);
+    }
+
+    /**
+     * 创建 MQTT 5.0 DISCONNECT 消息（带 Reason Code）
+     *
+     * @param reasonCode MQTT 5 Reason Code（如 0x8E Session taken over）
+     * @return DISCONNECT 消息
+     */
+    public static MqttMessage disconnectMessage(byte reasonCode) {
+        return MqttMessageBuilders.disconnect().reasonCode(reasonCode).build();
     }
 
     /**

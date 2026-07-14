@@ -97,6 +97,8 @@ class BootstrapTest {
 
     /**
      * 定向投递：向指定 clientId 设备发送消息（单节点）
+     * <p>
+     * 目标须已订阅主题，未订阅时不应收到消息。
      *
      * @throws Exception 测试异常
      */
@@ -108,6 +110,7 @@ class BootstrapTest {
         try {
             bootstrap.start().block(Duration.ofSeconds(5));
             MqttDevice device = connect("publish-target-device", 4883);
+            device.subscribe("test/target", MqttQoS.AT_LEAST_ONCE);
 
             MessageDispatcher dispatcher = NamespaceContextHolder.get(ns, "").getContext().getMessageDispatcher();
             MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
@@ -117,6 +120,32 @@ class BootstrapTest {
             log.info("published to [{}] topic [test/target]", device.clientId);
 
             assertReceived(device, "test/target", "hello-target");
+        } finally {
+            bootstrap.shutdown();
+        }
+    }
+
+    /**
+     * 定向投递：目标未订阅主题时不下发（MQTT 订阅语义）
+     *
+     * @throws Exception 测试异常
+     */
+    @Test
+    void testPublishToClientWithoutSubscribe() throws Exception {
+        String ns = "jmqx-publish-nosub-" + UUID.randomUUID();
+        MqttConfiguration config = config(ns, 4884);
+        Bootstrap bootstrap = new Bootstrap(config);
+        try {
+            bootstrap.start().block(Duration.ofSeconds(5));
+            MqttDevice device = connect("publish-nosub-device", 4884);
+
+            MessageDispatcher dispatcher = NamespaceContextHolder.get(ns, "").getContext().getMessageDispatcher();
+            MqttPublishMessage pubMsg = MqttMessageBuilder.publishMessage(
+                    false, MqttQoS.AT_LEAST_ONCE, 0, "test/nosub",
+                    Unpooled.wrappedBuffer("should-not-receive".getBytes(StandardCharsets.UTF_8)));
+            dispatcher.publish(device.clientId, pubMsg);
+
+            assertNotReceived(device, "test/nosub", 2);
         } finally {
             bootstrap.shutdown();
         }
@@ -151,8 +180,9 @@ class BootstrapTest {
         config.setSecurePort(mqttsPort);
         config.setWebsocketPort(wsPort);
         config.setWebsocketSecurePort(wssPort);
-        config.setConnectMode(ConnectMode.KICK); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
-        config.setNotKickSeconds(30); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
+        config.setConnectMode(ConnectMode.UNIQUE);
+        // config.setConnectMode(ConnectMode.KICK); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
+        // config.setNotKickSeconds(0); // 配置为按 MQTT 标准协议处理多个相同 clientId 设备同时连接 Broker
         config.setSslCa(Objects.requireNonNull(BootstrapTest.class.getResource("/ca.crt")).getPath());
         config.setSslCrt(Objects.requireNonNull(BootstrapTest.class.getResource("/server.crt")).getPath());
         config.setSslKey(Objects.requireNonNull(BootstrapTest.class.getResource("/server.key")).getPath());
