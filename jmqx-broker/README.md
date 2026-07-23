@@ -59,7 +59,9 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 | `TopicRegistry` | 主题注册中心，管理主题订阅关系 |
 | `MessageRegistry` | 消息注册中心，管理 Retain 消息 |
 | `AclManager` | 主题访问控制 SPI |
+| `AclExecutor` | ACL 卸载执行器（独立线程池，避免阻塞 control/publish IO） |
 | `AuthManager` | 设备连接鉴权 SPI |
+| `AuthExecutor` | 鉴权卸载执行器（独立线程池，与 ACL 池隔离） |
 | `PlatformDispatcher` | 设备生命周期事件回调 SPI |
 | `MetricsManager` | 指标收集 SPI |
 | `Interceptor` | 消息分发拦截器链 SPI |
@@ -70,21 +72,104 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-broker</artifactId>
-    <version>1.4.17</version>
+    <version>1.4.18</version>
 </dependency>
 ```
 
 ```java
+// @formatter:off
 MqttConfiguration config = new MqttConfiguration();
 Bootstrap bootstrap = new Bootstrap(config);
 bootstrap.startAwait();
+// @formatter:on
 ```
 
 详细用法参见项目根目录 README.md。
 
 ## 配置项
 
-`MqttConfiguration` 支持丰富的配置参数，涵盖线程模型、端口、SSL、集群、限流等，详见 `MqttConfiguration.java`。
+通过 `MqttConfiguration`（Java）或 Spring 示例中的 `jmqx.*` 属性注入。下表默认值以 `MqttConfiguration` 字段默认值为准；`N` 表示 `Runtime.availableProcessors()`。
+
+### 端口与传输
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `port` | `jmqx.tcp.port` | MQTT TCP 端口 | `1883` |
+| `securePort` | `jmqx.tcp.secure-port` | MQTTS 端口 | `8883` |
+| `websocketPort` | `jmqx.tcp.websocket-port` | MQTT over WebSocket 端口 | `1884` |
+| `websocketSecurePort` | `jmqx.tcp.websocket-secure-port` | MQTT over WSS 端口 | `8884` |
+| `websocketPath` | `jmqx.tcp.websocket-path` | WebSocket 路径 | `/mqtt` |
+| `wiretap` | `jmqx.tcp.wiretap` | Netty 二进制日志（需 DEBUG） | `true` |
+| `messageMaxSize` | `jmqx.tcp.message-max-size` | 单帧最大字节数 | `4194304`（4MB） |
+| `options` | `jmqx.tcp.options` | Netty ServerBootstrap Option | — |
+| `childOptions` | `jmqx.tcp.child-options` | Netty Child Option | — |
+
+### 线程模型
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `bossThreadSize` | `jmqx.tcp.boss-thread-size` | Netty Boss 线程数 | `N` |
+| `workThreadSize` | `jmqx.tcp.work-thread-size` | Netty Worker 线程数 | `max(N*2, 8)` |
+| `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务分发线程数（`jmqx-publish-io` / `jmqx-control-io`） | `max(N*4, 16)` |
+| `businessQueueSize` | `jmqx.tcp.business-queue-size` | 业务分发队列容量 | `100000` |
+
+> `businessThreadSize` 会按约 3:1 拆分为 publish / control 两组 Parallel 调度器。鉴权与 ACL **不占用**该池，见下文独立线程池。
+
+### 鉴权 / ACL 卸载线程池
+
+用户自定义 `AuthManager` / `AclManager` 可能包含 Feign、DB 等阻塞调用。Broker 会将其切到独立线程池，避免在 `jmqx-*-io`（Reactor NonBlocking）上触发 `block()` 异常或拖死心跳。
+
+**Auth 与 ACL 默认使用两套独立线程池**（`jmqx-auth-io-*` / `jmqx-acl-io-*`），避免 PUBLISH 风暴饿死 CONNECT 鉴权。
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `authTimeoutMillis` | `jmqx.tcp.auth-timeout-millis` | 鉴权超时（毫秒），超时视为失败 | `1000` |
+| `authThreadSize` | `jmqx.tcp.auth-thread-size` | 鉴权线程池大小 | `max(N*4, 16)` |
+| `authQueueSize` | `jmqx.tcp.auth-queue-size` | 鉴权队列容量，满则拒绝连接 | `200000` |
+| `aclTimeoutMillis` | `jmqx.tcp.acl-timeout-millis` | ACL 超时（毫秒），超时视为拒绝 | `1000` |
+| `aclThreadSize` | `jmqx.tcp.acl-thread-size` | ACL 线程池大小 | `max(N*4, 16)` |
+| `aclQueueSize` | `jmqx.tcp.acl-queue-size` | ACL 队列容量，满则拒绝发布/订阅 | `200000` |
+
+> Spring 示例里 `auth-thread-size` / `acl-thread-size` 等为 `0` 时表示不覆盖，沿用 `MqttConfiguration` 默认值。
+
+### 水位与读写限流
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `lowWaterMark` | `jmqx.tcp.low-water-mark` | Netty 写缓冲低水位（字节） | `65536`（64KB） |
+| `highWaterMark` | `jmqx.tcp.high-water-mark` | Netty 写缓冲高水位（字节） | `1048576`（1MB） |
+| `globalReadWriteSize` | `jmqx.tcp.global-read-write-size` | 全局读写限速，`读,写`（字节/秒） | `10000000,100000000` |
+| `channelReadWriteSize` | `jmqx.tcp.channel-read-write-size` | 单连接读写限速，`读,写`（字节/秒） | `10000000,100000000` |
+
+### SSL
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `sslEnable` | `jmqx.ssl.enable` | 是否启用 SSL | `false` |
+| `sslCa` | `jmqx.ssl.ca` | CA 证书路径 | — |
+| `sslCrt` | `jmqx.ssl.crt` | 服务端证书路径 | — |
+| `sslKey` | `jmqx.ssl.key` | 服务端私钥路径 | — |
+
+> Spring 示例额外支持 `jmqx.ssl.mode`（`classpath` / `absolute-path`）解析证书路径。
+
+### 连接行为与容量
+
+| 字段（Java） | 说明 | 默认值 |
+|---|---|---|
+| `connectMode` | 重复 `clientId`：`UNIQUE` 拒绝新连接 / `KICK` 踢掉旧连接 | `UNIQUE` |
+| `notKickSeconds` | `KICK` 模式下，连接建立后若干秒内不踢出 | `30` |
+| `maxConnections` | 最大连接数，`0`=不限制 | `0` |
+| `connectionRateLimit` | 连接速率上限（连接/秒），`0`=不限制 | `0` |
+| `maxOfflineQueueSize` | 每客户端离线消息队列上限，`0`=不限制 | `0` |
+| `maxTotalOfflineMessages` | 总离线消息上限，`0`=不限制 | `0` |
+| `maxRetainMessageCount` | Retain 消息总数上限，`0`=不限制 | `0` |
+| `maxInflightQos2` | 每会话 QoS2 飞行窗口，`0`=不限制 | `0` |
+| `maxTopicSubscriptions` | 每会话订阅数上限，`0`=不限制 | `0` |
+| `metricsEnabled` | 是否启用指标收集 | `false` |
+
+### 集群
+
+集群相关字段见 [`jmqx-cluster/README.md`](../jmqx-cluster/README.md#集群配置)，对应 `MqttConfiguration.ClusterConfig`。
 
 ## 压力测试
 

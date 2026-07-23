@@ -18,11 +18,12 @@
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-client</artifactId>
-    <version>1.4.17</version>
+    <version>1.4.18</version>
 </dependency>
 ```
 
 ```java
+// @formatter:off
 import plus.jmqx.client.mqtt.MqttClient;
 import plus.jmqx.client.mqtt.message.QoS;
 import plus.jmqx.client.mqtt.v3.Mqtt3RxClient;
@@ -48,11 +49,13 @@ client.subscribePublishes(Mqtt3Subscribe.builder()
 client.publish(Mqtt3Publish.builder()
         .topic("sensor/temp").payload("21.5".getBytes()).qos(QoS.AT_LEAST_ONCE).build())
         .block();
+// @formatter:on
 ```
 
 ## 快速开始（MQTT 5.0）
 
 ```java
+// @formatter:off
 Mqtt5RxClient client = MqttClient.builder().useMqttVersion5()
         .serverHost("localhost").serverPort(1883)
         .identifier("v5-client")
@@ -63,6 +66,7 @@ Mqtt5RxClient client = MqttClient.builder().useMqttVersion5()
         .buildRx();
 
 client.connect().block(Duration.ofSeconds(5));
+// @formatter:on
 ```
 
 ## API 视图
@@ -75,10 +79,12 @@ client.connect().block(Duration.ofSeconds(5));
 构建方式：
 
 ```java
+// @formatter:off
 MqttClient.builder().useMqttVersion3()  // 或 useMqttVersion5()
     .serverHost("localhost").serverPort(1883)
     .identifier("id")
     .buildRx();    // 或 buildAsync() / buildBlocking()
+// @formatter:on
 ```
 
 ## 测试

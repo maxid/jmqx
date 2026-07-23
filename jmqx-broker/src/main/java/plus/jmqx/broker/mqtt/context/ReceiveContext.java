@@ -1,6 +1,7 @@
 package plus.jmqx.broker.mqtt.context;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import plus.jmqx.broker.acl.AclExecutor;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.auth.AuthExecutor;
 import plus.jmqx.broker.auth.AuthManager;
@@ -89,6 +90,13 @@ public interface ReceiveContext<C extends Configuration> extends BiConsumer<Mqtt
      * @return MQTT 主题访问控制管理器
      */
     AclManager getAclManager();
+
+    /**
+     * MQTT 主题访问控制执行器
+     *
+     * @return ACL 执行器
+     */
+    AclExecutor getAclExecutor();
 
     /**
      * MQTT 连接认证管理器

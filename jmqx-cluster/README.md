@@ -46,47 +46,74 @@
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-cluster</artifactId>
-    <version>1.4.17</version>
+    <version>1.4.18</version>
 </dependency>
 ```
 
 双节点集群示例：
 
 ```java
+// @formatter:off
 // node-1
 MqttConfiguration config = new MqttConfiguration();
-config.getClusterConfig().setEnable(true);
+config.getClusterConfig().setEnabled(true);
 config.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
 config.getClusterConfig().setPort(7771);
 config.getClusterConfig().setNode("node-1");
 config.getClusterConfig().setNamespace("jmqx");
 new Bootstrap(config).startAwait();
 
-// node-2（配置不同端口和节点名）
+// node-2（配置不同 MQTT 端口和节点名）
 MqttConfiguration config2 = new MqttConfiguration();
 config2.setPort(2883);
-config2.getClusterConfig().setEnable(true);
+config2.getClusterConfig().setEnabled(true);
 config2.getClusterConfig().setUrl("127.0.0.1:7771,127.0.0.1:7772");
 config2.getClusterConfig().setPort(7772);
 config2.getClusterConfig().setNode("node-2");
 config2.getClusterConfig().setNamespace("jmqx");
 new Bootstrap(config2).startAwait();
+// @formatter:on
 ```
 
 ## 集群配置
 
-| 参数 | 说明 | 默认值 |
-|---|---|---|
-| `cluster.enable` | 是否启用集群 | `false` |
-| `cluster.url` | 种子节点地址列表（逗号分隔） | — |
-| `cluster.port` | 集群通信端口 | `7771` |
-| `cluster.node` | 本节点名称（需唯一） | `node-1` |
-| `cluster.namespace` | 集群命名空间（需一致才能通信） | `jmqx-broker` |
-| `cluster.suspicionMult` | 怀疑倍数 | `10` |
-| `cluster.pingTimeout` | 故障检测器超时（毫秒） | `3000` |
-| `cluster.clusterMessageBufferSize` | 集群消息缓冲区大小 | `1024` |
-| `cluster.external.host` | 容器/云环境外部暴露 IP | — |
-| `cluster.external.port` | 容器/云环境外部端口 | — |
+配置入口：`MqttConfiguration.ClusterConfig`（JSON/YAML 中常写作 `cluster`）。  
+Spring 示例属性前缀：`jmqx.cluster.*`。
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `enabled` | `jmqx.cluster.enable` | 是否启用集群 | `false` |
+| `url` | `jmqx.cluster.url` | 种子节点地址列表，逗号分隔（`host:port`） | — |
+| `port` | `jmqx.cluster.port` | 本节点集群通信端口（ScaleCube transport） | `7771` |
+| `node` | `jmqx.cluster.node` | 本节点名称，**集群内唯一** | `node-1` |
+| `namespace` | `jmqx.cluster.namespace` | 集群命名空间，**各节点必须一致**才能互通 | `jmqx-broker` |
+| `suspicionMult` | — | 成员怀疑倍数（ScaleCube membership） | `10` |
+| `pingTimeout` | — | 故障检测 Ping 超时（毫秒） | `3000` |
+| `clusterMessageBufferSize` | — | 集群消息 Sink 缓冲区大小 | `1024` |
+| `external.host` | — | 容器/云环境对外暴露 IP（NAT 场景） | — |
+| `external.port` | — | 容器/云环境对外暴露端口 | — |
+
+### 配置要点
+
+- **MQTT 端口与集群端口分离**：`MqttConfiguration.port`（如 `1883`）服务设备；`cluster.port`（如 `7771`）仅用于节点间通信。
+- **种子列表**：`url` 建议包含所有节点（或稳定种子），本节点地址会被自动过滤。
+- **命名空间**：`namespace` 不一致的节点互不可见，可用于同进程多集群隔离（测试常见）。
+- **集群 ID**：`namespace:node`（见 `ClusterConfig.getClusterId()`），用于会话/主题路由归属。
+- **Broker 侧配置仍生效**：鉴权/ACL 卸载池（`auth*` / `acl*`）、连接上限、业务线程等见 [jmqx-broker 配置项](../jmqx-broker/README.md#配置项)。集群节点转发的 PUBLISH 会跳过设备侧 ACL，设备入口节点仍做 ACL。
+
+### 最小可用示例（YAML / Spring）
+
+```yaml
+jmqx:
+  tcp:
+    port: 1883
+  cluster:
+    enable: true
+    namespace: jmqx
+    node: node-1
+    port: 7771
+    url: 127.0.0.1:7771,127.0.0.1:7772
+```
 
 ## 关键实现
 

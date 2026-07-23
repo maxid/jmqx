@@ -82,11 +82,8 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         TopicRegistry topicRegistry = context.getTopicRegistry();
         MessageRegistry messageRegistry = context.getMessageRegistry();
         AclManager aclManager = context.getAclManager();
-        int reasonCode = session.getProtocolVersion() == MqttVersion.MQTT_5.protocolLevel()
+        int denyReasonCode = session.getProtocolVersion() == MqttVersion.MQTT_5.protocolLevel()
                 ? CONNECTION_REFUSED_NOT_AUTHORIZED_5.byteValue() : CONNECTION_REFUSED_UNSPECIFIED_ERROR.byteValue();
-        Set<SubscribeTopic> topics = new LinkedHashSet<>();
-        List<Integer> reasonCodes = new ArrayList<>();
-        // 每会话订阅数上限
         final int subscriptionLimit;
         if (context.getConfiguration() instanceof MqttConfiguration mqttCfg
                 && mqttCfg.getMaxTopicSubscriptions() != null && mqttCfg.getMaxTopicSubscriptions() > 0) {
@@ -94,39 +91,88 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         } else {
             subscriptionLimit = 0;
         }
-        int[] addedCount = {0};
-        message.payload().topicSubscriptions().forEach(s -> {
-            // 订阅数上限检查
-            if (subscriptionLimit > 0 && session.getTopics().size() + addedCount[0] >= subscriptionLimit) {
-                log.warn("max subscriptions ({}) reached for [{}]", subscriptionLimit, session.getClientId());
-                reasonCodes.add(reasonCode);
-                return;
-            }
-            SubscribeTopic topic = new SubscribeTopic(s.topicFilter(), s.qualityOfService(), session);
-            if (aclManager.check(session, topic.getTopicFilter(), AclAction.SUBSCRIBE)) {
-                this.loadRetainMessage(messageRegistry, session, s);
-                topics.add(topic);
-                addedCount[0]++;
-                reasonCodes.add(s.qualityOfService().value());
-            } else {
-                reasonCodes.add(reasonCode);
-            }
+        // 提前拷贝订阅列表，避免异步 ACL 完成后依赖可能已释放的报文对象
+        List<MqttTopicSubscription> subscriptions = new ArrayList<>(message.payload().topicSubscriptions());
+        int messageId = message.variableHeader().messageId();
+        int existingTopicCount = session.getTopics().size();
+
+        context.getAclExecutor().supply(
+                () -> evaluateSubscriptions(aclManager, session, subscriptions, subscriptionLimit,
+                        existingTopicCount, denyReasonCode),
+                emptyResult(subscriptions.size(), denyReasonCode),
+                session.getClientId()
+        ).whenComplete((result, ex) -> {
+            SubscribeAclResult aclResult = result == null
+                    ? emptyResult(subscriptions.size(), denyReasonCode) : result;
+            applySubscribeResult(context, session, topicRegistry, messageRegistry, subscriptions, messageId, aclResult);
         });
+    }
+
+    private SubscribeAclResult evaluateSubscriptions(AclManager aclManager,
+                                                     MqttSession session,
+                                                     List<MqttTopicSubscription> subscriptions,
+                                                     int subscriptionLimit,
+                                                     int existingTopicCount,
+                                                     int denyReasonCode) {
+        Set<SubscribeTopic> topics = new LinkedHashSet<>();
+        List<Integer> reasonCodes = new ArrayList<>(subscriptions.size());
+        int addedCount = 0;
+        for (MqttTopicSubscription subscription : subscriptions) {
+            if (subscriptionLimit > 0 && existingTopicCount + addedCount >= subscriptionLimit) {
+                log.warn("max subscriptions ({}) reached for [{}]", subscriptionLimit, session.getClientId());
+                reasonCodes.add(denyReasonCode);
+                continue;
+            }
+            SubscribeTopic topic = new SubscribeTopic(subscription.topicFilter(), subscription.qualityOfService(), session);
+            if (aclManager.check(session, topic.getTopicFilter(), AclAction.SUBSCRIBE)) {
+                topics.add(topic);
+                addedCount++;
+                reasonCodes.add(subscription.qualityOfService().value());
+            } else {
+                reasonCodes.add(denyReasonCode);
+            }
+        }
+        return new SubscribeAclResult(topics, reasonCodes);
+    }
+
+    private void applySubscribeResult(ReceiveContext<?> context,
+                                      MqttSession session,
+                                      TopicRegistry topicRegistry,
+                                      MessageRegistry messageRegistry,
+                                      List<MqttTopicSubscription> subscriptions,
+                                      int messageId,
+                                      SubscribeAclResult result) {
+        Set<SubscribeTopic> topics = result.topics();
         if (CollUtil.isNotEmpty(topics)) {
             topicRegistry.registrySubscribesTopic(topics);
             clusterSubscribe(context, topics);
+            for (int i = 0; i < subscriptions.size(); i++) {
+                if (i < result.reasonCodes().size()
+                        && result.reasonCodes().get(i) == subscriptions.get(i).qualityOfService().value()) {
+                    loadRetainMessage(messageRegistry, session, subscriptions.get(i));
+                }
+            }
         }
-        session.write(MqttMessageBuilder.subAckMessage(
-                message.variableHeader().messageId(),
-                reasonCodes
-        ), false);
+        session.write(MqttMessageBuilder.subAckMessage(messageId, result.reasonCodes()), false);
+    }
+
+    private static SubscribeAclResult emptyResult(int size, int denyReasonCode) {
+        List<Integer> reasonCodes = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            reasonCodes.add(denyReasonCode);
+        }
+        return new SubscribeAclResult(Set.of(), reasonCodes);
     }
 
     private void clusterSubscribe(ReceiveContext<?> context, Set<SubscribeTopic> topics) {
         ClusterRegistry registry = context.getClusterRegistry();
-        if (registry == null) return;
+        if (registry == null) {
+            return;
+        }
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
-        if (config == null || !config.isEnabled()) return;
+        if (config == null || !config.isEnabled()) {
+            return;
+        }
         String nodeId = config.getClusterId();
         for (SubscribeTopic topic : topics) {
             SubscribeTopicMessage stm = new SubscribeTopicMessage(nodeId, topic.getTopicFilter(), true);
@@ -148,6 +194,9 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         String topic = subscription.topicFilter();
         messageRegistry.getRetainMessage(topic).forEach(msg ->
                 session.write(msg.toPublishMessage(session, topicQos), Math.min(topicQos, msg.getQos()) > 0));
+    }
+
+    private record SubscribeAclResult(Set<SubscribeTopic> topics, List<Integer> reasonCodes) {
     }
 
 }
