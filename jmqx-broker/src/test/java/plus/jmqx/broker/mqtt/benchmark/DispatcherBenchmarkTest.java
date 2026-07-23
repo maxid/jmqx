@@ -440,6 +440,16 @@ class DispatcherBenchmarkTest {
         }
 
         /**
+         * 获取 ACL 执行器
+         *
+         * @return ACL 执行器
+         */
+        @Override
+        public plus.jmqx.broker.acl.AclExecutor getAclExecutor() {
+            return null;
+        }
+
+        /**
          * 获取鉴权管理器
          *
          * @return 鉴权管理器

@@ -1,5 +1,6 @@
 package plus.jmqx.broker.mqtt.message.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
@@ -7,7 +8,6 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclAction;
-import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.metrics.MetricsManagerHolder;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
@@ -82,63 +82,101 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             MqttPublishMessage message = wrapper.getMessage();
             MqttPublishVariableHeader header = message.variableHeader();
 
-            AclManager aclManager = context.getAclManager();
-            if (!session.getIsCluster() && !aclManager.check(session, header.topicName(), AclAction.PUBLISH)) {
-                sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
-                log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ", session.getConnection(), header.topicName());
+            // 集群节点转发消息跳过 ACL；设备侧 ACL 卸载到独立线程池，避免阻塞 jmqx-publish-io
+            if (!session.getIsCluster()) {
+                Object payload = message.payload();
+                if (payload instanceof ByteBuf buf) {
+                    // 对抗 process 返回后 channel/dispatcher 释放 payload，保证 ACL 回调时仍可读
+                    buf.retain();
+                }
+                context.getAclExecutor().check(session, header.topicName(), AclAction.PUBLISH)
+                        .whenComplete((passed, ex) -> {
+                            try {
+                                if (!Boolean.TRUE.equals(passed)) {
+                                    sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
+                                    log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ",
+                                            session.getConnection(), header.topicName());
+                                    return;
+                                }
+                                processAuthorized(wrapper, session, context, message, header);
+                            } catch (Exception e) {
+                                log.error("error ", e);
+                            } finally {
+                                if (payload instanceof ByteBuf buf) {
+                                    buf.release();
+                                }
+                            }
+                        });
                 return;
             }
 
-            // === 定向投递分支：平台向指定 clientId 设备下发消息 ===
-            String clientId = wrapper.getClientId();
-            if (clientId != null) {
-                send(clientId, message, context);
-                return;
-            }
-
-            TopicRegistry topicRegistry = context.getTopicRegistry();
-            MessageRegistry messageRegistry = context.getMessageRegistry();
-            Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
-            // 分发设备上报消息
-            String topicName = header.topicName();
-            if (!wrapper.getClustered() && !Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
-                context.dispatch(d -> d.onPublish(PublishMessage.builder()
-                                .clientId(session.getClientId())
-                                .username(session.getUsername())
-                                .topic(header.topicName())
-                                .payload(MessageUtils.copyReleaseByteBuf(message.payload()))
-                                .build())
-                        .subscribeOn(contextHolder().getDispatchScheduler())
-                        .subscribe());
-            }
-            // 缓存 Retain 消息
-            if (message.fixedHeader().isRetain()) {
-                messageRegistry.saveRetainMessage(RetainMessage.of(message));
-            }
-            // 集群节点消息广播
-            if (session.getIsCluster()) {
-                send(topics, message, messageRegistry);
-                return;
-            }
-            // MQTT QoS 处理
-            MqttQoS qos = message.fixedHeader().qosLevel();
-            switch (qos) {
-                case AT_LEAST_ONCE:
-                    session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false);
-                    break;
-                case EXACTLY_ONCE:
-                    if (!session.cacheQos2Msg(header.packetId(), MessageUtils.wrapPublishMessage(message, qos, 0))) {
-                        return;
-                    }
-                    session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false);
-                    return;
-                default:
-                    break;
-            }
-            send(topics, message, messageRegistry);
+            processAuthorized(wrapper, session, context, message, header);
         } catch (Exception e) {
             log.error("error ", e);
         }
+    }
+
+    /**
+     * ACL 通过后的发布处理
+     *
+     * @param wrapper 消息包装
+     * @param session 会话
+     * @param context 接收上下文
+     * @param message 发布消息
+     * @param header  可变头
+     */
+    private void processAuthorized(MessageWrapper<MqttPublishMessage> wrapper,
+                                   MqttSession session,
+                                   ReceiveContext<?> context,
+                                   MqttPublishMessage message,
+                                   MqttPublishVariableHeader header) {
+        // === 定向投递分支：平台向指定 clientId 设备下发消息 ===
+        String clientId = wrapper.getClientId();
+        if (clientId != null) {
+            send(clientId, message, context);
+            return;
+        }
+
+        TopicRegistry topicRegistry = context.getTopicRegistry();
+        MessageRegistry messageRegistry = context.getMessageRegistry();
+        Set<SubscribeTopic> topics = topicRegistry.getSubscribesByTopic(header.topicName(), message.fixedHeader().qosLevel());
+        // 分发设备上报消息
+        String topicName = header.topicName();
+        if (!wrapper.getClustered() && !Event.CONNECT.topicName().equals(topicName) && !Event.CLOSE.topicName().equals(topicName)) {
+            context.dispatch(d -> d.onPublish(PublishMessage.builder()
+                            .clientId(session.getClientId())
+                            .username(session.getUsername())
+                            .topic(header.topicName())
+                            .payload(MessageUtils.copyReleaseByteBuf(message.payload()))
+                            .build())
+                    .subscribeOn(contextHolder().getDispatchScheduler())
+                    .subscribe());
+        }
+        // 缓存 Retain 消息
+        if (message.fixedHeader().isRetain()) {
+            messageRegistry.saveRetainMessage(RetainMessage.of(message));
+        }
+        // 集群节点消息广播
+        if (session.getIsCluster()) {
+            send(topics, message, messageRegistry);
+            return;
+        }
+        // MQTT QoS 处理
+        MqttQoS qos = message.fixedHeader().qosLevel();
+        switch (qos) {
+            case AT_LEAST_ONCE:
+                session.write(MqttMessageBuilder.publishAckMessage(header.packetId()), false);
+                break;
+            case EXACTLY_ONCE:
+                if (!session.cacheQos2Msg(header.packetId(), MessageUtils.wrapPublishMessage(message, qos, 0))) {
+                    return;
+                }
+                session.write(MqttMessageBuilder.publishRecMessage(header.packetId()), false);
+                return;
+            default:
+                break;
+        }
+        send(topics, message, messageRegistry);
     }
 
     /**
@@ -207,7 +245,6 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
      * @param subscribeTopics 订阅集合
      * @param message         发布消息
      * @param messageRegistry 消息注册中心
-     *
      */
     private void send(Set<SubscribeTopic> subscribeTopics, MqttPublishMessage message, MessageRegistry messageRegistry) {
         subscribeTopics.stream()
@@ -230,7 +267,6 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
      * @param messageRegistry 消息注册中心
      * @param message         发布消息
      * @return 是否可发送
-     *
      */
     private boolean filterOfflineSession(MqttSession session, MessageRegistry messageRegistry, MqttPublishMessage message) {
         if (session.getStatus() == SessionStatus.ONLINE) {
