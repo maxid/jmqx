@@ -61,6 +61,18 @@ public class MqttConfiguration implements Configuration {
      */
     private Integer             authQueueSize        = 200000;
     /**
+     * ACL 校验超时时间（毫秒）
+     */
+    private Long                aclTimeoutMillis     = 1000L;
+    /**
+     * ACL 线程池大小（IO 密集型建议大于 CPU 核数；与鉴权池隔离）
+     */
+    private Integer             aclThreadSize        = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
+    /**
+     * ACL 线程池队列大小
+     */
+    private Integer             aclQueueSize         = 200000;
+    /**
      * 消息最大限制值
      */
     private Integer             messageMaxSize       = 4194304;

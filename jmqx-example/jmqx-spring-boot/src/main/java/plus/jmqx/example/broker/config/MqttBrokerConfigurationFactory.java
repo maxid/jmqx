@@ -63,6 +63,15 @@ public class MqttBrokerConfigurationFactory
     @Value(value = "${jmqx.tcp.auth-queue-size:0}")
     private Integer authQueueSize;
 
+    @Value(value = "${jmqx.tcp.acl-timeout-millis:1000}")
+    private Long aclTimeoutMillis;
+
+    @Value(value = "${jmqx.tcp.acl-thread-size:0}")
+    private Integer aclThreadSize;
+
+    @Value(value = "${jmqx.tcp.acl-queue-size:0}")
+    private Integer aclQueueSize;
+
     @Value(value = "${jmqx.tcp.message-max-size:4194304}")
     private Integer messageMaxSize;
 
@@ -160,6 +169,15 @@ public class MqttBrokerConfigurationFactory
         }
         if (authQueueSize != null && authQueueSize > 0) {
             config.setAuthQueueSize(authQueueSize);
+        }
+        if (aclTimeoutMillis != null && aclTimeoutMillis > 0) {
+            config.setAclTimeoutMillis(aclTimeoutMillis);
+        }
+        if (aclThreadSize != null && aclThreadSize > 0) {
+            config.setAclThreadSize(aclThreadSize);
+        }
+        if (aclQueueSize != null && aclQueueSize > 0) {
+            config.setAclQueueSize(aclQueueSize);
         }
         config.setMessageMaxSize(messageMaxSize);
         config.setLowWaterMark(lowWaterMark);

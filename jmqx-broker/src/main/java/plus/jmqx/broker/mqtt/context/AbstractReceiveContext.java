@@ -5,6 +5,7 @@ import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import plus.jmqx.broker.acl.AclExecutor;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.acl.impl.DefaultAclManager;
 import plus.jmqx.broker.auth.AuthExecutor;
@@ -96,6 +97,10 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      */
     private final AclManager           aclManager;
     /**
+     * MQTT 主题访问控制执行器
+     */
+    private final AclExecutor          aclExecutor;
+    /**
      * MQTT 认证管理
      */
     private final AuthManager          authManager;
@@ -124,6 +129,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
         this.topicRegistry = topicRegistry();
         this.messageRegistry = messageRegistry();
         this.aclManager = aclManager();
+        this.aclExecutor = aclExecutor();
         this.authManager = authManager();
         this.authExecutor = authExecutor();
     }
@@ -264,6 +270,15 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
     private AclManager aclManager() {
         return Optional.ofNullable(contextHolder().getAclManager())
                 .orElse(Optional.ofNullable(AclManager.INSTANCE).orElseGet(DefaultAclManager::new));
+    }
+
+    /**
+     * 创建主题访问控制执行器
+     *
+     * @return ACL 执行器
+     */
+    private AclExecutor aclExecutor() {
+        return new AclExecutor(aclManager, configuration);
     }
 
     /**
