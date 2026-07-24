@@ -20,33 +20,33 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 
 线格式编解码基于 Netty `MqttDecoder` / `MqttEncoder`，可接受 `protocolLevel=5` 的连接；业务层对多数 MQTT 5 Properties **未消费语义**。图例：✅ 已支持 · ⚠️ 部分支持 · ❌ 未支持。
 
-| 特性 | 状态 | 说明 |
-|---|---|---|
-| 协议握手 / 线格式编解码 | ✅ | CONNECT `protocolLevel=5` 可接入；编解码由 Netty MQTT codec 完成 |
-| WebSocket 子协议协商 | ✅ | 按 OASIS MQTT 第 6 章校验 `Sec-WebSocket-Protocol`（含 v5） |
-| CONNACK Reason Code（3.x→5 映射） | ✅ | 如 Identifier Rejected → Client Identifier Not Valid 等 |
-| CONNACK `Retain Available` | ✅ | 固定宣告为 `1`，与 Retain 实现一致 |
-| CONNACK `Shared Subscription Available` | ✅ | 固定宣告为 `0`（**明确不支持**共享订阅） |
-| Session Taken Over（DISCONNECT `0x8E`） | ✅ | `ConnectMode.KICK` 踢旧连接时先下发再关 TCP |
-| ACL 拒绝 Reason Code | ✅ | PUBACK/PUBREC、SUBACK 使用 `0x87` Not Authorized（仅 MQTT 5 会话） |
-| Retain 消息 | ✅ | 与 `Retain Available=1` 一致 |
-| 通配符订阅 `+` / `#` | ✅ | 主题树已实现；CONNACK **未单独宣告** Wildcard Subscription Available |
-| User Property（PUBLISH） | ⚠️ | 在线 fan-out 透传完整 Properties；Retain / 离线队列目前主要持久化 User Property |
-| Clean Start / 会话持久化 | ⚠️ | 仅处理 Clean Session 位；**不读** Session Expiry Interval |
-| CONNACK 其它 Properties | ❌ | 无 Receive Maximum、Maximum Packet Size、Topic Alias Maximum、Assigned Client Identifier、Server Keep Alive、Maximum QoS、Subscription Identifier Available、Response Information 等 |
-| CONNACK `sessionPresent` | ❌ | 当前恒为 `false`，不反映会话恢复 |
-| Session Expiry Interval | ❌ | CONNECT / DISCONNECT 均未处理 |
-| Will Delay / Will Properties | ❌ | 仅基础 Will（Topic/Payload/QoS/Retain）；连接关闭即发，无延迟 |
-| Topic Alias | ❌ | 未实现 |
-| Subscription Identifier | ❌ | 未实现 |
-| Shared Subscription（`$share/...`） | ❌ | 与 CONNACK 宣告一致，无选路逻辑 |
-| 订阅选项（No Local / Retain As Published / Retain Handling） | ❌ | SUBSCRIBE 仅使用 Topic Filter + QoS |
-| Request/Response（Response Topic / Correlation Data 等） | ❌ | 未实现语义 |
-| Receive Maximum / 协议流控 | ❌ | 仅有本地配置 `maxInflightQos2`，非 MQTT 5 Receive Maximum |
-| Assigned Client Identifier | ❌ | 空 `clientId` 不分配服务端标识 |
-| Enhanced Authentication（AUTH 包） | ❌ | 仅用户名/密码等 `AuthManager` SPI |
-| UNSUBACK / 成功路径 PUB* Reason Code | ❌ | 多为 MQTT 3.x 形态报文 |
-| Reason String / 控制包 User Property | ❌ | CONNACK 等控制包未附带 |
+| 特性 | 状态 | 说明 | 应用场景 |
+|---|---|---|---|
+| 协议握手 / 线格式编解码 | ✅ | CONNECT `protocolLevel=5` 可接入；编解码由 Netty MQTT codec 完成 | 设备/网关以 MQTT 5 客户端接入 Broker |
+| WebSocket 子协议协商 | ✅ | 按 OASIS MQTT 第 6 章校验 `Sec-WebSocket-Protocol`（含 v5） | 浏览器或经 WS 代理的 MQTT 连接 |
+| CONNACK Reason Code（3.x→5 映射） | ✅ | 如 Identifier Rejected → Client Identifier Not Valid 等 | 客户端按标准码区分拒绝原因并提示/重试 |
+| CONNACK `Retain Available` | ✅ | 固定宣告为 `1`，与 Retain 实现一致 | 客户端获知可使用 Retain 能力 |
+| CONNACK `Shared Subscription Available` | ✅ | 固定宣告为 `0`（**明确不支持**共享订阅） | 客户端避免误用 `$share` 订阅 |
+| Session Taken Over（DISCONNECT `0x8E`） | ✅ | `ConnectMode.KICK` 踢旧连接时先下发再关 TCP | 同 `clientId` 重连/互踢，旧端可感知被接管 |
+| ACL 拒绝 Reason Code | ✅ | PUBACK/PUBREC、SUBACK 使用 `0x87` Not Authorized（仅 MQTT 5 会话） | 发布/订阅鉴权失败时客户端明确无权限 |
+| Retain 消息 | ✅ | 与 `Retain Available=1` 一致 | 新订阅者立即拿到主题最新状态（如设备影子） |
+| 通配符订阅 `+` / `#` | ✅ | 主题树已实现；CONNACK **未单独宣告** Wildcard Subscription Available | 按层级批量订阅（如 `device/+/status`） |
+| User Property（PUBLISH） | ⚠️ | 在线 fan-out 透传完整 Properties；Retain / 离线队列目前主要持久化 User Property | 业务自定义元数据随消息传递（如 traceId、租户） |
+| Clean Start / 会话持久化 | ⚠️ | 仅处理 Clean Session 位；**不读** Session Expiry Interval | 断线后是否保留订阅/离线消息（粗粒度） |
+| CONNACK 其它 Properties | ❌ | 无 Receive Maximum、Maximum Packet Size、Topic Alias Maximum、Assigned Client Identifier、Server Keep Alive、Maximum QoS、Subscription Identifier Available、Response Information 等 | 能力协商、限流、别名上限等高级会话参数 |
+| CONNACK `sessionPresent` | ❌ | 当前恒为 `false`，不反映会话恢复 | 客户端判断是否复用了服务端持久会话 |
+| Session Expiry Interval | ❌ | CONNECT / DISCONNECT 均未处理 | 指定会话在断线后保留多久再清理 |
+| Will Delay / Will Properties | ❌ | 仅基础 Will（Topic/Payload/QoS/Retain）；连接关闭即发，无延迟 | 短暂闪断不误发遗愿；遗愿带额外属性 |
+| Topic Alias | ❌ | 未实现 | 高频短报文用数字别名压缩主题名，省带宽 |
+| Subscription Identifier | ❌ | 未实现 | 一条 PUBLISH 对应多个订阅时客户端按 ID 分发处理 |
+| Shared Subscription（`$share/...`） | ❌ | 与 CONNACK 宣告一致，无选路逻辑 | 多消费者负载均衡消费同一主题 |
+| 订阅选项（No Local / Retain As Published / Retain Handling） | ❌ | SUBSCRIBE 仅使用 Topic Filter + QoS | 不收自己发的消息、保留原 Retain 标志、控制是否收 Retain |
+| Request/Response（Response Topic / Correlation Data 等） | ❌ | 未实现语义 | MQTT 上的 RPC/请求响应关联 |
+| Receive Maximum / 协议流控 | ❌ | 仅有本地配置 `maxInflightQos2`，非 MQTT 5 Receive Maximum | 限制飞行中 QoS>0 报文数，防接收端过载 |
+| Assigned Client Identifier | ❌ | 空 `clientId` 不分配服务端标识 | 匿名/临时客户端由 Broker 分配 ID |
+| Enhanced Authentication（AUTH 包） | ❌ | 仅用户名/密码等 `AuthManager` SPI | SCRAM、挑战应答等多轮增强认证 |
+| UNSUBACK / 成功路径 PUB* Reason Code | ❌ | 多为 MQTT 3.x 形态报文 | 成功/失败路径统一用 Reason Code 诊断 |
+| Reason String / 控制包 User Property | ❌ | CONNACK 等控制包未附带 | 给人读的失败说明、控制面扩展元数据 |
 
 > 自定义客户端若依赖上表 ❌ / ⚠️ 项，请先按实际行为验证，或停留在 MQTT 3.1.1。`jmqx-client` 的 v5 API 能力面更宽，**仍受本 Broker 实现范围约束**。
 
