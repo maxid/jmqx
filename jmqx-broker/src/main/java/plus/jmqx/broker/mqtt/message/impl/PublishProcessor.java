@@ -82,8 +82,18 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             MqttPublishMessage message = wrapper.getMessage();
             MqttPublishVariableHeader header = message.variableHeader();
 
-            // 集群节点转发消息跳过 ACL；设备侧 ACL 卸载到独立线程池，避免阻塞 jmqx-publish
+            // 集群节点转发消息跳过 ACL；可能阻塞的 ACL 卸载到独立线程池，完成后回流 jmqx-publish
             if (!session.getIsCluster()) {
+                if (!context.getAclExecutor().requiresOffload()) {
+                    if (!context.getAclExecutor().checkInline(session, header.topicName(), AclAction.PUBLISH)) {
+                        sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
+                        log.debug("mqtt【{}】publish topic 【{}】 acl not authorized ",
+                                session.getConnection(), header.topicName());
+                        return;
+                    }
+                    processAuthorized(wrapper, session, context, message, header);
+                    return;
+                }
                 Object payload = message.payload();
                 if (payload instanceof ByteBuf buf) {
                     // 对抗 process 返回后 channel/dispatcher 释放 payload，保证 ACL 回调时仍可读

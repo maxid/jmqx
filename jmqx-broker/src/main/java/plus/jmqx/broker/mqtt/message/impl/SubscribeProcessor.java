@@ -101,11 +101,19 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
                         existingTopicCount, denyReasonCode),
                 emptyResult(subscriptions.size(), denyReasonCode),
                 session.getClientId()
-        ).whenComplete((result, ex) -> scheduleOnControl(() -> {
-            SubscribeAclResult aclResult = result == null
-                    ? emptyResult(subscriptions.size(), denyReasonCode) : result;
-            applySubscribeResult(context, session, topicRegistry, messageRegistry, subscriptions, messageId, aclResult);
-        }));
+        ).whenComplete((result, ex) -> {
+            Runnable apply = () -> {
+                SubscribeAclResult aclResult = result == null
+                        ? emptyResult(subscriptions.size(), denyReasonCode) : result;
+                applySubscribeResult(context, session, topicRegistry, messageRegistry, subscriptions, messageId, aclResult);
+            };
+            // 非阻塞 ACL：supply 已在当前（control）线程完成，直接应用，避免再 schedule 一次
+            if (!context.getAclExecutor().requiresOffload()) {
+                apply.run();
+            } else {
+                scheduleOnControl(apply);
+            }
+        });
     }
 
     private SubscribeAclResult evaluateSubscriptions(AclManager aclManager,
