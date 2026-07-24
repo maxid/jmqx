@@ -256,8 +256,9 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-broker \
 > 双节点，MQTT 端口分别为解析后的 `port` 与 `port + 1000`，集群通信端口默认 7771/7772，启动前同样会做可用端口解析
 
 ```shell
-MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster \
+MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster -am \
   -Djmqx.integration.tests=true \
+  -Dsurefire.failIfNoSpecifiedTests=false \
   -Dtest=ClusterStressTest \
   -Djmqx.stress.durationSeconds=600 \
   -Djmqx.stress.threads=200 \

@@ -109,8 +109,8 @@ bootstrap.startAwait();
 ```
 EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 非阻塞)
                                     │
-                    Auth/Acl Offload (jmqx-auth-io / jmqx-acl-io)
-                                    │ 完成后回流 publish/control
+         ┌── requiresOffload=false：内联 Auth/ACL（Default*）─────────┐
+         └── requiresOffload=true ：Offload → 回流 publish/control ───┘
                                     ▼
               Platform ──► jmqx-dispatch (boundedElastic)
               Cluster  ──► jmqx-cluster  (boundedElastic, 与平台隔离)
@@ -122,12 +122,13 @@ EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 
 | `workThreadSize` | `jmqx.tcp.work-thread-size` | Netty Worker 线程数 | `max(N*2, 8)` |
 | `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务 parallel 总数（约 3:1 拆为 `jmqx-publish` / `jmqx-control`） | `max(N*4, 16)` |
 | `businessQueueSize` | `jmqx.tcp.business-queue-size` | 业务分发 Sink 队列容量 | `100000` |
-| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | 平台回调 `jmqx-dispatch` 线程数；`<=0` 回退 business | 回退 business |
-| `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列；`<=0` 回退 businessQueue | 回退 businessQueue |
-| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | 集群扩散 `jmqx-cluster` 线程数 | `max(N*2, 8)` |
-| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 集群扩散队列；`<=0` 回退 businessQueue | 回退 businessQueue |
+| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | 平台回调 `jmqx-dispatch` 线程数；`null`/`<=0` 回退 `businessThreadSize` | 回退 business |
+| `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列容量；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | 集群消息扩散 `jmqx-cluster` 线程数（Broker 侧，非 ScaleCube） | `max(N*2, 8)` |
+| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 集群消息扩散队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
 
-> `jmqx-publish` / `jmqx-control` 为 Reactor `newParallel`（假定非阻塞）。Auth/ACL **不占用**该池；完成后会回流对应 Scheduler 再做匹配、会话与写回编排。`Interceptor` 必须非阻塞，见接口契约。
+> `jmqx-publish` / `jmqx-control` 为 Reactor `newParallel`（假定非阻塞）。`Interceptor` 必须非阻塞，见接口契约。  
+> `clusterThreadSize` / `clusterQueueSize` 控制 **PUBLISH/订阅同步等到其它节点的扩散任务** 所用线程池，与下方「集群」节的 `ClusterConfig`（ScaleCube 端口/种子）不同；启用 `jmqx-cluster` 模块时同样生效，详见 [jmqx-cluster README](../jmqx-cluster/README.md#集群配置)。
 
 ### 鉴权 / ACL 卸载线程池
 
@@ -135,18 +136,21 @@ EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 
 
 **Auth 与 ACL 默认使用两套独立线程池**（`jmqx-auth-io-*` / `jmqx-acl-io-*`），避免 PUBLISH 风暴饿死 CONNECT 鉴权。保持专用 `OffloadExecutor`，不使用全局 `Schedulers.boundedElastic()`。
 
-> `AclManager.requiresOffload()` 默认 `true`；`DefaultAclManager` 返回 `false`，在 `jmqx-publish`/`jmqx-control` **内联**校验，避免热路径 Offload+回流。自定义 Feign/DB ACL 保持默认即可。
+| SPI | `requiresOffload()` | 行为 |
+|---|---|---|
+| 默认实现 `DefaultAuthManager` / `DefaultAclManager` | `false` | 在 `jmqx-control` / `jmqx-publish` **内联**校验，无 Offload、无回流 |
+| 自定义实现（未覆盖） | 默认 `true` | 走独立 Offload 池；完成后回流对应 Scheduler 再做会话/匹配/fan-out |
 
 | 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
 |---|---|---|---|
 | `authTimeoutMillis` | `jmqx.tcp.auth-timeout-millis` | 鉴权超时（毫秒），超时视为失败 | `1000` |
-| `authThreadSize` | `jmqx.tcp.auth-thread-size` | 鉴权线程池大小 | `max(N*4, 16)` |
+| `authThreadSize` | `jmqx.tcp.auth-thread-size` | 鉴权线程池大小（仅 `requiresOffload=true` 时有意义） | `max(N*4, 16)` |
 | `authQueueSize` | `jmqx.tcp.auth-queue-size` | 鉴权队列容量，满则拒绝连接 | `200000` |
 | `aclTimeoutMillis` | `jmqx.tcp.acl-timeout-millis` | ACL 超时（毫秒），超时视为拒绝 | `1000` |
-| `aclThreadSize` | `jmqx.tcp.acl-thread-size` | ACL 线程池大小 | `max(N*4, 16)` |
+| `aclThreadSize` | `jmqx.tcp.acl-thread-size` | ACL 线程池大小（仅 `requiresOffload=true` 时有意义） | `max(N*4, 16)` |
 | `aclQueueSize` | `jmqx.tcp.acl-queue-size` | ACL 队列容量，满则拒绝发布/订阅 | `200000` |
 
-> Spring 示例里 `auth-thread-size` / `acl-thread-size` 等为 `0` 时表示不覆盖，沿用 `MqttConfiguration` 默认值。
+> Spring 示例里 `auth-thread-size` / `acl-thread-size` / `dispatch-thread-size` / `cluster-thread-size` 等为 `0` 时表示不覆盖，沿用 `MqttConfiguration` 默认值（或回退规则）。
 
 ### 水位与读写限流
 
@@ -185,7 +189,16 @@ EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 
 
 ### 集群
 
-集群相关字段见 [`jmqx-cluster/README.md`](../jmqx-cluster/README.md#集群配置)，对应 `MqttConfiguration.ClusterConfig`。
+ScaleCube 成员/种子等字段见 [`jmqx-cluster/README.md`](../jmqx-cluster/README.md#集群配置)，对应 `MqttConfiguration.ClusterConfig`。
+
+与集群相关、但挂在 **Broker TCP/线程** 上的配置（启用集群模块时建议关注）：
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | 节点间消息扩散专用池 `jmqx-cluster` | `max(N*2, 8)` |
+| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 扩散任务队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+
+完整线程模型见上文 [线程模型](#线程模型)。
 
 ## 压力测试
 

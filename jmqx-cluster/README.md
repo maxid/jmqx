@@ -77,8 +77,14 @@ new Bootstrap(config2).startAwait();
 
 ## 集群配置
 
-配置入口：`MqttConfiguration.ClusterConfig`（JSON/YAML 中常写作 `cluster`）。  
-Spring 示例属性前缀：`jmqx.cluster.*`。
+配置入口分两类：
+
+1. **`MqttConfiguration.ClusterConfig`**（JSON/YAML 中常写作 `cluster`）— ScaleCube 成员、种子、故障检测等  
+2. **Broker 线程池**（`MqttConfiguration` 顶层 / `jmqx.tcp.*`）— 集群消息扩散所用 `jmqx-cluster` 调度器  
+
+Spring 示例属性前缀：`jmqx.cluster.*`（成员）与 `jmqx.tcp.cluster-*-*`（扩散线程池）。
+
+### ScaleCube / 成员配置
 
 | 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
 |---|---|---|---|
@@ -93,13 +99,31 @@ Spring 示例属性前缀：`jmqx.cluster.*`。
 | `external.host` | — | 容器/云环境对外暴露 IP（NAT 场景） | — |
 | `external.port` | — | 容器/云环境对外暴露端口 | — |
 
+### 集群消息扩散线程池（Broker 侧，1.4.19+）
+
+PUBLISH 扩散、订阅关系同步等走 `Schedulers.newBoundedElastic("jmqx-cluster")`，与平台回调 `jmqx-dispatch`、业务 `jmqx-publish`/`jmqx-control` 隔离。字段定义在 `MqttConfiguration`（非 `ClusterConfig`）：
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | `jmqx-cluster` 线程数；`null`/`<=0` 使用内置默认 | `max(N*2, 8)` |
+| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 扩散任务队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+
+另见平台回调池（与集群扩散同类隔离）：
+
+| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
+|---|---|---|---|
+| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | `jmqx-dispatch` 线程数；`null`/`<=0` 回退 `businessThreadSize` | 回退 business |
+| `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+
+完整线程模型、Auth/ACL Offload 与 `requiresOffload()` 说明见 [jmqx-broker 线程模型](../jmqx-broker/README.md#线程模型)。
+
 ### 配置要点
 
 - **MQTT 端口与集群端口分离**：`MqttConfiguration.port`（如 `1883`）服务设备；`cluster.port`（如 `7771`）仅用于节点间通信。
 - **种子列表**：`url` 建议包含所有节点（或稳定种子），本节点地址会被自动过滤。
 - **命名空间**：`namespace` 不一致的节点互不可见，可用于同进程多集群隔离（测试常见）。
 - **集群 ID**：`namespace:node`（见 `ClusterConfig.getClusterId()`），用于会话/主题路由归属。
-- **Broker 侧配置仍生效**：鉴权/ACL 卸载池（`auth*` / `acl*`）、连接上限、业务线程等见 [jmqx-broker 配置项](../jmqx-broker/README.md#配置项)。集群节点转发的 PUBLISH 会跳过设备侧 ACL，设备入口节点仍做 ACL。
+- **Broker 侧配置仍生效**：鉴权/ACL（`auth*` / `acl*`，含 `requiresOffload`）、连接上限、`business*` / `dispatch*` / `clusterThread*` 等见 [jmqx-broker 配置项](../jmqx-broker/README.md#配置项)。集群节点转发的 PUBLISH 会跳过设备侧 ACL，设备入口节点仍做 ACL。
 
 ### 最小可用示例（YAML / Spring）
 
@@ -107,6 +131,10 @@ Spring 示例属性前缀：`jmqx.cluster.*`。
 jmqx:
   tcp:
     port: 1883
+    # 可选：调大集群扩散池，避免与平台回调争用
+    # cluster-thread-size: 16
+    # cluster-queue-size: 100000
+    # dispatch-thread-size: 16
   cluster:
     enable: true
     namespace: jmqx
