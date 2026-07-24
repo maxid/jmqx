@@ -6,6 +6,11 @@ import java.lang.reflect.Proxy;
 
 /**
  * 拦截器接口
+ * <p>
+ * <b>线程契约：</b>{@link #intercept(Invocation)} 在消息分发调用线程上同步执行
+ * （可能是 Netty Event Loop、{@code jmqx-publish}/{@code jmqx-control} 等）。
+ * 实现必须非阻塞；禁止 JDBC、同步 HTTP、Feign、{@code Thread.sleep} 等。
+ * 若需阻塞 I/O，请自行卸载到专用线程池后再返回。
  *
  * @author maxid
  * @since 2025/4/16 17:14

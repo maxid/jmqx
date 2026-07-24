@@ -54,6 +54,18 @@ public class MqttBrokerConfigurationFactory
     @Value(value = "${jmqx.tcp.business-queue-size:100000}")
     private Integer businessQueueSize;
 
+    @Value(value = "${jmqx.tcp.dispatch-thread-size:0}")
+    private Integer dispatchThreadSize;
+
+    @Value(value = "${jmqx.tcp.dispatch-queue-size:0}")
+    private Integer dispatchQueueSize;
+
+    @Value(value = "${jmqx.tcp.cluster-thread-size:0}")
+    private Integer clusterThreadSize;
+
+    @Value(value = "${jmqx.tcp.cluster-queue-size:0}")
+    private Integer clusterQueueSize;
+
     @Value(value = "${jmqx.tcp.auth-timeout-millis:10000}")
     private Long authTimeoutMillis;
 
@@ -160,6 +172,18 @@ public class MqttBrokerConfigurationFactory
         }
         if (businessQueueSize != null && businessQueueSize > 0) {
             config.setBusinessQueueSize(businessQueueSize);
+        }
+        if (dispatchThreadSize != null && dispatchThreadSize > 0) {
+            config.setDispatchThreadSize(dispatchThreadSize);
+        }
+        if (dispatchQueueSize != null && dispatchQueueSize > 0) {
+            config.setDispatchQueueSize(dispatchQueueSize);
+        }
+        if (clusterThreadSize != null && clusterThreadSize > 0) {
+            config.setClusterThreadSize(clusterThreadSize);
+        }
+        if (clusterQueueSize != null && clusterQueueSize > 0) {
+            config.setClusterQueueSize(clusterQueueSize);
         }
         if (authTimeoutMillis != null && authTimeoutMillis > 0) {
             config.setAuthTimeoutMillis(authTimeoutMillis);

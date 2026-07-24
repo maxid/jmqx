@@ -5,6 +5,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import plus.jmqx.broker.acl.AclManager;
 import plus.jmqx.broker.auth.AuthManager;
+import plus.jmqx.broker.concurrent.SchedulerTasks;
 import plus.jmqx.broker.mqtt.MqttConfiguration;
 import plus.jmqx.broker.mqtt.context.ContextHolder;
 import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
@@ -96,10 +97,22 @@ public class Bootstrap {
         ContextHolder holder = contextHolder();
         holder.setAclManager(aclManager);
         holder.setAuthManager(authManager);
+        int dispatchThreads = SchedulerTasks.resolveSize(
+                config.getDispatchThreadSize(), config.getBusinessThreadSize());
+        int dispatchQueue = SchedulerTasks.resolveSize(
+                config.getDispatchQueueSize(), config.getBusinessQueueSize());
         holder.setDispatchScheduler(Schedulers.newBoundedElastic(
-                config.getBusinessThreadSize(),
-                config.getBusinessQueueSize(),
-                "jmqx-dispatch-io"
+                dispatchThreads,
+                dispatchQueue,
+                "jmqx-dispatch"
+        ));
+        int clusterDefaultThreads = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
+        int clusterThreads = SchedulerTasks.resolveSize(config.getClusterThreadSize(), clusterDefaultThreads);
+        int clusterQueue = SchedulerTasks.resolveSize(config.getClusterQueueSize(), config.getBusinessQueueSize());
+        holder.setClusterScheduler(Schedulers.newBoundedElastic(
+                clusterThreads,
+                clusterQueue,
+                "jmqx-cluster"
         ));
         holder.setPlatformDispatcher(platformDispatcher);
         return startMqtt(config)
