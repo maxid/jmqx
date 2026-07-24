@@ -106,7 +106,7 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 <dependency>
     <groupId>plus.jmqx.iot</groupId>
     <artifactId>jmqx-broker</artifactId>
-    <version>1.4.18</version>
+    <version>1.4.19</version>
 </dependency>
 ```
 
