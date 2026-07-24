@@ -5,7 +5,7 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 ## 功能特性
 
 - **多协议支持**：同时支持 MQTT、MQTTS（TLS）、MQTT-WebSocket、MQTT-WSS 四种传输层
-- **MQTT 协议版本**：支持 v3.1、v3.1.1、v5（v5 部分实现）
+- **MQTT 协议版本**：支持 v3.1、v3.1.1、v5（[v5 部分实现，详见下表](#mqtt-v5-特性支持)）
 - **可插拔鉴权**：通过 `AuthManager` SPI 自定义设备连接鉴权
 - **主题访问控制**：通过 `AclManager` SPI 自定义发布/订阅权限
 - **设备生命周期钩子**：通过 `PlatformDispatcher` 监听设备上线、下线、消息上报
@@ -15,6 +15,40 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 - **指标 SPI**：`MetricsManager` 可替换的监控指标实现
 - **消息拦截器链**：支持自定义拦截器处理消息分发管线
 - **定向下发**：支持通过 clientId 向指定设备下发消息；**目标须已订阅该主题**（未订阅则不下发，符合 MQTT 订阅语义），走完整分发管线（含 ACL）
+
+## MQTT v5 特性支持
+
+线格式编解码基于 Netty `MqttDecoder` / `MqttEncoder`，可接受 `protocolLevel=5` 的连接；业务层对多数 MQTT 5 Properties **未消费语义**。图例：✅ 已支持 · ⚠️ 部分支持 · ❌ 未支持。
+
+| 特性 | 状态 | 说明 |
+|---|---|---|
+| 协议握手 / 线格式编解码 | ✅ | CONNECT `protocolLevel=5` 可接入；编解码由 Netty MQTT codec 完成 |
+| WebSocket 子协议协商 | ✅ | 按 OASIS MQTT 第 6 章校验 `Sec-WebSocket-Protocol`（含 v5） |
+| CONNACK Reason Code（3.x→5 映射） | ✅ | 如 Identifier Rejected → Client Identifier Not Valid 等 |
+| CONNACK `Retain Available` | ✅ | 固定宣告为 `1`，与 Retain 实现一致 |
+| CONNACK `Shared Subscription Available` | ✅ | 固定宣告为 `0`（**明确不支持**共享订阅） |
+| Session Taken Over（DISCONNECT `0x8E`） | ✅ | `ConnectMode.KICK` 踢旧连接时先下发再关 TCP |
+| ACL 拒绝 Reason Code | ✅ | PUBACK/PUBREC、SUBACK 使用 `0x87` Not Authorized（仅 MQTT 5 会话） |
+| Retain 消息 | ✅ | 与 `Retain Available=1` 一致 |
+| 通配符订阅 `+` / `#` | ✅ | 主题树已实现；CONNACK **未单独宣告** Wildcard Subscription Available |
+| User Property（PUBLISH） | ⚠️ | 在线 fan-out 透传完整 Properties；Retain / 离线队列目前主要持久化 User Property |
+| Clean Start / 会话持久化 | ⚠️ | 仅处理 Clean Session 位；**不读** Session Expiry Interval |
+| CONNACK 其它 Properties | ❌ | 无 Receive Maximum、Maximum Packet Size、Topic Alias Maximum、Assigned Client Identifier、Server Keep Alive、Maximum QoS、Subscription Identifier Available、Response Information 等 |
+| CONNACK `sessionPresent` | ❌ | 当前恒为 `false`，不反映会话恢复 |
+| Session Expiry Interval | ❌ | CONNECT / DISCONNECT 均未处理 |
+| Will Delay / Will Properties | ❌ | 仅基础 Will（Topic/Payload/QoS/Retain）；连接关闭即发，无延迟 |
+| Topic Alias | ❌ | 未实现 |
+| Subscription Identifier | ❌ | 未实现 |
+| Shared Subscription（`$share/...`） | ❌ | 与 CONNACK 宣告一致，无选路逻辑 |
+| 订阅选项（No Local / Retain As Published / Retain Handling） | ❌ | SUBSCRIBE 仅使用 Topic Filter + QoS |
+| Request/Response（Response Topic / Correlation Data 等） | ❌ | 未实现语义 |
+| Receive Maximum / 协议流控 | ❌ | 仅有本地配置 `maxInflightQos2`，非 MQTT 5 Receive Maximum |
+| Assigned Client Identifier | ❌ | 空 `clientId` 不分配服务端标识 |
+| Enhanced Authentication（AUTH 包） | ❌ | 仅用户名/密码等 `AuthManager` SPI |
+| UNSUBACK / 成功路径 PUB* Reason Code | ❌ | 多为 MQTT 3.x 形态报文 |
+| Reason String / 控制包 User Property | ❌ | CONNACK 等控制包未附带 |
+
+> 自定义客户端若依赖上表 ❌ / ⚠️ 项，请先按实际行为验证，或停留在 MQTT 3.1.1。`jmqx-client` 的 v5 API 能力面更宽，**仍受本 Broker 实现范围约束**。
 
 ## 架构概览
 
