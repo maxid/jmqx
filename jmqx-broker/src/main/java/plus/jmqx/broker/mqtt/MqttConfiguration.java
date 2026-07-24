@@ -43,7 +43,7 @@ public class MqttConfiguration implements Configuration {
     /**
      * 业务分发 parallel 线程总数（按约 3:1 拆为 jmqx-publish / jmqx-control）
      */
-    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
+    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
     /**
      * 业务分发 Sink 队列容量
      */

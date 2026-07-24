@@ -25,4 +25,14 @@ public class DefaultAclManager implements AclManager {
         return Boolean.TRUE;
     }
 
+    /**
+     * 默认实现恒允许且无阻塞 I/O，无需 Offload
+     *
+     * @return false
+     */
+    @Override
+    public boolean requiresOffload() {
+        return false;
+    }
+
 }

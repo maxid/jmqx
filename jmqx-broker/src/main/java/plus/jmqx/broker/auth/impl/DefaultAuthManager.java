@@ -23,4 +23,9 @@ public class DefaultAuthManager implements AuthManager {
         return Boolean.TRUE;
     }
 
+    @Override
+    public boolean requiresOffload() {
+        return false;
+    }
+
 }

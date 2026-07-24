@@ -26,4 +26,17 @@ public interface AclManager {
      */
     boolean check(MqttSession session, String topic, AclAction action);
 
+    /**
+     * 是否必须卸载到独立线程池执行 {@link #check}。
+     * <p>
+     * 默认 {@code true}（保守：自定义实现可能含 Feign/DB 等阻塞调用）。
+     * 内存规则、恒允许等非阻塞实现应返回 {@code false}，以便在
+     * {@code jmqx-publish}/{@code jmqx-control} 上内联校验，避免无谓的 Offload + 回流切换。
+     *
+     * @return {@code true} 时走 AclExecutor Offload；{@code false} 时调用方可同步内联
+     */
+    default boolean requiresOffload() {
+        return true;
+    }
+
 }

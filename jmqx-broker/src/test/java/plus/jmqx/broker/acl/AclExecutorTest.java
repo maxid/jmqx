@@ -48,11 +48,19 @@ class AclExecutorTest {
     }
 
     @Test
-    void supplySupportsBatchTask() {
+    void defaultAclManagerSkipsOffload() {
+        AclExecutor executor = new AclExecutor(new plus.jmqx.broker.acl.impl.DefaultAclManager(),
+                "mqtt", 1000, 8, 1000);
+        assertEquals(false, executor.requiresOffload());
+        assertEquals(true, executor.checkInline(null, "t/1", AclAction.PUBLISH));
+        assertEquals(Boolean.TRUE, executor.check(null, "t/1", AclAction.PUBLISH).join());
+    }
+
+    @Test
+    void customAclManagerRequiresOffloadByDefault() {
         AclManager aclManager = (session, topic, action) -> true;
         AclExecutor executor = new AclExecutor(aclManager, "mqtt", 1000, 8, 1000);
-        Integer result = executor.supply(() -> 2, -1, "c1").join();
-        assertEquals(2, result);
+        assertEquals(true, executor.requiresOffload());
     }
 
 }

@@ -120,7 +120,7 @@ EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 
 |---|---|---|---|
 | `bossThreadSize` | `jmqx.tcp.boss-thread-size` | Netty Boss 线程数 | `N` |
 | `workThreadSize` | `jmqx.tcp.work-thread-size` | Netty Worker 线程数 | `max(N*2, 8)` |
-| `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务 parallel 总数（约 3:1 拆为 `jmqx-publish` / `jmqx-control`） | `max(N*2, 8)` |
+| `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务 parallel 总数（约 3:1 拆为 `jmqx-publish` / `jmqx-control`） | `max(N*4, 16)` |
 | `businessQueueSize` | `jmqx.tcp.business-queue-size` | 业务分发 Sink 队列容量 | `100000` |
 | `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | 平台回调 `jmqx-dispatch` 线程数；`<=0` 回退 business | 回退 business |
 | `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列；`<=0` 回退 businessQueue | 回退 businessQueue |
@@ -134,6 +134,8 @@ EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 
 用户自定义 `AuthManager` / `AclManager` 可能包含 Feign、DB 等阻塞调用。Broker 会将其切到独立线程池，避免在 `jmqx-publish` / `jmqx-control`（Reactor NonBlocking）上触发 `block()` 异常或拖死心跳。
 
 **Auth 与 ACL 默认使用两套独立线程池**（`jmqx-auth-io-*` / `jmqx-acl-io-*`），避免 PUBLISH 风暴饿死 CONNECT 鉴权。保持专用 `OffloadExecutor`，不使用全局 `Schedulers.boundedElastic()`。
+
+> `AclManager.requiresOffload()` 默认 `true`；`DefaultAclManager` 返回 `false`，在 `jmqx-publish`/`jmqx-control` **内联**校验，避免热路径 Offload+回流。自定义 Feign/DB ACL 保持默认即可。
 
 | 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
 |---|---|---|---|
