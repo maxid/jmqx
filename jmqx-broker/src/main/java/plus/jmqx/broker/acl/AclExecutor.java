@@ -61,6 +61,31 @@ public class AclExecutor {
     }
 
     /**
+     * 当前 ACL 实现是否需要 Offload（自定义阻塞实现为 true）
+     *
+     * @return 是否需要卸载
+     */
+    public boolean requiresOffload() {
+        return aclManager == null || aclManager.requiresOffload();
+    }
+
+    /**
+     * 同步执行单次 ACL 校验（仅当 {@link #requiresOffload()} 为 false 时由调用方使用）
+     *
+     * @param session 会话
+     * @param topic   主题
+     * @param action  动作
+     * @return 校验结果
+     */
+    public boolean checkInline(MqttSession session, String topic, AclAction action) {
+        try {
+            return Boolean.TRUE.equals(aclManager.check(session, topic, action));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * 执行单次 ACL 校验，超时/异常/队列满时返回 false
      *
      * @param session 会话
@@ -69,6 +94,9 @@ public class AclExecutor {
      * @return 校验结果
      */
     public CompletableFuture<Boolean> check(MqttSession session, String topic, AclAction action) {
+        if (!requiresOffload()) {
+            return CompletableFuture.completedFuture(checkInline(session, topic, action));
+        }
         String traceKey = session == null ? topic : session.getClientId();
         return offloadExecutor.supply(
                 () -> Boolean.TRUE.equals(aclManager.check(session, topic, action)),
@@ -78,7 +106,8 @@ public class AclExecutor {
     }
 
     /**
-     * 在 ACL 线程池执行自定义任务（如一次 SUBSCRIBE 内批量校验），超时/异常/队列满时返回 fallback
+     * 在 ACL 线程池执行自定义任务（如一次 SUBSCRIBE 内批量校验），超时/异常/队列满时返回 fallback。
+     * 当 {@link #requiresOffload()} 为 false 时在调用线程同步执行。
      *
      * @param task     任务
      * @param fallback 失败回退值
@@ -87,6 +116,13 @@ public class AclExecutor {
      * @return 异步结果
      */
     public <T> CompletableFuture<T> supply(Supplier<T> task, T fallback, String traceKey) {
+        if (!requiresOffload()) {
+            try {
+                return CompletableFuture.completedFuture(task.get());
+            } catch (Exception e) {
+                return CompletableFuture.completedFuture(fallback);
+            }
+        }
         return offloadExecutor.supply(task, fallback, traceKey);
     }
 

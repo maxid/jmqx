@@ -25,4 +25,14 @@ public interface AuthManager {
      */
     boolean auth(String clientId, String username, byte[] password);
 
+    /**
+     * 是否必须卸载到独立线程池执行 {@link #auth}。
+     * 默认 {@code true}；{@code DefaultAuthManager} 等非阻塞实现应返回 {@code false}。
+     *
+     * @return 是否需要 Offload
+     */
+    default boolean requiresOffload() {
+        return true;
+    }
+
 }

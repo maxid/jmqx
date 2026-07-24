@@ -38,8 +38,8 @@
 | Keepalive / PING | EL | EL 旁路写 PONG | ✅ | ✅ | `MqttReceiveContext` |
 | CONNECT 鉴权 | auth 专用池 | `jmqx-auth-io`（`OffloadExecutor`） | ✅ | ✅ | `AuthExecutor` / `ConnectProcessor` |
 | SUB/PUB ACL | acl 专用池 | `jmqx-acl-io` | ✅ | ✅ | `AclExecutor` / `PublishProcessor` / `SubscribeProcessor` |
-| 鉴权/ACL **之后** 匹配、会话、fan-out | EL / parallel（数据面） | 多在 **auth/acl 回调线程** 继续 | ⚠️→❌ | ✅ | R1：`scheduleOnPublish` / `scheduleOnControl` 回流 |
-| 主题匹配 + 大扇出 | EL 或 `parallel` | 常在 **acl 池**；入口曾在 publish-io | ⚠️ | ✅ | 回流后在 `jmqx-publish` / `jmqx-control` |
+| 鉴权/ACL **之后** 匹配、会话、fan-out | EL / parallel（数据面） | 多在 **auth/acl 回调线程** 继续 | ⚠️→❌ | ✅ | R1 回流；`requiresOffload()=false` 时内联（DefaultAcl/Auth） |
+| 主题匹配 + 大扇出 | EL 或 `parallel` | 常在 **acl 池**；入口曾在 publish-io | ⚠️ | ✅ | 默认 ACL 内联于 `jmqx-publish`；阻塞 ACL 仍 Offload+回流 |
 | QoS 内存状态机 | 宜连接 EL 亲和 | 在 publish-io / acl / control-io 上改 session | ⚠️ | ⚠️ | 已离开 acl 池；EL 亲和仍待 R7 |
 | 写回客户端 | 目标连接 EL | `outbound().sendObject`（一般安全） | ✅/⚠️ | ✅/⚠️ | 写安全；可变状态亲和未文档化（R7） |
 | 平台 SPI 回调 | blocking 池 | `jmqx-dispatch-io`（与 business 同尺寸） | ✅ | ✅ | `jmqx-dispatch`；R4 配置已拆分 |

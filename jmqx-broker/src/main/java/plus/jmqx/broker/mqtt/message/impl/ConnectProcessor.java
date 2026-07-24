@@ -159,6 +159,18 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                 return;
             }
         }
+        if (!context.getAuthExecutor().requiresOffload()) {
+            boolean passed = context.getAuthExecutor().authInline(clientId, username, password);
+            if (!passed) {
+                session.setStatus(SessionStatus.AUTH_FAILED);
+                dispatchConnectionLost(session, context);
+                badCredentials(session, mqttVersion);
+                return;
+            }
+            afterAuthenticated(message, session, context, header, payload, channelRegistry,
+                    topicRegistry, eventRegistry, clientId, username, mqttVersion);
+            return;
+        }
         context.getAuthExecutor().execute(clientId, username, password)
                 .thenAccept(passed -> scheduleOnControl(() -> {
                     if (!passed) {

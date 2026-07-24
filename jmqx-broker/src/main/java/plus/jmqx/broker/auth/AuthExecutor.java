@@ -59,6 +59,31 @@ public class AuthExecutor {
     }
 
     /**
+     * 当前鉴权实现是否需要 Offload
+     *
+     * @return 是否需要卸载
+     */
+    public boolean requiresOffload() {
+        return authManager == null || authManager.requiresOffload();
+    }
+
+    /**
+     * 同步鉴权（仅当 {@link #requiresOffload()} 为 false 时由调用方使用）
+     *
+     * @param clientId 设备 ID
+     * @param username 用户名
+     * @param password 密码
+     * @return 鉴权结果
+     */
+    public boolean authInline(String clientId, String username, byte[] password) {
+        try {
+            return Boolean.TRUE.equals(authManager.auth(clientId, username, password));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * 执行鉴权并在超时/异常/队列满场景下返回失败
      *
      * @param clientId 设备 ID
@@ -67,6 +92,9 @@ public class AuthExecutor {
      * @return 鉴权结果
      */
     public CompletableFuture<Boolean> execute(String clientId, String username, byte[] password) {
+        if (!requiresOffload()) {
+            return CompletableFuture.completedFuture(authInline(clientId, username, password));
+        }
         return offloadExecutor.supply(
                 () -> Boolean.TRUE.equals(authManager.auth(clientId, username, password)),
                 Boolean.FALSE,
