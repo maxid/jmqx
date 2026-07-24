@@ -29,38 +29,39 @@
 
 ## 2. 对标矩阵
 
-图例：✅ 对齐 · ⚠️ 部分对齐 / 有风险 · ❌ 缺口 · — 当前产品范围外
+图例：✅ 对齐 · ⚠️ 部分对齐 / 有风险 · ❌ 缺口 · — 当前产品范围外  
+「判定」= 整改前快照；「整改后判定」= R1/R2/R4/R5 落地后（见 §7）。
 
-| ADR 业务 / 决策 | 推荐执行域 | jmqx 现状 | 判定 | 证据（入口） |
-|-----------------|------------|-----------|------|--------------|
-| TCP Codec / Accept | EL | `jmqx-event-loop` | ✅ | `AbstractReceiveContext` / `Mqtt*Receiver` |
-| Keepalive / PING | EL | EL 旁路写 PONG | ✅ | `MqttReceiveContext` |
-| CONNECT 鉴权 | auth 专用池 | `jmqx-auth-io`（`OffloadExecutor`） | ✅ | `AuthExecutor` / `ConnectProcessor` |
-| SUB/PUB ACL | acl 专用池 | `jmqx-acl-io` | ✅ | `AclExecutor` / `PublishProcessor` / `SubscribeProcessor` |
-| 鉴权/ACL **之后** 匹配、会话、fan-out | EL / parallel（数据面） | 多在 **auth/acl 回调线程** 继续 | ⚠️→❌ | `PublishProcessor.processAuthorized` 在 `whenComplete`；CONNECT `thenAccept` |
-| 主题匹配 + 大扇出 | EL 或 `parallel` | 常在 **acl 池**；入口曾在 publish-io | ⚠️ | 同上 |
-| QoS 内存状态机 | 宜连接 EL 亲和 | 在 publish-io / acl / control-io 上改 session | ⚠️ | `session.cacheQos2Msg` / `session.write` |
-| 写回客户端 | 目标连接 EL | `outbound().sendObject`（一般安全） | ✅/⚠️ | 写安全；可变状态亲和未文档化 |
-| 平台 SPI 回调 | blocking 池 | `jmqx-dispatch-io` | ✅ | `Bootstrap` + 各 Processor `subscribeOn` |
-| 用户 `Interceptor` | 默认按阻塞 | **同步**跑在 dispatch 调用线程 | ⚠️ | `MessageProxy` |
-| 集群 PUBLISH 扩散 | cluster-el / 专用 | 全局 `Schedulers.boundedElastic()` | ❌ | `MessageProxy.TailIntercept:70` |
-| 集群订阅同步 | 同上 | 同上 | ❌ | `SubscribeProcessor` / `UnsubscribeProcessor` / `ConnectProcessor` |
-| 独立 `cluster-el` | 与 client-el 分离 | ScaleCube 自带 transport，**未**与 client LoopResources 隔离 | ❌ | `ScubeClusterRegistry` |
-| `cluster-ctrl`（single） | 成员/路由串行 | 无；`ConcurrentHashMap` 多线程更新 | ❌ | 集群路由相关 |
-| persist 池 | 磁盘/DB 持久化 | 默认内存 `MessageRegistry` | — | 上磁盘 SPI 后再建 |
-| bridge 池 | Webhook 等 | 无内置 bridge | — | |
-| 池监控 / 队列深度 | ADR §8 | 缺统一 metrics | ❌ | — |
-| D5 禁止 EL/parallel 阻塞 | — | Auth/ACL 已卸载；Interceptor 仍可能堵 | ⚠️ | |
+| ADR 业务 / 决策 | 推荐执行域 | jmqx 现状（整改前） | 判定 | 整改后判定 | 证据（入口） |
+|-----------------|------------|-------------------|------|------------|--------------|
+| TCP Codec / Accept | EL | `jmqx-event-loop` | ✅ | ✅ | `AbstractReceiveContext` / `Mqtt*Receiver` |
+| Keepalive / PING | EL | EL 旁路写 PONG | ✅ | ✅ | `MqttReceiveContext` |
+| CONNECT 鉴权 | auth 专用池 | `jmqx-auth-io`（`OffloadExecutor`） | ✅ | ✅ | `AuthExecutor` / `ConnectProcessor` |
+| SUB/PUB ACL | acl 专用池 | `jmqx-acl-io` | ✅ | ✅ | `AclExecutor` / `PublishProcessor` / `SubscribeProcessor` |
+| 鉴权/ACL **之后** 匹配、会话、fan-out | EL / parallel（数据面） | 多在 **auth/acl 回调线程** 继续 | ⚠️→❌ | ✅ | R1：`scheduleOnPublish` / `scheduleOnControl` 回流 |
+| 主题匹配 + 大扇出 | EL 或 `parallel` | 常在 **acl 池**；入口曾在 publish-io | ⚠️ | ✅ | 回流后在 `jmqx-publish` / `jmqx-control` |
+| QoS 内存状态机 | 宜连接 EL 亲和 | 在 publish-io / acl / control-io 上改 session | ⚠️ | ⚠️ | 已离开 acl 池；EL 亲和仍待 R7 |
+| 写回客户端 | 目标连接 EL | `outbound().sendObject`（一般安全） | ✅/⚠️ | ✅/⚠️ | 写安全；可变状态亲和未文档化（R7） |
+| 平台 SPI 回调 | blocking 池 | `jmqx-dispatch-io`（与 business 同尺寸） | ✅ | ✅ | `jmqx-dispatch`；R4 配置已拆分 |
+| 用户 `Interceptor` | 默认按阻塞 | **同步**跑在 dispatch 调用线程 | ⚠️ | ⚠️ | R5：非阻塞契约已文档化；仍同步执行 |
+| 集群 PUBLISH 扩散 | cluster-el / 专用 | 全局 `Schedulers.boundedElastic()` | ❌ | ✅ | R2：`jmqx-cluster`（`MessageProxy`） |
+| 集群订阅同步 | 同上 | 同上 | ❌ | ✅ | R2：`Subscribe`/`Unsubscribe`/`Connect` 走 `SchedulerTasks.subscribeOnCluster` |
+| 独立 `cluster-el` | 与 client-el 分离 | ScaleCube 自带 transport，**未**与 client LoopResources 隔离 | ❌ | ❌ | `ScubeClusterRegistry`（R3 未做） |
+| `cluster-ctrl`（single） | 成员/路由串行 | 无；`ConcurrentHashMap` 多线程更新 | ❌ | ❌ | 集群路由相关（R3 未做） |
+| persist 池 | 磁盘/DB 持久化 | 默认内存 `MessageRegistry` | — | — | 上磁盘 SPI 后再建（R9） |
+| bridge 池 | Webhook 等 | 无内置 bridge | — | — | |
+| 池监控 / 队列深度 | ADR §8 | 缺统一 metrics | ❌ | ❌ | R8 未做 |
+| D5 禁止 EL/parallel 阻塞 | — | Auth/ACL 已卸载；Interceptor 仍可能堵 | ⚠️ | ⚠️ | Offload+回流已加固；Interceptor 仍依赖契约 |
 
 ### 当前线程流（简图）
 
 ```
 EL (jmqx-event-loop)
-  └─ emit → publishOn → jmqx-publish-io / jmqx-control-io
+  └─ emit → publishOn → jmqx-publish / jmqx-control
        └─ Auth/Acl Offload (jmqx-auth-io / jmqx-acl-io)
-            └─ whenComplete / thenAccept  ← 匹配、fan-out、CONNACK 常停在这里 ⚠️
-                 ├─ Platform → jmqx-dispatch-io ✅
-                 └─ Cluster spread → 全局 boundedElastic ❌
+            └─ scheduleOnPublish/Control 回流 ✅
+                 ├─ Platform → jmqx-dispatch ✅
+                 └─ Cluster spread → jmqx-cluster ✅
 ```
 
 ---
