@@ -82,7 +82,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
             MqttPublishMessage message = wrapper.getMessage();
             MqttPublishVariableHeader header = message.variableHeader();
 
-            // 集群节点转发消息跳过 ACL；设备侧 ACL 卸载到独立线程池，避免阻塞 jmqx-publish-io
+            // 集群节点转发消息跳过 ACL；设备侧 ACL 卸载到独立线程池，避免阻塞 jmqx-publish
             if (!session.getIsCluster()) {
                 Object payload = message.payload();
                 if (payload instanceof ByteBuf buf) {
@@ -90,7 +90,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
                     buf.retain();
                 }
                 context.getAclExecutor().check(session, header.topicName(), AclAction.PUBLISH)
-                        .whenComplete((passed, ex) -> {
+                        .whenComplete((passed, ex) -> scheduleOnPublish(() -> {
                             try {
                                 if (!Boolean.TRUE.equals(passed)) {
                                     sendRejectAck(session, message.fixedHeader().qosLevel(), header.packetId());
@@ -106,7 +106,7 @@ public class PublishProcessor extends NamespceMessageProcessor<MqttPublishMessag
                                     buf.release();
                                 }
                             }
-                        });
+                        }));
                 return;
             }
 

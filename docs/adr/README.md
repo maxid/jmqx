@@ -5,3 +5,4 @@
 | 编号 | 标题 | 状态 |
 |------|------|------|
 | [0001](./0001-reactor-schedulers-for-mqtt-broker.md) | 基于 reactor-netty 的 MQTT Broker / Cluster 业务与 Reactor Schedulers 选型 | Accepted（参考基线） |
+| [0001-roadmap](./0001-roadmap-schedulers-alignment.md) | ADR-0001 与 jmqx 实现对标及整改 Roadmap | Active |

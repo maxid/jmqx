@@ -9,8 +9,10 @@ import java.util.function.Supplier;
 
 /**
  * ACL 执行器<br/>
- * 因为不清楚用户的 ACL 实现采用何种方案(如 openfeign 等), 可能会导致 Reactor 业务线程（jmqx-control-io / jmqx-publish-io）被阻塞<br/>
+ * 因为不清楚用户的 ACL 实现采用何种方案(如 openfeign 等), 可能会导致 Reactor 业务线程（jmqx-control / jmqx-publish）被阻塞<br/>
  * 统一把 ACL 调用切到独立业务线程池（与 AuthExecutor 隔离，避免发布风暴饿死连接鉴权），并设置超时和熔断
+ * <p>
+ * ACL 完成后应通过 {@code scheduleOnPublish}/{@code scheduleOnControl} 回流数据面，勿在本池线程继续做主题匹配或 fan-out。
  *
  * @author maxid
  * @since 2026/7/23 23:30

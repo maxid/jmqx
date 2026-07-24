@@ -41,6 +41,34 @@ public interface Configuration {
     Integer getBusinessQueueSize();
 
     /**
+     * 平台生命周期回调线程数；{@code null}/{@code <=0} 时回退 {@link #getBusinessThreadSize()}
+     *
+     * @return 线程数
+     */
+    Integer getDispatchThreadSize();
+
+    /**
+     * 平台生命周期回调队列容量；{@code null}/{@code <=0} 时回退 {@link #getBusinessQueueSize()}
+     *
+     * @return 队列容量
+     */
+    Integer getDispatchQueueSize();
+
+    /**
+     * 集群消息扩散线程数；{@code null}/{@code <=0} 时使用内置默认
+     *
+     * @return 线程数
+     */
+    Integer getClusterThreadSize();
+
+    /**
+     * 集群消息扩散队列容量；{@code null}/{@code <=0} 时回退 {@link #getBusinessQueueSize()}
+     *
+     * @return 队列容量
+     */
+    Integer getClusterQueueSize();
+
+    /**
      * 连接鉴权超时时间（毫秒）
      *
      * @return 超时时间

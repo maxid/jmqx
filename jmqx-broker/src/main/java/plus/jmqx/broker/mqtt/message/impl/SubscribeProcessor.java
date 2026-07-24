@@ -21,7 +21,7 @@ import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.registry.MessageRegistry;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import reactor.core.scheduler.Schedulers;
+import plus.jmqx.broker.concurrent.SchedulerTasks;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -101,11 +101,11 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
                         existingTopicCount, denyReasonCode),
                 emptyResult(subscriptions.size(), denyReasonCode),
                 session.getClientId()
-        ).whenComplete((result, ex) -> {
+        ).whenComplete((result, ex) -> scheduleOnControl(() -> {
             SubscribeAclResult aclResult = result == null
                     ? emptyResult(subscriptions.size(), denyReasonCode) : result;
             applySubscribeResult(context, session, topicRegistry, messageRegistry, subscriptions, messageId, aclResult);
-        });
+        }));
     }
 
     private SubscribeAclResult evaluateSubscriptions(AclManager aclManager,
@@ -176,8 +176,8 @@ public class SubscribeProcessor extends NamespceMessageProcessor<MqttSubscribeMe
         String nodeId = config.getClusterId();
         for (SubscribeTopic topic : topics) {
             SubscribeTopicMessage stm = new SubscribeTopicMessage(nodeId, topic.getTopicFilter(), true);
-            registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
-                    .subscribeOn(Schedulers.boundedElastic())
+            SchedulerTasks.subscribeOnCluster(contextHolder(),
+                            registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE)))
                     .subscribe();
         }
     }
