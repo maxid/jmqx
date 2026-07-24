@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
  * 鉴权执行器<br/>
  * 因为不清楚用户的鉴权实现采用何种方案(如 openfeign 等), 可能会导致 Netty event loop 被阻塞, 连带影响心跳、收发包和重连风暴<br/>
  * 统一把鉴权调用切到独立业务线程池，并设置超时和熔断
+ * <p>
+ * 鉴权完成后应通过 {@code scheduleOnControl} 回流控制面，勿在本池线程继续做会话注册或协议写回编排。
  *
  * @author maxid
  * @since 2026/4/16 23:04

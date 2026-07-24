@@ -41,13 +41,29 @@ public class MqttConfiguration implements Configuration {
      */
     private Integer             workThreadSize       = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
     /**
-     * Netty 业务线程数
+     * 业务分发 parallel 线程总数（按约 3:1 拆为 jmqx-publish / jmqx-control）
      */
-    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 4, 16);
+    private Integer             businessThreadSize   = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
     /**
-     * Netty 工作队列数、
+     * 业务分发 Sink 队列容量
      */
     private Integer             businessQueueSize    = 100000;
+    /**
+     * 平台生命周期回调线程数；{@code null}/{@code <=0} 时回退 businessThreadSize
+     */
+    private Integer             dispatchThreadSize;
+    /**
+     * 平台生命周期回调队列容量；{@code null}/{@code <=0} 时回退 businessQueueSize
+     */
+    private Integer             dispatchQueueSize;
+    /**
+     * 集群消息扩散线程数；{@code null}/{@code <=0} 时使用内置默认
+     */
+    private Integer             clusterThreadSize    = Math.max(Runtime.getRuntime().availableProcessors() * 2, 8);
+    /**
+     * 集群消息扩散队列容量；{@code null}/{@code <=0} 时回退 businessQueueSize
+     */
+    private Integer             clusterQueueSize;
     /**
      * 连接鉴权超时时间（毫秒）
      */

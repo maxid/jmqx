@@ -66,6 +66,24 @@ public interface MessageProcessor<T extends MqttMessage> {
     }
 
     /**
+     * Auth/ACL Offload 完成后回流 PUBLISH 数据面（jmqx-publish）
+     *
+     * @param task 非阻塞后续逻辑
+     */
+    default void scheduleOnPublish(Runnable task) {
+        plus.jmqx.broker.concurrent.SchedulerTasks.schedule(contextHolder().getPublishScheduler(), task);
+    }
+
+    /**
+     * Auth/ACL Offload 完成后回流控制面（jmqx-control）
+     *
+     * @param task 非阻塞后续逻辑
+     */
+    default void scheduleOnControl(Runnable task) {
+        plus.jmqx.broker.concurrent.SchedulerTasks.schedule(contextHolder().getControlScheduler(), task);
+    }
+
+    /**
      * 获取消息处理器适配的消息类型
      *
      * @return 消息类型集合

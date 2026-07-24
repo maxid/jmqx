@@ -14,7 +14,7 @@ import plus.jmqx.broker.mqtt.message.NamespceMessageProcessor;
 import plus.jmqx.broker.mqtt.message.SubscribeTopicMessage;
 import plus.jmqx.broker.mqtt.registry.TopicRegistry;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
-import reactor.core.scheduler.Schedulers;
+import plus.jmqx.broker.concurrent.SchedulerTasks;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -66,8 +66,8 @@ public class UnsubscribeProcessor extends NamespceMessageProcessor<MqttUnsubscri
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
         if (config == null || !config.isEnabled()) return;
         SubscribeTopicMessage stm = new SubscribeTopicMessage(config.getClusterId(), topicFilter, false);
-        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
-                .subscribeOn(Schedulers.boundedElastic())
+        SchedulerTasks.subscribeOnCluster(contextHolder(),
+                        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE)))
                 .subscribe();
     }
 

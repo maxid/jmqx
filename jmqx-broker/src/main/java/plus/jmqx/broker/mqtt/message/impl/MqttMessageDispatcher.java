@@ -62,8 +62,13 @@ public class MqttMessageDispatcher implements MessageDispatcher {
         this.config = config;
         int publishThreads = Math.max(threadSize * 3 / 4, 1);
         int controlThreads = Math.max(threadSize - publishThreads, 2);
-        this.publishScheduler = Schedulers.newParallel("jmqx-publish-io", publishThreads);
-        this.controlScheduler = Schedulers.newParallel("jmqx-control-io", controlThreads);
+        // parallel：非阻塞 CPU 数据面/控制面（勿在此执行 Auth/ACL/Feign 等阻塞调用）
+        this.publishScheduler = Schedulers.newParallel("jmqx-publish", publishThreads);
+        this.controlScheduler = Schedulers.newParallel("jmqx-control", controlThreads);
+        ContextHolder holder = NamespaceContextHolder.get(
+                config.getClusterConfig().getNamespace(), config.getClusterConfig().getNode());
+        holder.setPublishScheduler(this.publishScheduler);
+        holder.setControlScheduler(this.controlScheduler);
         this.publishAcceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
         this.controlAcceptor = Sinks.many().multicast().onBackpressureBuffer(queueSize);
         Stream<MessageProcessor<?>> processors = (Stream<MessageProcessor<?>>) (Stream<?>) DynamicLoader.findAll(MessageProcessor.class);

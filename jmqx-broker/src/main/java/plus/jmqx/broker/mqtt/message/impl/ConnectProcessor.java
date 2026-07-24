@@ -36,7 +36,7 @@ import plus.jmqx.broker.mqtt.registry.impl.DefaultSessionRegistry;
 import plus.jmqx.broker.mqtt.registry.impl.Event;
 import plus.jmqx.broker.mqtt.topic.SubscribeTopic;
 import plus.jmqx.broker.util.TokenBucketRateLimiter;
-import reactor.core.scheduler.Schedulers;
+import plus.jmqx.broker.concurrent.SchedulerTasks;
 import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
@@ -160,7 +160,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
             }
         }
         context.getAuthExecutor().execute(clientId, username, password)
-                .thenAccept(passed -> {
+                .thenAccept(passed -> scheduleOnControl(() -> {
                     if (!passed) {
                         session.setStatus(SessionStatus.AUTH_FAILED);
                         dispatchConnectionLost(session, context);
@@ -169,7 +169,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
                     }
                     afterAuthenticated(message, session, context, header, payload, channelRegistry,
                             topicRegistry, eventRegistry, clientId, username, mqttVersion);
-                });
+                }));
     }
 
     /**
@@ -227,7 +227,9 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         CloseMqttMessage closeMqttMessage = new CloseMqttMessage();
         closeMqttMessage.setClientId(clientId);
         ClusterMessage clusterMessage = new ClusterMessage(closeMqttMessage);
-        context.getClusterRegistry().spreadPublishMessage(clusterMessage).subscribe();
+        SchedulerTasks.subscribeOnCluster(contextHolder(),
+                        context.getClusterRegistry().spreadPublishMessage(clusterMessage))
+                .subscribe();
         // 注册会话到集群路由表，后续定向消息仅发送到本节点
         context.getClusterRegistry().registerSession(clientId);
         // 遗愿消息处理
@@ -436,12 +438,16 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
      */
     private void clusterUnsubscribeTopic(MqttReceiveContext context, String topicFilter) {
         ClusterRegistry registry = context.getClusterRegistry();
-        if (registry == null) return;
+        if (registry == null) {
+            return;
+        }
         MqttConfiguration.ClusterConfig config = context.getConfiguration().getClusterConfig();
-        if (config == null || !config.isEnabled()) return;
+        if (config == null || !config.isEnabled()) {
+            return;
+        }
         SubscribeTopicMessage stm = new SubscribeTopicMessage(config.getClusterId(), topicFilter, false);
-        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE))
-                .subscribeOn(Schedulers.boundedElastic())
+        SchedulerTasks.subscribeOnCluster(contextHolder(),
+                        registry.spreadPublishMessage(new ClusterMessage(stm, ClusterMessage.ClusterEvent.SUBSCRIBE)))
                 .subscribe();
     }
 

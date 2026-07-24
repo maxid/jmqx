@@ -59,7 +59,7 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 | `TopicRegistry` | 主题注册中心，管理主题订阅关系 |
 | `MessageRegistry` | 消息注册中心，管理 Retain 消息 |
 | `AclManager` | 主题访问控制 SPI |
-| `AclExecutor` | ACL 卸载执行器（独立线程池，避免阻塞 control/publish IO） |
+| `AclExecutor` | ACL 卸载执行器（独立线程池，避免阻塞 jmqx-publish/control） |
 | `AuthManager` | 设备连接鉴权 SPI |
 | `AuthExecutor` | 鉴权卸载执行器（独立线程池，与 ACL 池隔离） |
 | `PlatformDispatcher` | 设备生命周期事件回调 SPI |
@@ -106,20 +106,34 @@ bootstrap.startAwait();
 
 ### 线程模型
 
+```
+EL (jmqx-event-loop) ──emit──► jmqx-publish / jmqx-control (parallel, 非阻塞)
+                                    │
+                    Auth/Acl Offload (jmqx-auth-io / jmqx-acl-io)
+                                    │ 完成后回流 publish/control
+                                    ▼
+              Platform ──► jmqx-dispatch (boundedElastic)
+              Cluster  ──► jmqx-cluster  (boundedElastic, 与平台隔离)
+```
+
 | 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
 |---|---|---|---|
 | `bossThreadSize` | `jmqx.tcp.boss-thread-size` | Netty Boss 线程数 | `N` |
 | `workThreadSize` | `jmqx.tcp.work-thread-size` | Netty Worker 线程数 | `max(N*2, 8)` |
-| `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务分发线程数（`jmqx-publish-io` / `jmqx-control-io`） | `max(N*4, 16)` |
-| `businessQueueSize` | `jmqx.tcp.business-queue-size` | 业务分发队列容量 | `100000` |
+| `businessThreadSize` | `jmqx.tcp.business-thread-size` | 业务 parallel 总数（约 3:1 拆为 `jmqx-publish` / `jmqx-control`） | `max(N*2, 8)` |
+| `businessQueueSize` | `jmqx.tcp.business-queue-size` | 业务分发 Sink 队列容量 | `100000` |
+| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | 平台回调 `jmqx-dispatch` 线程数；`<=0` 回退 business | 回退 business |
+| `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列；`<=0` 回退 businessQueue | 回退 businessQueue |
+| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | 集群扩散 `jmqx-cluster` 线程数 | `max(N*2, 8)` |
+| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 集群扩散队列；`<=0` 回退 businessQueue | 回退 businessQueue |
 
-> `businessThreadSize` 会按约 3:1 拆分为 publish / control 两组 Parallel 调度器。鉴权与 ACL **不占用**该池，见下文独立线程池。
+> `jmqx-publish` / `jmqx-control` 为 Reactor `newParallel`（假定非阻塞）。Auth/ACL **不占用**该池；完成后会回流对应 Scheduler 再做匹配、会话与写回编排。`Interceptor` 必须非阻塞，见接口契约。
 
 ### 鉴权 / ACL 卸载线程池
 
-用户自定义 `AuthManager` / `AclManager` 可能包含 Feign、DB 等阻塞调用。Broker 会将其切到独立线程池，避免在 `jmqx-*-io`（Reactor NonBlocking）上触发 `block()` 异常或拖死心跳。
+用户自定义 `AuthManager` / `AclManager` 可能包含 Feign、DB 等阻塞调用。Broker 会将其切到独立线程池，避免在 `jmqx-publish` / `jmqx-control`（Reactor NonBlocking）上触发 `block()` 异常或拖死心跳。
 
-**Auth 与 ACL 默认使用两套独立线程池**（`jmqx-auth-io-*` / `jmqx-acl-io-*`），避免 PUBLISH 风暴饿死 CONNECT 鉴权。
+**Auth 与 ACL 默认使用两套独立线程池**（`jmqx-auth-io-*` / `jmqx-acl-io-*`），避免 PUBLISH 风暴饿死 CONNECT 鉴权。保持专用 `OffloadExecutor`，不使用全局 `Schedulers.boundedElastic()`。
 
 | 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
 |---|---|---|---|

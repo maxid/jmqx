@@ -34,8 +34,20 @@ public final class ContextHolder {
      */
     private PlatformDispatcher platformDispatcher;
     /**
-     * 调度器
+     * 平台生命周期回调调度器（阻塞友好，boundedElastic）
      */
     private Scheduler          dispatchScheduler;
+    /**
+     * PUBLISH 数据面调度器（parallel，非阻塞 CPU）
+     */
+    private Scheduler          publishScheduler;
+    /**
+     * CONNECT/SUB 等控制面调度器（parallel，非阻塞 CPU）
+     */
+    private Scheduler          controlScheduler;
+    /**
+     * 集群消息扩散调度器（boundedElastic，与平台回调隔离）
+     */
+    private Scheduler          clusterScheduler;
 
 }

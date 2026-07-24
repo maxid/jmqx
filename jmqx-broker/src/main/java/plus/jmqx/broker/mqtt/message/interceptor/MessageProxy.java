@@ -5,8 +5,10 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import plus.jmqx.broker.cluster.ClusterMessage;
+import plus.jmqx.broker.concurrent.SchedulerTasks;
 import plus.jmqx.broker.config.Configuration;
 import plus.jmqx.broker.mqtt.channel.MqttSession;
+import plus.jmqx.broker.mqtt.context.NamespaceContextHolder;
 import plus.jmqx.broker.mqtt.context.ReceiveContext;
 import plus.jmqx.broker.mqtt.message.HeapMqttMessage;
 import plus.jmqx.broker.mqtt.message.MessageDispatcher;
@@ -14,7 +16,6 @@ import plus.jmqx.broker.mqtt.message.MessageWrapper;
 import plus.jmqx.broker.mqtt.util.JacksonUtil;
 import plus.jmqx.broker.mqtt.util.MessageUtils;
 import plus.jmqx.broker.spi.DynamicLoader;
-import reactor.core.scheduler.Schedulers;
 import reactor.netty.ReactorNetty;
 
 import java.nio.charset.StandardCharsets;
@@ -66,8 +67,11 @@ public class MessageProxy {
                         event = ClusterMessage.ClusterEvent.PUBLISH_TARGET;
                         heapMqttMessage.setClientId(wrapper.getClientId());
                     }
-                    context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage, event))
-                            .subscribeOn(Schedulers.boundedElastic())
+                    SchedulerTasks.subscribeOnCluster(
+                                    NamespaceContextHolder.get(
+                                            context.getConfiguration().getClusterConfig().getNamespace(),
+                                            context.getConfiguration().getClusterConfig().getNode()),
+                                    context.getClusterRegistry().spreadPublishMessage(new ClusterMessage(heapMqttMessage, event)))
                             .subscribe();
                 }
             }
@@ -102,8 +106,7 @@ public class MessageProxy {
             MessageWrapper<MqttMessage> wrapper = (MessageWrapper<MqttMessage>) invocation.getArgs()[1];
             MqttMessage message = wrapper.getMessage();
             try {
-                if (message instanceof MqttPublishMessage) {
-                    MqttPublishMessage publishMessage = (MqttPublishMessage) message;
+                if (message instanceof MqttPublishMessage publishMessage) {
                     publishMessage.retain();
                 }
                 return invocation.proceed();
