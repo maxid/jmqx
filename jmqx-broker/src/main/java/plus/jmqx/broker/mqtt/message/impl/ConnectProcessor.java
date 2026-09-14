@@ -283,16 +283,28 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         // 触发连接事件
         eventRegistry.registry(Event.CONNECT, session, message, context);
         //
-        context.dispatch(d -> d.onConnect(ConnectMessage.builder()
-                        .clientId(session.getClientId())
-                        .username(session.getUsername())
-                        .protocolName(header.name())
-                        .version(header.version())
-                        .build())
+        context.dispatch(d -> d.onConnect(toPlatformConnect(session, header))
                 .subscribeOn(contextHolder().getDispatchScheduler())
                 .subscribe());
         // 连接确认
         ok(session, context, mqttVersion);
+    }
+
+    /**
+     * 组装平台 CONNECT 回调载荷，包含 MQTT Keep Alive（秒）。
+     *
+     * @param session 会话
+     * @param header  CONNECT 可变头
+     * @return 平台连接消息
+     */
+    static ConnectMessage toPlatformConnect(MqttSession session, MqttConnectVariableHeader header) {
+        return ConnectMessage.builder()
+                .clientId(session.getClientId())
+                .username(session.getUsername())
+                .protocolName(header.name())
+                .version(header.version())
+                .keepAlive(header.keepAliveTimeSeconds())
+                .build();
     }
 
     /**
