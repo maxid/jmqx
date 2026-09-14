@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * PINGREQ 平台回调：PONG 之后在 dispatchScheduler 上触发 onPing。
+ * PINGREQ 心跳回调：PONG 之后在 dispatchScheduler 上触发 {@code onPing}。
  */
 class PingReqHandlerTest {
 
@@ -30,6 +30,9 @@ class PingReqHandlerTest {
         }
     }
 
+    /**
+     * {@code onPing} 必须带着会话 clientId/username，且不在调用线程执行。
+     */
     @Test
     void dispatchOnPingRunsOnDispatchSchedulerWithSessionIdentity() throws Exception {
         dispatchScheduler = Schedulers.newSingle("jmqx-dispatch-test");
@@ -88,6 +91,9 @@ class PingReqHandlerTest {
         assertTrue(!threadName.get().equals(caller));
     }
 
+    /**
+     * 未覆盖 {@code onPing} 的实现走默认空实现，不应抛错。
+     */
     @Test
     void defaultOnPingIsNoopSoExistingDispatchersKeepCompiling() {
         PlatformDispatcher dispatcher = new PlatformDispatcher() {

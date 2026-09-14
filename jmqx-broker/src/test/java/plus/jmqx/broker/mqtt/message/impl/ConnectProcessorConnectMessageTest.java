@@ -9,10 +9,13 @@ import plus.jmqx.broker.mqtt.message.dispatch.ConnectMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * CONNECT 平台回调必须带上 Keep Alive 秒数。
+ * {@link ConnectProcessor#toConnectMessage} 须从 CONNECT 可变头拷贝 Keep Alive（秒）。
  */
-class ConnectProcessorPlatformConnectTest {
+class ConnectProcessorConnectMessageTest {
 
+    /**
+     * Keep Alive、clientId、username、协议名与级别均来自会话与 CONNECT 头。
+     */
     @Test
     void copiesKeepAliveSecondsFromConnectHeader() {
         MqttSession session = new MqttSession();
@@ -28,7 +31,7 @@ class ConnectProcessorPlatformConnectTest {
                 false,
                 true,
                 90);
-        ConnectMessage message = ConnectProcessor.toPlatformConnect(session, header);
+        ConnectMessage message = ConnectProcessor.toConnectMessage(session, header);
         assertEquals("dev-1", message.getClientId());
         assertEquals("user-1", message.getUsername());
         assertEquals("MQTT", message.getProtocolName());

@@ -60,14 +60,14 @@ public class MqttReceiveContext extends AbstractReceiveContext<MqttConfiguration
     /**
      * 接收并分发消息到消息处理器
      * <p>
-     * PINGREQ 绕过 Sink：EventLoop 上回 PONG，再在 dispatchScheduler 上回调 onPing。
+     * PINGREQ 不进 Sink：当前 EventLoop 写 PINGRESP，心跳回调切到 {@code dispatchScheduler}。
      *
      * @param session 会话
      * @param message 消息包装
      */
     @Override
     public void accept(MqttSession session, MessageWrapper<MqttMessage> message) {
-        // PINGREQ 旁路：EventLoop 写 PONG，不进 Sink；onPing 走 dispatchScheduler
+        // PINGREQ 旁路：先 PONG 保活，再异步 onPing，避免心跳挤占控制通道
         if (message.getMessage().fixedHeader().messageType() == MqttMessageType.PINGREQ) {
             PingReqHandler.pongAndDispatch(session, contextHolder());
             return;
