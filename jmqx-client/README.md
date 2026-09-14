@@ -72,9 +72,9 @@ client.connect().block(Duration.ofSeconds(5));
 ## API 视图
 
 | 协议 | Reactor         | Async              | Blocking              |
-|----|-----------------|--------------------|-----------------------|
-| v3 | `Mqtt3RxClient` | `Mqtt3AsyncClient` | `Mqtt3BlockingClient` |
-| v5 | `Mqtt5RxClient` | `Mqtt5AsyncClient` | `Mqtt5BlockingClient` |
+|------|-----------------|--------------------|-----------------------|
+| v3   | `Mqtt3RxClient` | `Mqtt3AsyncClient` | `Mqtt3BlockingClient` |
+| v5   | `Mqtt5RxClient` | `Mqtt5AsyncClient` | `Mqtt5BlockingClient` |
 
 构建方式：
 
@@ -105,15 +105,15 @@ mvn -pl jmqx-broker install -DskipTests
 
 覆盖编解码、背压、ACK 跟踪、断线缓存、自动重连、主题匹配等核心逻辑，**不依赖外部 broker**：
 
-| 测试类 | 覆盖范围 |
-|--------|----------|
-| `Mqtt3MessageServiceTest` / `Mqtt5MessageServiceTest` | PUBLISH/SUBSCRIBE 编解码往返 |
+| 测试类                                                     | 覆盖范围                      |
+|------------------------------------------------------------|-------------------------------|
+| `Mqtt3MessageServiceTest` / `Mqtt5MessageServiceTest`      | PUBLISH/SUBSCRIBE 编解码往返  |
 | `MqttInboxBackpressureTest` / `MqttOutboxBackpressureTest` | 入站/出站背压与 inflight 控制 |
-| `AckTrackerTest` | QoS1/2 出站 ACK 跟踪 |
-| `MessageBufferTest` | 断线期间出站消息缓冲 |
-| `MqttAutoReconnectTest` | 自动重连退避策略 |
-| `TopicMatcherTest` / `PacketIdManagerTest` | 主题通配符匹配、packetId 分配 |
-| `QoSTest` | QoS 枚举与转换 |
+| `AckTrackerTest`                                           | QoS1/2 出站 ACK 跟踪          |
+| `MessageBufferTest`                                        | 断线期间出站消息缓冲          |
+| `MqttAutoReconnectTest`                                    | 自动重连退避策略              |
+| `TopicMatcherTest` / `PacketIdManagerTest`                 | 主题通配符匹配、packetId 分配 |
+| `QoSTest`                                                  | QoS 枚举与转换                |
 
 ```bash
 # 默认运行（排除 *IT.java 与 *StressTest.java）
@@ -132,37 +132,37 @@ mvn -pl jmqx-client test
 
 **MQTT 3.1.1 覆盖（`Mqtt3ClientIT`）：**
 
-| 场景 | 说明 |
-|------|------|
-| 连接/断开 | CONNACK 接受、正常 DISCONNECT |
-| QoS 0/1/2 发布订阅 | 参数化覆盖全部 QoS 级别 |
-| 三种 API | Reactor（Rx）、`CompletableFuture`（Async）、Blocking |
-| 通配符订阅 | `#` 与 `+` 主题过滤 |
-| 取消订阅 | UNSUBSCRIBE 后不再投递 |
-| 双客户端 | 独立 publisher / subscriber |
-| Retain 消息 | 晚加入订阅者仍能收到 retain |
-| 会话持久化 | cleanSession=false 时离线消息重连后投递 |
-| 多 topic 订阅 | 单次 SUBSCRIBE 多个 filter |
-| 空 payload / 并发发布 | 边界与 Async 并发场景 |
+| 场景                  | 说明                                                  |
+|-----------------------|-------------------------------------------------------|
+| 连接/断开             | CONNACK 接受、正常 DISCONNECT                         |
+| QoS 0/1/2 发布订阅    | 参数化覆盖全部 QoS 级别                               |
+| 三种 API              | Reactor（Rx）、`CompletableFuture`（Async）、Blocking |
+| 通配符订阅            | `#` 与 `+` 主题过滤                                   |
+| 取消订阅              | UNSUBSCRIBE 后不再投递                                |
+| 双客户端              | 独立 publisher / subscriber                           |
+| Retain 消息           | 晚加入订阅者仍能收到 retain                           |
+| 会话持久化            | cleanSession=false 时离线消息重连后投递               |
+| 多 topic 订阅         | 单次 SUBSCRIBE 多个 filter                            |
+| 空 payload / 并发发布 | 边界与 Async 并发场景                                 |
 
 **MQTT 5.0 覆盖（`Mqtt5ClientIT`）：**
 
-| 场景 | 说明 |
-|------|------|
-| 连接/断开、QoS 0/1/2 | 同 v3 基础链路 |
-| User Properties / Content-Type | v5 发布属性 |
-| 三种 API、通配符、取消订阅 | 同 v3 |
-| 双客户端、Retain | 同 v3 |
-| CONNACK receiveMaximum | v5 会话协商属性 |
+| 场景                           | 说明            |
+|--------------------------------|-----------------|
+| 连接/断开、QoS 0/1/2           | 同 v3 基础链路  |
+| User Properties / Content-Type | v5 发布属性     |
+| 三种 API、通配符、取消订阅     | 同 v3           |
+| 双客户端、Retain               | 同 v3           |
+| CONNACK receiveMaximum         | v5 会话协商属性 |
 
 **传输层覆盖（`Mqtt3TransportIT` / `Mqtt5TransportIT`，各 3 个用例）：**
 
-| 传输 | 默认端口 | 说明 |
-|------|----------|------|
-| TCP | 1883 | 明文 MQTT（`Mqtt3ClientIT` / `Mqtt5ClientIT`） |
-| MQTTS (TLS) | 8883 | 连接 + QoS1 发布订阅 |
-| WS | 1884 | WebSocket `/mqtt` 子协议 |
-| WSS | 8884 | WebSocket over TLS |
+| 传输        | 默认端口 | 说明                                           |
+|-------------|----------|------------------------------------------------|
+| TCP         | 1883     | 明文 MQTT（`Mqtt3ClientIT` / `Mqtt5ClientIT`） |
+| MQTTS (TLS) | 8883     | 连接 + QoS1 发布订阅                           |
+| WS          | 1884     | WebSocket `/mqtt` 子协议                       |
+| WSS         | 8884     | WebSocket over TLS                             |
 
 ```bash
 # 运行全部集成测试（33 个用例，内嵌 broker）
@@ -188,22 +188,22 @@ mvn -pl jmqx-client test -Dtest='Mqtt3ClientIT,Mqtt5ClientIT,Mqtt3TransportIT,Mq
 
 **三类场景：**
 
-| 方法 | 场景 | 主要参数 | 度量 |
-|------|------|----------|------|
-| `connectStress` | 连接压测 | `connections`、`threads`、`connectionHoldSeconds` | 同时在线连接数（peakActive） |
-| `publishStress` | 发布压测 | `messages`、`qos`、`threads`、`inflight` | 出站 msg/s（**每条等 broker ACK**） |
-| `subscribeStress` | 订阅压测 | `messages`、`qos`、`subscribers`、`publishers` | 入站接收 msg/s |
+| 方法              | 场景     | 主要参数                                          | 度量                                |
+|-------------------|----------|---------------------------------------------------|-------------------------------------|
+| `connectStress`   | 连接压测 | `connections`、`threads`、`connectionHoldSeconds` | 同时在线连接数（peakActive）        |
+| `publishStress`   | 发布压测 | `messages`、`qos`、`threads`、`inflight`          | 出站 msg/s（**每条等 broker ACK**） |
+| `subscribeStress` | 订阅压测 | `messages`、`qos`、`subscribers`、`publishers`    | 入站接收 msg/s                      |
 
 **前置：启动 broker**
 
 压测不会自动启动 broker。请自行部署并确保对应传输端口可连接（默认与 jmqx-broker 一致）：
 
-| 传输 | 默认端口 | 属性 `jmqx.client.stress.transport` |
-|------|----------|-------------------------------------|
-| TCP | 1883 | `tcp`（默认） |
-| MQTTS | 8883 | `mqtts` |
-| WS | 1884 | `ws` |
-| WSS | 8884 | `wss` |
+| 传输  | 默认端口 | 属性 `jmqx.client.stress.transport` |
+|-------|----------|-------------------------------------|
+| TCP   | 1883     | `tcp`（默认）                       |
+| MQTTS | 8883     | `mqtts`                             |
+| WS    | 1884     | `ws`                                |
+| WSS   | 8884     | `wss`                               |
 
 例如：
 
@@ -265,31 +265,31 @@ mvn -pl jmqx-client test -Djmqx.stress.tests=true \
 
 **可调参数**（系统属性 `-Djmqx.client.stress.*`）：
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `jmqx.client.stress.scenario` | `all` | 场景过滤：`connect` / `publish` / `subscribe` / `all` |
-| `jmqx.client.stress.transport` | `tcp` | 传输层：`tcp` / `mqtts` / `ws` / `wss` |
-| `jmqx.client.stress.messages` | 2000 | 发布/订阅压测消息数 |
-| `jmqx.client.stress.threads` | 4 | 连接/发布并发线程数 |
-| `jmqx.client.stress.publishers` | 1 | 订阅压测中的灌流发布端数量 |
-| `jmqx.client.stress.subscribers` | 1 | 订阅压测中的订阅客户端数 |
-| `jmqx.client.stress.connections` | 50 | 连接压测目标连接数 |
-| `jmqx.client.stress.connectionHoldSeconds` | 30 | 全部建连后保持时长（秒），用于压同时在线连接 |
-| `jmqx.client.stress.payloadBytes` | 64 | 单条 payload 字节数 |
-| `jmqx.client.stress.qos` | 0 | QoS 级别（0/1/2） |
-| `jmqx.client.stress.inflight` | 256 | 发布侧滑动窗口（同时在途未 ACK 条数上限） |
-| `jmqx.client.stress.minThroughput` | 100 | 最低吞吐阈值（msg/s 或 conn/s 场景自适应） |
-| `jmqx.client.stress.timeoutSeconds` | `120`（≤5 万条）/ 按消息量自动估算 | 超时秒数；未显式设置且 `messages` > 50000 时按约 5 万 msg/s 保守估算 |
-| `jmqx.client.stress.topic` | `stress/client/topic` | 测试 topic 前缀 |
-| `jmqx.client.stress.broker.host` | `localhost` | broker 地址 |
-| `jmqx.client.stress.broker.port` | `1883` | TCP 端口（`transport=tcp`） |
-| `jmqx.client.stress.broker.securePort` | `8883` | MQTTS 端口 |
-| `jmqx.client.stress.broker.websocketPort` | `1884` | WS 端口 |
-| `jmqx.client.stress.broker.websocketSecurePort` | `8884` | WSS 端口 |
-| `jmqx.client.stress.broker.username` | — | MQTT 用户名（未设置则匿名） |
-| `jmqx.client.stress.broker.password` | — | MQTT 密码 |
-| `jmqx.client.stress.progressIntervalSeconds` | 5 | 进度日志间隔（秒），设为 0 关闭 |
-| `jmqx.client.stress.logLevel` | WARN | 压测日志级别 |
+| 属性                                            | 默认值                             | 说明                                                                 |
+|-------------------------------------------------|------------------------------------|----------------------------------------------------------------------|
+| `jmqx.client.stress.scenario`                   | `all`                              | 场景过滤：`connect` / `publish` / `subscribe` / `all`                |
+| `jmqx.client.stress.transport`                  | `tcp`                              | 传输层：`tcp` / `mqtts` / `ws` / `wss`                               |
+| `jmqx.client.stress.messages`                   | 2000                               | 发布/订阅压测消息数                                                  |
+| `jmqx.client.stress.threads`                    | 4                                  | 连接/发布并发线程数                                                  |
+| `jmqx.client.stress.publishers`                 | 1                                  | 订阅压测中的灌流发布端数量                                           |
+| `jmqx.client.stress.subscribers`                | 1                                  | 订阅压测中的订阅客户端数                                             |
+| `jmqx.client.stress.connections`                | 50                                 | 连接压测目标连接数                                                   |
+| `jmqx.client.stress.connectionHoldSeconds`      | 30                                 | 全部建连后保持时长（秒），用于压同时在线连接                         |
+| `jmqx.client.stress.payloadBytes`               | 64                                 | 单条 payload 字节数                                                  |
+| `jmqx.client.stress.qos`                        | 0                                  | QoS 级别（0/1/2）                                                    |
+| `jmqx.client.stress.inflight`                   | 256                                | 发布侧滑动窗口（同时在途未 ACK 条数上限）                            |
+| `jmqx.client.stress.minThroughput`              | 100                                | 最低吞吐阈值（msg/s 或 conn/s 场景自适应）                           |
+| `jmqx.client.stress.timeoutSeconds`             | `120`（≤5 万条）/ 按消息量自动估算 | 超时秒数；未显式设置且 `messages` > 50000 时按约 5 万 msg/s 保守估算 |
+| `jmqx.client.stress.topic`                      | `stress/client/topic`              | 测试 topic 前缀                                                      |
+| `jmqx.client.stress.broker.host`                | `localhost`                        | broker 地址                                                          |
+| `jmqx.client.stress.broker.port`                | `1883`                             | TCP 端口（`transport=tcp`）                                          |
+| `jmqx.client.stress.broker.securePort`          | `8883`                             | MQTTS 端口                                                           |
+| `jmqx.client.stress.broker.websocketPort`       | `1884`                             | WS 端口                                                              |
+| `jmqx.client.stress.broker.websocketSecurePort` | `8884`                             | WSS 端口                                                             |
+| `jmqx.client.stress.broker.username`            | —                                  | MQTT 用户名（未设置则匿名）                                          |
+| `jmqx.client.stress.broker.password`            | —                                  | MQTT 密码                                                            |
+| `jmqx.client.stress.progressIntervalSeconds`    | 5                                  | 进度日志间隔（秒），设为 0 关闭                                      |
+| `jmqx.client.stress.logLevel`                   | WARN                               | 压测日志级别                                                         |
 
 ### Netty 内存泄漏检测（可选）
 

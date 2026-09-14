@@ -11,15 +11,15 @@ Jmqx 项目的 Maven 父 POM，集中管理全局依赖版本、插件配置和 
 
 ## 依赖版本
 
-| 依赖 | 版本 |
-|---|---|
-| Reactor BOM | 2024.0.4 |
-| Netty | 4.1.119.Final |
-| ScaleCube Cluster | 2.6.17 |
-| Jackson BOM | 2.11.0 |
-| Lombok | 1.18.30 |
-| SLF4J | 1.7.30 |
-| Hutool | 5.8.35 |
+| 依赖              | 版本          |
+|-------------------|---------------|
+| Reactor BOM       | 2024.0.4      |
+| Netty             | 4.1.119.Final |
+| ScaleCube Cluster | 2.6.17        |
+| Jackson BOM       | 2.11.0        |
+| Lombok            | 1.18.30       |
+| SLF4J             | 1.7.30        |
+| Hutool            | 5.8.35        |
 
 ## 使用
 
