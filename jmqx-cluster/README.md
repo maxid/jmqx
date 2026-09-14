@@ -86,34 +86,34 @@ Spring 示例属性前缀：`jmqx.cluster.*`（成员）与 `jmqx.tcp.cluster-*-
 
 ### ScaleCube / 成员配置
 
-| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
-|---|---|---|---|
-| `enabled` | `jmqx.cluster.enable` | 是否启用集群 | `false` |
-| `url` | `jmqx.cluster.url` | 种子节点地址列表，逗号分隔（`host:port`） | — |
-| `port` | `jmqx.cluster.port` | 本节点集群通信端口（ScaleCube transport） | `7771` |
-| `node` | `jmqx.cluster.node` | 本节点名称，**集群内唯一** | `node-1` |
-| `namespace` | `jmqx.cluster.namespace` | 集群命名空间，**各节点必须一致**才能互通 | `jmqx-broker` |
-| `suspicionMult` | — | 成员怀疑倍数（ScaleCube membership） | `10` |
-| `pingTimeout` | — | 故障检测 Ping 超时（毫秒） | `3000` |
-| `clusterMessageBufferSize` | — | 集群消息 Sink 缓冲区大小 | `1024` |
-| `external.host` | — | 容器/云环境对外暴露 IP（NAT 场景） | — |
-| `external.port` | — | 容器/云环境对外暴露端口 | — |
+| 字段（Java）               | Spring 示例属性          | 说明                                      | 默认值        |
+|----------------------------|--------------------------|-------------------------------------------|---------------|
+| `enabled`                  | `jmqx.cluster.enable`    | 是否启用集群                              | `false`       |
+| `url`                      | `jmqx.cluster.url`       | 种子节点地址列表，逗号分隔（`host:port`） | —             |
+| `port`                     | `jmqx.cluster.port`      | 本节点集群通信端口（ScaleCube transport） | `7771`        |
+| `node`                     | `jmqx.cluster.node`      | 本节点名称，**集群内唯一**                | `node-1`      |
+| `namespace`                | `jmqx.cluster.namespace` | 集群命名空间，**各节点必须一致**才能互通  | `jmqx-broker` |
+| `suspicionMult`            | —                        | 成员怀疑倍数（ScaleCube membership）      | `10`          |
+| `pingTimeout`              | —                        | 故障检测 Ping 超时（毫秒）                | `3000`        |
+| `clusterMessageBufferSize` | —                        | 集群消息 Sink 缓冲区大小                  | `1024`        |
+| `external.host`            | —                        | 容器/云环境对外暴露 IP（NAT 场景）        | —             |
+| `external.port`            | —                        | 容器/云环境对外暴露端口                   | —             |
 
 ### 集群消息扩散线程池（Broker 侧，1.4.19+）
 
 PUBLISH 扩散、订阅关系同步等走 `Schedulers.newBoundedElastic("jmqx-cluster")`，与平台回调 `jmqx-dispatch`、业务 `jmqx-publish`/`jmqx-control` 隔离。字段定义在 `MqttConfiguration`（非 `ClusterConfig`）：
 
-| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
-|---|---|---|---|
-| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | `jmqx-cluster` 线程数；`null`/`<=0` 使用内置默认 | `max(N*2, 8)` |
-| `clusterQueueSize` | `jmqx.tcp.cluster-queue-size` | 扩散任务队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+| 字段（Java）        | Spring 示例属性                | 说明                                                | 默认值             |
+|---------------------|--------------------------------|-----------------------------------------------------|--------------------|
+| `clusterThreadSize` | `jmqx.tcp.cluster-thread-size` | `jmqx-cluster` 线程数；`null`/`<=0` 使用内置默认    | `max(N*2, 8)`      |
+| `clusterQueueSize`  | `jmqx.tcp.cluster-queue-size`  | 扩散任务队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
 
 另见平台回调池（与集群扩散同类隔离）：
 
-| 字段（Java） | Spring 示例属性 | 说明 | 默认值 |
-|---|---|---|---|
-| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | `jmqx-dispatch` 线程数；`null`/`<=0` 回退 `businessThreadSize` | 回退 business |
-| `dispatchQueueSize` | `jmqx.tcp.dispatch-queue-size` | 平台回调队列；`null`/`<=0` 回退 `businessQueueSize` | 回退 businessQueue |
+| 字段（Java）         | Spring 示例属性                 | 说明                                                           | 默认值             |
+|----------------------|---------------------------------|----------------------------------------------------------------|--------------------|
+| `dispatchThreadSize` | `jmqx.tcp.dispatch-thread-size` | `jmqx-dispatch` 线程数；`null`/`<=0` 回退 `businessThreadSize` | 回退 business      |
+| `dispatchQueueSize`  | `jmqx.tcp.dispatch-queue-size`  | 平台回调队列；`null`/`<=0` 回退 `businessQueueSize`            | 回退 businessQueue |
 
 完整线程模型、Auth/ACL Offload 与 `requiresOffload()` 说明见 [jmqx-broker 线程模型](../jmqx-broker/README.md#线程模型)。
 

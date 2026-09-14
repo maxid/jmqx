@@ -50,12 +50,12 @@ mvn spring-boot:run -pl jmqx-example/jmqx-spring-boot
 
 `application.yml` 包含完整的配置模板，支持以下配置块：
 
-| 配置前缀 | 说明 |
-|---|---|
-| `jmqx.tcp.*` | MQTT 传输层配置（端口、线程、缓冲区等） |
-| `jmqx.ssl.*` | SSL/TLS 配置（证书路径、启用开关） |
-| `jmqx.auth.fixed.*` | 固定鉴权的用户名密码 |
-| `jmqx.cluster.*` | 集群配置（启用、种子节点等） |
+| 配置前缀            | 说明                                    |
+|---------------------|-----------------------------------------|
+| `jmqx.tcp.*`        | MQTT 传输层配置（端口、线程、缓冲区等） |
+| `jmqx.ssl.*`        | SSL/TLS 配置（证书路径、启用开关）      |
+| `jmqx.auth.fixed.*` | 固定鉴权的用户名密码                    |
+| `jmqx.cluster.*`    | 集群配置（启用、种子节点等）            |
 
 ## 技术栈
 
