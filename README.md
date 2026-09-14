@@ -65,7 +65,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.19</version>
+            <version>1.4.20</version>
         </dependency>
 ```
 
@@ -323,7 +323,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster -am \
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.19</version>
+            <version>1.4.20</version>
         </dependency>
 ```
 
