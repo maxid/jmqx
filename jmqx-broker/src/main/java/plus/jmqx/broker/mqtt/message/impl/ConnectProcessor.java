@@ -283,7 +283,7 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
         // 触发连接事件
         eventRegistry.registry(Event.CONNECT, session, message, context);
         //
-        context.dispatch(d -> d.onConnect(toPlatformConnect(session, header))
+        context.dispatch(d -> d.onConnect(toConnectMessage(session, header))
                 .subscribeOn(contextHolder().getDispatchScheduler())
                 .subscribe());
         // 连接确认
@@ -291,13 +291,13 @@ public class ConnectProcessor extends NamespceMessageProcessor<MqttConnectMessag
     }
 
     /**
-     * 组装平台 CONNECT 回调载荷，包含 MQTT Keep Alive（秒）。
+     * 将会话与 CONNECT 可变头组装为生命周期回调载荷，包含 Keep Alive（秒）。
      *
-     * @param session 会话
+     * @param session 已鉴权会话
      * @param header  CONNECT 可变头
-     * @return 平台连接消息
+     * @return 连接回调消息
      */
-    static ConnectMessage toPlatformConnect(MqttSession session, MqttConnectVariableHeader header) {
+    static ConnectMessage toConnectMessage(MqttSession session, MqttConnectVariableHeader header) {
         return ConnectMessage.builder()
                 .clientId(session.getClientId())
                 .username(session.getUsername())

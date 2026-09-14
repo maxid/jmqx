@@ -43,11 +43,12 @@ public interface PlatformDispatcher {
     Mono<Void> onPublish(PublishMessage message);
 
     /**
-     * 设备心跳（MQTT PINGREQ）。默认空实现，避免已有分发器编译失败。
+     * 设备心跳（MQTT PINGREQ）。
      * <p>
-     * Broker 已在 EventLoop 上回 PONG；本回调在 {@code dispatchScheduler} 上执行。
+     * 默认空实现，已有实现类无需改动即可编译。Broker 已在 EventLoop 上回 PINGRESP，
+     * 本回调在 {@code dispatchScheduler} 上执行，勿在此再写 PONG。
      *
-     * @param message 心跳消息（clientId / username）
+     * @param message 心跳消息，含 clientId / username
      * @return 处理结果
      */
     default Mono<Void> onPing(PingMessage message) {
