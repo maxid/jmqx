@@ -5,10 +5,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * CONNECT 平台回调需携带 MQTT Keep Alive（秒），供上层推导心跳窗口。
+ * CONNECT 生命周期回调须携带 MQTT Keep Alive（秒）。
  */
 class ConnectMessageTest {
 
+    /**
+     * Builder 写入的 keepAlive 可按秒读出。
+     */
     @Test
     void keepAliveSecondsComeFromConnectHeader() {
         ConnectMessage message = ConnectMessage.builder()
