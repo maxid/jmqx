@@ -296,7 +296,7 @@ public abstract class AbstractReceiveContext<T extends Configuration> implements
      *
      * @return 上下文持有器
      */
-    private ContextHolder contextHolder() {
+    protected ContextHolder contextHolder() {
         return NamespaceContextHolder.get(configuration.getClusterConfig().getNamespace(),
                 configuration.getClusterConfig().getNode());
     }
