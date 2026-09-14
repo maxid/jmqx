@@ -19,5 +19,9 @@ public class ConnectMessage {
     private final String username;
     private final String protocolName;
     private final int    version;
+    /**
+     * MQTT CONNECT Keep Alive，单位秒；客户端声明为 0 时保持 0。
+     */
+    private final int    keepAlive;
 
 }

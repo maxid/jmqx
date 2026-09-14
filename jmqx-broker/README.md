@@ -96,7 +96,7 @@ Jmqx 的核心模块，提供完整的 MQTT Broker 实现。作为一个可内�
 | `AclExecutor` | ACL 卸载执行器（独立线程池，避免阻塞 jmqx-publish/control） |
 | `AuthManager` | 设备连接鉴权 SPI |
 | `AuthExecutor` | 鉴权卸载执行器（独立线程池，与 ACL 池隔离） |
-| `PlatformDispatcher` | 设备生命周期事件回调 SPI |
+| `PlatformDispatcher` | 设备生命周期事件回调 SPI（CONNECT/DISCONNECT/LOST/PUBLISH/`onPing`） |
 | `MetricsManager` | 指标收集 SPI |
 | `Interceptor` | 消息分发拦截器链 SPI |
 

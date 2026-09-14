@@ -53,6 +53,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 22. 修复：KICK 模式同 clientId 接管时 SessionRegistry/集群路由按实例移除，避免轮番重连误删新会话；MQTT 5 踢连接下发 DISCONNECT 0x8E Session taken over（2026-7-14））（1.4.17）（使用 vibe coding 编码 + code review）
 23. 重要：修复因在 jmqx-control-io / jmqx-publish-io 线程同步调用 ACL（用户实现可能含 Feign 等阻塞调用）触发 Reactor `block()` 不被允许的问题，引入独立 `AclExecutor` 并与 `AuthExecutor` 线程池隔离（2026-7-23）（1.4.18）（使用 vibe coding 编码 + code review）
 24. 重要：进一步实现 MQTT 业务与 reactor-netty 线程模型的对齐，并增加场景开关，PART 1 详见 [ADR-0001](./docs/adr/0001-roadmap-schedulers-alignment.md)（2026-7-24）（1.4.19）（使用 vibe coding 编码 + code review）
+25. 增强：`ConnectMessage` 携带 MQTT Keep Alive（秒）；PINGREQ 仍在 EventLoop 回 PONG，并在 `dispatchScheduler` 回调 `PlatformDispatcher.onPing`（默认空实现）（2026-9-14）（1.4.20）
 
 ## 使用示例
 
@@ -123,6 +124,13 @@ class BootstrapTest {
                             message.getUsername(),
                             message.getTopic(),
                             new String(message.getPayload(), StandardCharsets.UTF_8));
+                });
+            }
+
+            @Override
+            public Mono<Void> onPing(PingMessage message) {
+                return Mono.fromRunnable(() -> {
+                    log.info("设备心跳：{}", message);
                 });
             }
         });
