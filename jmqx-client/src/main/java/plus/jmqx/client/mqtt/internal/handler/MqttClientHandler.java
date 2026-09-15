@@ -22,6 +22,7 @@ import reactor.core.publisher.Sinks;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * MQTT 入站/出站分发的单一 Netty 处理器。
@@ -57,6 +58,10 @@ public class MqttClientHandler extends ChannelDuplexHandler {
      * CONNACK 结果发射器
      */
     private final Sinks.One<MqttConnAck> connAckSink;
+    /**
+     * 对端 DISCONNECT / 管理踢线回调；可空
+     */
+    private final Consumer<Throwable>    peerDisconnect;
 
     /**
      * 待完成的 SUBACK 回调（按 packetId 索引）
@@ -83,12 +88,34 @@ public class MqttClientHandler extends ChannelDuplexHandler {
                              MqttInbox inbox,
                              InboundQos inboundQos,
                              Sinks.One<MqttConnAck> connAckSink) {
+        this(config, service, ackTracker, inbox, inboundQos, connAckSink, null);
+    }
+
+    /**
+     * 构造 MqttClientHandler。
+     *
+     * @param config          客户端配置
+     * @param service         消息编解码服务
+     * @param ackTracker      ACK 跟踪器
+     * @param inbox           入站投递枢纽
+     * @param inboundQos      入站 QoS 状态机
+     * @param connAckSink     CONNACK 结果发射器
+     * @param peerDisconnect  收到服务端 DISCONNECT 时的回调；可空
+     */
+    public MqttClientHandler(MqttClientConfig config,
+                             MqttMessageService service,
+                             AckTracker ackTracker,
+                             MqttInbox inbox,
+                             InboundQos inboundQos,
+                             Sinks.One<MqttConnAck> connAckSink,
+                             Consumer<Throwable> peerDisconnect) {
         this.config = config;
         this.service = service;
         this.ackTracker = ackTracker;
         this.inbox = inbox;
         this.inboundQos = inboundQos;
         this.connAckSink = connAckSink;
+        this.peerDisconnect = peerDisconnect;
     }
 
     /**
@@ -176,7 +203,12 @@ public class MqttClientHandler extends ChannelDuplexHandler {
                 }
             }
             case PINGRESP -> log.debug("PINGRESP received");
-            case DISCONNECT -> log.debug("Server-initiated DISCONNECT");
+            case DISCONNECT -> {
+                log.debug("Server-initiated DISCONNECT");
+                if (peerDisconnect != null) {
+                    peerDisconnect.accept(new RuntimeException("server DISCONNECT"));
+                }
+            }
             default -> log.debug("Unhandled MQTT message type: {}", type);
         }
     }

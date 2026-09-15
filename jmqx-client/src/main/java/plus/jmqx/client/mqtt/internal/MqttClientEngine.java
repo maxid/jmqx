@@ -32,7 +32,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.netty.Connection;
 
-import java.net.SocketException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -186,7 +185,8 @@ public abstract class MqttClientEngine {
                 return Mono.error(new IllegalStateException("Client is " + state.get()));
             }
             Sinks.One<MqttConnAck> ackSink = Sinks.one();
-            MqttClientHandler h = new MqttClientHandler(config, service, ackTracker, inbox, inboundQos, ackSink);
+            MqttClientHandler h = new MqttClientHandler(
+                    config, service, ackTracker, inbox, inboundQos, ackSink, this::onTransportError);
             return transportFactory.connect(config)
                     .flatMap(conn -> {
                         this.connection = conn;
@@ -196,12 +196,11 @@ public abstract class MqttClientEngine {
                                 .ofType(io.netty.handler.codec.mqtt.MqttMessage.class)
                                 .subscribe(
                                         mqtt -> h.handleInbound(conn.channel(), mqtt),
-                                        this::onInboundStreamError);
-                        conn.onDispose().subscribe(v -> {
-                            if (state.get() != MqttClientState.DISCONNECTING) {
-                                onTransportError(new RuntimeException("connection disposed"));
-                            }
-                        });
+                                        this::onInboundStreamError,
+                                        this::onInboundCompleted);
+                        conn.onDispose()
+                                .doOnTerminate(this::onConnectionDisposed)
+                                .subscribe();
                         NettyUtil.writeAndFlush(conn.channel(), service.encodeConnect(config));
                         return ackSink.asMono();
                     })
@@ -212,10 +211,7 @@ public abstract class MqttClientEngine {
                         resubscribe();
                         messageBuffer.flush(this::doPublish).subscribe();
                     })
-                    .doOnError(err -> {
-                        state.set(MqttClientState.DISCONNECTING);
-                        onTransportError(err);
-                    });
+                    .doOnError(this::onTransportError);
         });
     }
 
@@ -392,40 +388,63 @@ public abstract class MqttClientEngine {
     }
 
     /**
-     * 传输错误处理。
+     * 传输错误或对端关连接：CONNECTED/CONNECTING → DISCONNECTED，只通知一次。
      *
      * @param err 传输异常
      */
     protected void onTransportError(Throwable err) {
-        log.warn("Transport error: {}", err.toString());
-        state.set(MqttClientState.DISCONNECTED);
+        MqttClientState previous = state.getAndSet(MqttClientState.DISCONNECTED);
+        if (previous == MqttClientState.DISCONNECTED || previous == MqttClientState.DISCONNECTING) {
+            return;
+        }
+        Throwable cause = err != null ? err : new RuntimeException("connection closed");
+        log.warn("Transport error: {}", cause.toString());
         MqttClientReconnector rc = new MqttClientReconnector(0, config.isAutomaticReconnect());
         MqttClientDisconnectedContext ctx = new MqttClientDisconnectedContext(
-                config, MqttClientDisconnectedContext.DisconnectSource.SERVER, err, rc);
+                config, MqttClientDisconnectedContext.DisconnectSource.SERVER, cause, rc);
         for (var l : disconnectedListeners) {
             l.onDisconnected(ctx);
         }
+        if (autoReconnect != null) {
+            autoReconnect.onDisconnected(ctx);
+        }
         if (!config.isAutomaticReconnect()) {
-            messageBuffer.failAll(err);
-            ackTracker.failAll(err);
+            messageBuffer.failAll(cause);
+            ackTracker.failAll(cause);
         }
     }
 
-    private void onInboundStreamError(Throwable err) {
+    /**
+     * 入站流报错。用户主动断开期间忽略；Connection reset 视为对端踢线。
+     *
+     * @param err 入站异常
+     */
+    void onInboundStreamError(Throwable err) {
         MqttClientState s = state.get();
-        if (s == MqttClientState.DISCONNECTING || s == MqttClientState.DISCONNECTED || isBenignDisconnect(err)) {
+        if (s == MqttClientState.DISCONNECTING || s == MqttClientState.DISCONNECTED) {
             log.debug("Inbound closed: {}", err.toString());
             return;
         }
         onTransportError(err);
     }
 
-    private static boolean isBenignDisconnect(Throwable err) {
-        if (err instanceof SocketException) {
-            String msg = err.getMessage();
-            return msg != null && (msg.contains("Connection reset") || msg.contains("Broken pipe"));
+    /**
+     * 入站流正常结束（对端 FIN），CONNECTED 时按服务端断开处理。
+     */
+    void onInboundCompleted() {
+        MqttClientState s = state.get();
+        if (s == MqttClientState.DISCONNECTING || s == MqttClientState.DISCONNECTED) {
+            return;
         }
-        return false;
+        onTransportError(new RuntimeException("inbound completed"));
+    }
+
+    private void onConnectionDisposed() {
+        MqttClientState s = state.get();
+        if (s == MqttClientState.DISCONNECTING || s == MqttClientState.DISCONNECTED) {
+            return;
+        }
+        onTransportError(new RuntimeException("connection disposed"));
     }
 
     /**
