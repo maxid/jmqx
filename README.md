@@ -54,6 +54,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
 23. 重要：修复因在 jmqx-control-io / jmqx-publish-io 线程同步调用 ACL（用户实现可能含 Feign 等阻塞调用）触发 Reactor `block()` 不被允许的问题，引入独立 `AclExecutor` 并与 `AuthExecutor` 线程池隔离（2026-7-23）（1.4.18）（使用 vibe coding 编码 + code review）
 24. 重要：进一步实现 MQTT 业务与 reactor-netty 线程模型的对齐，并增加场景开关，PART 1 详见 [ADR-0001](./docs/adr/0001-roadmap-schedulers-alignment.md)（2026-7-24）（1.4.19）（使用 vibe coding 编码 + code review）
 25. 增强：`ConnectMessage` 携带 MQTT Keep Alive（秒）；PINGREQ 仍在 EventLoop 回 PONG，并在 `dispatchScheduler` 回调 `PlatformDispatcher.onPing`（默认空实现）（2026-9-14）（1.4.20）
+26. 修复：jmqx-client 对端断连（Connection reset / 入站流结束 / 连接 dispose）统一按 SERVER 断开回调，不再被误判为良性断开而静默；服务端下发 DISCONNECT 经 peerDisconnect 回调引擎，并以状态原子切换保证同一轮断开只通知一次（2026-9-15）（1.4.21）
 
 ## 使用示例
 
@@ -65,7 +66,7 @@ Jmqx 是在 [SMQTT 1.x](https://github.com/quickmsg/smqtt) 基础上的重构版
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-broker</artifactId>
-            <version>1.4.20</version>
+            <version>1.4.21</version>
         </dependency>
 ```
 
@@ -323,7 +324,7 @@ MAVEN_OPTS="-Xmx4g" mvn test -pl jmqx-cluster -am \
         <dependency>
             <groupId>plus.jmqx.iot</groupId>
             <artifactId>jmqx-cluster</artifactId>
-            <version>1.4.20</version>
+            <version>1.4.21</version>
         </dependency>
 ```
 
